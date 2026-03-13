@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(cd /tmp)",
+      "Bash(jar tf:*)",
+      "Bash(find C:/Users/KIET/.gradle -name *.jar -path *supabase*auth* -not -path *sources* -not -path *android*)",
+      "Bash(find C:/Users/KIET/.gradle -name *auth-kt*)",
+      "Bash(powershell -Command \":*)"
+    ]
+  }
+}
