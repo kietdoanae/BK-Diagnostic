@@ -20,7 +20,7 @@ The application serves as a diagnostic tool that reads and interprets CAN bus da
 - **Backend/Database**: Supabase
 - **Networking**: Ktor
 - **Media**: Media3 ExoPlayer (for introductory videos)
-- **Hardware Interface**: STM32 + MCP2515 (CAN Bus)
+- **Hardware Interface**: STM32 + MCP2515 (CAN Bus) + CP2102 (UART)
 
 ## 📸 Screenshots
 *Coming soon...*
