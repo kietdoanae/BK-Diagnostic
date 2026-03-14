@@ -19,7 +19,8 @@ import androidx.compose.ui.unit.dp
 import com.example.bkdiagnostic.R
 import com.example.bkdiagnostic.supabaseClient
 import io.github.jan.supabase.auth.auth
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 
 @Composable
 fun SplashScreen(
@@ -28,16 +29,20 @@ fun SplashScreen(
 ) {
     val scale = remember { Animatable(0f) }
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(Unit) {
+        // Chạy song song: animation + session check trên IO thread
+        // → không block Main Thread, tổng thời gian = max(animation, session_check) ≈ 700ms
+        val sessionDeferred = async(Dispatchers.IO) {
+            supabaseClient.auth.currentSessionOrNull()
+        }
+
         scale.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 1000)
+            animationSpec = tween(durationMillis = 700)
         )
-        delay(800)
 
-        // Nếu đã có session hợp lệ (vd: sau khi xác nhận email hoặc đã đăng nhập trước đó)
-        val session = supabaseClient.auth.currentSessionOrNull()
-        if (session != null) {
+        // Animation xong (~700ms), session check thường đã hoàn tất
+        if (sessionDeferred.await() != null) {
             onNavigateToMain()
         } else {
             onNavigateToLogin()

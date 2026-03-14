@@ -5,21 +5,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.bkdiagnostic.ui.screens.BrandSelectionScreen
+import com.example.bkdiagnostic.ui.screens.DashboardScreen
+import com.example.bkdiagnostic.ui.screens.DiagnosticScreen
+import com.example.bkdiagnostic.ui.screens.ModelSelectionScreen
 import com.example.bkdiagnostic.ui.screens.ForgotPasswordScreen
 import com.example.bkdiagnostic.ui.screens.LoginScreen
 import com.example.bkdiagnostic.ui.screens.RegisterScreen
@@ -113,7 +112,48 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("main") {
-                            MainScreen()
+                            DashboardScreen(
+                                onLogout = {
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                },
+                                onDiagnosticsClick = {
+                                    navController.navigate("brand_selection")
+                                }
+                            )
+                        }
+                        composable("brand_selection") {
+                            BrandSelectionScreen(
+                                onBrandSelected = { brand ->
+                                    navController.navigate("model_selection/${brand.id}")
+                                },
+                                onBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+                        composable("model_selection/{brandId}") { backStack ->
+                            val brandId = backStack.arguments?.getString("brandId") ?: "ford"
+                            ModelSelectionScreen(
+                                brandId = brandId,
+                                onModelSelected = { model ->
+                                    navController.navigate("diagnostic/$brandId/${model.id}")
+                                },
+                                onBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+                        composable("diagnostic/{brandId}/{modelId}") { backStack ->
+                            val brandId = backStack.arguments?.getString("brandId") ?: "ford"
+                            val modelId = backStack.arguments?.getString("modelId") ?: "ranger"
+                            DiagnosticScreen(
+                                brandId = brandId,
+                                modelId = modelId,
+                                onBack = { navController.popBackStack() },
+                                application = application
+                            )
                         }
                     }
                 }
@@ -153,12 +193,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun MainScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "Chào mừng đến với BK Diagnostic!")
     }
 }

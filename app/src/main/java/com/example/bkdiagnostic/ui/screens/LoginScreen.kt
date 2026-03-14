@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -34,7 +34,7 @@ fun LoginScreen(
     onNavigateToForgotPassword: () -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
-    var email by remember { mutableStateOf("") }
+    var emailOrUsername by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -75,15 +75,15 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedTextField(
-                value = email,
+                value = emailOrUsername,
                 onValueChange = {
-                    email = it
+                    emailOrUsername = it
                     if (uiState is AuthUiState.Error) viewModel.resetState()
                 },
-                label = { Text("Email") },
+                label = { Text("Email hoặc Tên đăng nhập") },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
                 isError = uiState is AuthUiState.Error
@@ -136,17 +136,17 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    if (email.isBlank() || password.isBlank()) {
+                    if (emailOrUsername.isBlank() || password.isBlank()) {
                         // handled by isError state but no reset needed
                     } else {
-                        viewModel.login(email.trim(), password)
+                        viewModel.login(emailOrUsername.trim(), password)
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                enabled = email.isNotBlank() && password.isNotBlank() && uiState !is AuthUiState.Loading
+                enabled = emailOrUsername.isNotBlank() && password.isNotBlank() && uiState !is AuthUiState.Loading
             ) {
                 if (uiState is AuthUiState.Loading) {
                     CircularProgressIndicator(

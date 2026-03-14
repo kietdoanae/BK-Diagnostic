@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Bộ lọc USB cho thiết bị CP2102 (Silicon Labs CP210x USB-to-UART Bridge)
+    VID = 0x10C4 (4292) — Silicon Laboratories
+    PID = 0xEA60 (60000) — CP210x
+    Khi cắm đúng thiết bị này, Android sẽ hiện hộp thoại yêu cầu mở BKDiagnostic
+-->
+<resources>
+    <usb-device vendor-id="4292" product-id="60000" />
+</resources>

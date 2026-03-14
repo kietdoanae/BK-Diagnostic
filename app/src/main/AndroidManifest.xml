@@ -4,7 +4,11 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- USB Host mode: kết nối với STM32 qua CP2102 -->
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+
     <application
+        android:name=".BKDiagnosticApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -45,6 +49,14 @@
                     android:scheme="bkdiagnostic"
                     android:host="reset" />
             </intent-filter>
+
+            <!-- Tự động mở app khi cắm thiết bị CP2102 vào -->
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/usb_device_filter" />
 
         </activity>
     </application>

@@ -55,9 +55,13 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.core.splashscreen)
 
+    // USB Serial (CP2102 / CH340 / FTDI)
+    implementation(libs.usb.serial.android)
+
     // Supabase
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.auth)
+    implementation(libs.supabase.postgrest)
     implementation(libs.ktor.client.android)
 
     testImplementation(libs.junit)
