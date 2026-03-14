@@ -43,7 +43,7 @@ The application serves as a diagnostic tool that reads and interprets CAN bus da
 5. Build and run on a Tablet device (Pixel Tablet recommended).
 
 ## 🎓 Author
-- **Student**: [Your Name]
+- **Student**: Kiet Doan Anh
 - **University**: Ho Chi Minh City University of Technology (Bach Khoa)
 
 ---
