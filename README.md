@@ -4,7 +4,7 @@ BK Diagnostic is an advanced automotive diagnostic application designed to inter
 
 ## 🚗 Project Overview
 
-The application serves as a diagnostic tool that reads and interprets CAN bus data from vehicles using an **MCP2515 CAN module** and an **STM32 microcontroller**. The data is transmitted to an Android tablet, where the app analyzes it based on specific vehicle models and protocols.
+The application serves as a diagnostic tool that reads and interprets CAN bus data from vehicles using an **MCP2515 CAN module**,an **STM32 microcontroller** and an **CP2102 UART module**. The data is transmitted to an Android tablet, where the app analyzes it based on specific vehicle models and protocols.
 
 ### Key Features
 - **Modern UI/UX**: Designed with Jetpack Compose and Material 3 for a sleek, responsive experience.
