@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -26,7 +27,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.bkdiagnostic.ActivityLogger
 import com.example.bkdiagnostic.R
+import com.example.bkdiagnostic.ui.components.AppTopBar
+import com.example.bkdiagnostic.ui.components.AppTopBarChip
 
 data class CarModel(
     val id: String,
@@ -38,23 +42,26 @@ data class CarModel(
 
 // ── Ford model list ──────────────────────────────────────────────────────────
 val fordModels = listOf(
-    CarModel("ranger",        "Ford Ranger",       "Bán tải",   "2022 – 2024", R.drawable.ford_ranger),
-    CarModel("ranger_raptor", "Ranger Raptor",     "Bán tải",   "2022 – 2024", R.drawable.ford_ranger_raptor),
-    CarModel("everest",       "Ford Everest",      "SUV 7 chỗ", "2022 – 2024", R.drawable.ford_everest),
-    CarModel("territory",     "Ford Territory",    "SUV 5 chỗ", "2021 – 2024", R.drawable.ford_territory),
-    CarModel("transit",       "Ford Transit",      "Minivan",   "2022 – 2024", R.drawable.ford_transit),
-    CarModel("bronco",        "Ford Bronco",       "SUV",       "2021 – 2024", R.drawable.ford_bronco),
-    CarModel("mustang",       "Ford Mustang",      "Coupe",     "2022 – 2024", R.drawable.ford_mustang),
-    CarModel("explorer",      "Ford Explorer",     "SUV 7 chỗ", "2022 – 2024", R.drawable.ford_explorer),
-    CarModel("escape",        "Ford Escape",       "Crossover", "2022 – 2024", R.drawable.ford_escape),
-    CarModel("ecosport",      "Ford EcoSport",     "Crossover", "2020 – 2023", R.drawable.ford_ecosport),
-    CarModel("f150",          "Ford F-150",        "Bán tải",   "2022 – 2024", R.drawable.ford_f150),
-    CarModel("mach_e",        "Mustang Mach-E",    "SUV Điện",  "2022 – 2024", R.drawable.ford_mach_e),
+    CarModel("ranger",        "Ford Ranger",       "Pickup",      "2022 – 2024", R.drawable.ford_ranger),
+    CarModel("ranger_raptor", "Ranger Raptor",     "Pickup",      "2022 – 2024", R.drawable.ford_ranger_raptor),
+    CarModel("everest",       "Ford Everest",      "SUV 7-seat",  "2022 – 2024", R.drawable.ford_everest),
+    CarModel("territory",     "Ford Territory",    "SUV 5-seat",  "2021 – 2024", R.drawable.ford_territory),
+    CarModel("transit",       "Ford Transit",      "Minivan",     "2022 – 2024", R.drawable.ford_transit),
+    CarModel("bronco",        "Ford Bronco",       "SUV",         "2021 – 2024", R.drawable.ford_bronco),
+    CarModel("mustang",       "Ford Mustang",      "Coupe",       "2022 – 2024", R.drawable.ford_mustang),
+    CarModel("explorer",      "Ford Explorer",     "SUV 7-seat",  "2022 – 2024", R.drawable.ford_explorer),
+    CarModel("escape",        "Ford Escape",       "Crossover",   "2022 – 2024", R.drawable.ford_escape),
+    CarModel("ecosport",      "Ford EcoSport",     "Crossover",   "2020 – 2023", R.drawable.ford_ecosport),
+    CarModel("f150",          "Ford F-150",        "Pickup",      "2022 – 2024", R.drawable.ford_f150),
+    CarModel("mach_e",        "Mustang Mach-E",    "Electric SUV","2022 – 2024", R.drawable.ford_mach_e),
 )
 
 private val brandModels: Map<String, List<CarModel>> = mapOf(
     "ford" to fordModels
 )
+
+/** Model IDs đã hỗ trợ đầy đủ — các model khác sẽ hiện dialog "Under Development" */
+private val availableModelIds: Set<String> = setOf("ranger")
 
 @Composable
 fun ModelSelectionScreen(
@@ -65,118 +72,132 @@ fun ModelSelectionScreen(
     val brand = carBrands.find { it.id == brandId }
     val models = brandModels[brandId] ?: emptyList()
 
+    var comingSoonModel by remember { mutableStateOf<CarModel?>(null) }
+    val brandColor = brand?.primaryColor ?: Color(0xFF003087)
+
+    // ── Coming Soon dialog ────────────────────────────────────────────────────
+    comingSoonModel?.let { model ->
+        AlertDialog(
+            onDismissRequest = { comingSoonModel = null },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            icon = {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(brandColor.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Build,
+                        contentDescription = null,
+                        tint = brandColor,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            },
+            title = {
+                Text(
+                    text = model.name,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp,
+                    color = Color(0xFF1A1A2E)
+                )
+            },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFFFF3CD)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Construction,
+                                contentDescription = null,
+                                tint = Color(0xFF856404),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "Under Development",
+                                color = Color(0xFF856404),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                    Text(
+                        text = "${model.name} is currently under development. Please check back later!",
+                        color = Color(0xFF6B6B80),
+                        fontSize = 14.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { comingSoonModel = null },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = brandColor)
+                ) {
+                    Text("Got It", fontWeight = FontWeight.SemiBold)
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFEEF2F7))
     ) {
         // ─── Top bar ─────────────────────────────────────────────────────────
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(Color(0xFF0A1E6E), Color(0xFF1565C0), Color(0xFF1E88E5))
-                    )
-                )
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(130.dp)
-                    .offset(x = (-35).dp, y = (-35).dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.06f))
-            )
-            Box(
-                modifier = Modifier
-                    .size(70.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 20.dp, y = 20.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.04f))
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.12f))
-                ) {
+        AppTopBar(
+            title = "Model Selection",
+            subtitle = "Select a model to start diagnostics",
+            onBack = onBack,
+            trailingContent = {
+                AppTopBarChip {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Quay lại",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        imageVector = Icons.Filled.Build,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(13.dp)
                     )
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
+                    Icon(
+                        imageVector = Icons.Filled.ChevronRight,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.45f),
+                        modifier = Modifier.size(13.dp)
+                    )
                     Text(
-                        text = "MODEL SELECTION",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp,
+                        text = brand?.name ?: brandId,
+                        color = Color.White.copy(alpha = 0.75f),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.ChevronRight,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.45f),
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = "Model",
                         color = Color.White,
-                        letterSpacing = 0.5.sp
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp
                     )
-                    Text(
-                        text = "Chọn model xe để bắt đầu chẩn đoán",
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.65f)
-                    )
-                }
-
-                // Breadcrumb chip
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = Color.White.copy(alpha = 0.14f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Build,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Icon(
-                            imageVector = Icons.Filled.ChevronRight,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.45f),
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Text(
-                            text = brand?.name ?: brandId,
-                            color = Color.White.copy(alpha = 0.75f),
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 12.sp
-                        )
-                        Icon(
-                            imageVector = Icons.Filled.ChevronRight,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.45f),
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Text(
-                            text = "Model",
-                            color = Color.White,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
-                        )
-                    }
                 }
             }
-        }
+        )
 
         // ─── Model grid (LazyVerticalGrid 4 cols) ────────────────────────────
         LazyVerticalGrid(
@@ -191,8 +212,21 @@ fun ModelSelectionScreen(
             items(models) { model ->
                 ModelCard(
                     model = model,
-                    brandColor = brand?.primaryColor ?: Color(0xFF003087),
-                    onClick = { onModelSelected(model) }
+                    brandColor = brandColor,
+                    isAvailable = model.id in availableModelIds,
+                    onClick = {
+                        if (model.id in availableModelIds) {
+                            ActivityLogger.modelSelected(
+                                brandName = brand?.name ?: brandId,
+                                modelName = model.name,
+                                category = model.category,
+                                years = model.years
+                            )
+                            onModelSelected(model)
+                        } else {
+                            comingSoonModel = model
+                        }
+                    }
                 )
             }
         }
@@ -203,15 +237,20 @@ fun ModelSelectionScreen(
 private fun ModelCard(
     model: CarModel,
     brandColor: Color,
+    isAvailable: Boolean = true,
     onClick: () -> Unit
 ) {
+    val cardColor = if (isAvailable) brandColor else Color(0xFF9E9E9E)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = if (isAvailable) Color.White else Color(0xFFF5F5F5)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isAvailable) 4.dp else 1.dp)
     ) {
         Column {
             // ── Car image (16:9 ratio) ──────────────────────────────────────
@@ -222,7 +261,7 @@ private fun ModelCard(
                     .background(
                         Brush.radialGradient(
                             colors = listOf(
-                                brandColor.copy(alpha = 0.08f),
+                                cardColor.copy(alpha = if (isAvailable) 0.08f else 0.04f),
                                 Color(0xFFF0F4FF)
                             )
                         )
@@ -233,7 +272,8 @@ private fun ModelCard(
                     contentDescription = model.name,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(8.dp),
+                        .padding(8.dp)
+                        .then(if (!isAvailable) Modifier.alpha(0.45f) else Modifier),
                     contentScale = ContentScale.Fit
                 )
 
@@ -243,7 +283,7 @@ private fun ModelCard(
                         .align(Alignment.TopEnd)
                         .padding(8.dp),
                     shape = RoundedCornerShape(6.dp),
-                    color = brandColor.copy(alpha = 0.88f)
+                    color = cardColor.copy(alpha = 0.88f)
                 ) {
                     Text(
                         text = model.years,
@@ -252,6 +292,36 @@ private fun ModelCard(
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                     )
+                }
+
+                // Coming soon overlay badge — top left
+                if (!isAvailable) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFFFF3CD)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Construction,
+                                contentDescription = null,
+                                tint = Color(0xFF856404),
+                                modifier = Modifier.size(10.dp)
+                            )
+                            Text(
+                                text = "Coming Soon",
+                                color = Color(0xFF856404),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                 }
             }
 
@@ -262,7 +332,7 @@ private fun ModelCard(
                     .height(2.dp)
                     .background(
                         Brush.horizontalGradient(
-                            colors = listOf(brandColor, brandColor.copy(alpha = 0.2f))
+                            colors = listOf(cardColor, cardColor.copy(alpha = 0.2f))
                         )
                     )
             )
@@ -279,18 +349,18 @@ private fun ModelCard(
                         text = model.name,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 14.sp,
-                        color = Color(0xFF1A1A2E),
+                        color = if (isAvailable) Color(0xFF1A1A2E) else Color(0xFF9E9E9E),
                         maxLines = 1
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     // Category chip
                     Surface(
                         shape = RoundedCornerShape(4.dp),
-                        color = brandColor.copy(alpha = 0.10f)
+                        color = cardColor.copy(alpha = 0.10f)
                     ) {
                         Text(
                             text = model.category,
-                            color = brandColor,
+                            color = cardColor,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
@@ -303,13 +373,14 @@ private fun ModelCard(
                     modifier = Modifier
                         .size(30.dp)
                         .clip(CircleShape)
-                        .background(brandColor.copy(alpha = 0.09f)),
+                        .background(cardColor.copy(alpha = 0.09f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        imageVector = if (isAvailable) Icons.AutoMirrored.Filled.ArrowForward
+                                      else Icons.Filled.Lock,
                         contentDescription = null,
-                        tint = brandColor,
+                        tint = cardColor,
                         modifier = Modifier.size(16.dp)
                     )
                 }

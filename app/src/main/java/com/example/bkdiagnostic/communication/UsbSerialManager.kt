@@ -61,10 +61,28 @@ class UsbSerialManager private constructor(private val context: Context) {
 
     // ── Nội bộ ──────────────────────────────────────────────────────────────
 
+    // ── Preferred settings (updated by SettingsViewModel) ───────────────────
+
+    /** Tốc độ UART giữa Android → CP2102 → STM32. Mặc định 115200. */
+    var preferredBaudRate: Int = 115200
+
+    /** Tốc độ CAN bus gửi cho STM32 ngay sau khi kết nối. Mặc định 500 kbps. */
+    var preferredCanKbps: Int = 500
+
+    /**
+     * Tự kết nối lại khi cổng serial bị ngắt (transient disconnect).
+     * Lưu ý: chỉ hoạt động khi thiết bị vẫn còn cắm — không phát hiện
+     * unplug/replug (cần ACTION_USB_DEVICE_ATTACHED cho trường hợp đó).
+     */
+    var autoReconnect: Boolean = false
+
+    // ── Internal ─────────────────────────────────────────────────────────────
+
     private val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var serialPort: UsbSerialPort? = null
     private val parser = FrameProtocol.StreamParser()
+    private var receiverRegistered = false
 
     private val ACTION_USB_PERMISSION = "com.example.bkdiagnostic.USB_PERMISSION"
 
@@ -93,7 +111,7 @@ class UsbSerialManager private constructor(private val context: Context) {
      * Nếu chưa có quyền USB → hộp thoại hệ thống sẽ xuất hiện.
      * Nếu không tìm thấy thiết bị tương thích → [ConnectionState.Error].
      */
-    fun connect(baudRate: Int = 115200) {
+    fun connect(baudRate: Int = preferredBaudRate, canBaudKbps: Int = preferredCanKbps) {
         _state.value = ConnectionState.Searching
 
         val drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
@@ -108,7 +126,7 @@ class UsbSerialManager private constructor(private val context: Context) {
         registerPermissionReceiver()
 
         if (usbManager.hasPermission(device)) {
-            openPort(device, baudRate)
+            openPort(device, baudRate, canBaudKbps)
         } else {
             _state.value = ConnectionState.AwaitingPermission(device)
             val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
@@ -125,7 +143,10 @@ class UsbSerialManager private constructor(private val context: Context) {
         serialPort = null
         parser.reset()
         _state.value = ConnectionState.Disconnected
-        runCatching { context.unregisterReceiver(permissionReceiver) }
+        if (receiverRegistered) {
+            runCatching { context.unregisterReceiver(permissionReceiver) }
+            receiverRegistered = false
+        }
     }
 
     /**
@@ -145,7 +166,8 @@ class UsbSerialManager private constructor(private val context: Context) {
 
     // ── Nội bộ ──────────────────────────────────────────────────────────────
 
-    private fun openPort(device: UsbDevice, baudRate: Int = 115200) {
+    private fun openPort(device: UsbDevice, baudRate: Int = preferredBaudRate,
+                          canBaudKbps: Int = preferredCanKbps) {
         scope.launch {
             runCatching {
                 val drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
@@ -165,9 +187,9 @@ class UsbSerialManager private constructor(private val context: Context) {
                     baudRate = baudRate
                 )
 
-                // Đặt tốc độ CAN bus mặc định 500kbps
+                // Đặt tốc độ CAN bus theo setting (mặc định 500 kbps)
                 delay(200)
-                val baudCmd = FrameProtocol.encodeSetBaud(500)
+                val baudCmd = FrameProtocol.encodeSetBaud(canBaudKbps)
                 port.write(baudCmd, 500)
 
                 // Bắt đầu vòng lặp đọc
@@ -190,7 +212,12 @@ class UsbSerialManager private constructor(private val context: Context) {
                     }
                 }.onFailure {
                     // Cổng bị đóng hoặc thiết bị rút ra
+                    serialPort = null
                     _state.value = ConnectionState.Disconnected
+                    if (autoReconnect) {
+                        delay(2000)
+                        connect()   // dùng lại preferredBaudRate / preferredCanKbps
+                    }
                     return@launch
                 }
             }
@@ -211,12 +238,14 @@ class UsbSerialManager private constructor(private val context: Context) {
     }
 
     private fun registerPermissionReceiver() {
+        if (receiverRegistered) return
         val filter = IntentFilter(ACTION_USB_PERMISSION)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.registerReceiver(permissionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             context.registerReceiver(permissionReceiver, filter)
         }
+        receiverRegistered = true
     }
 
     fun destroy() {

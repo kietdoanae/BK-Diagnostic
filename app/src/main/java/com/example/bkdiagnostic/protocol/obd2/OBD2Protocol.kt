@@ -90,17 +90,28 @@ object OBD2Protocol {
     /**
      * Giải mã CAN response → [SensorReading].
      * Hỗ trợ Mode 01 (0x41) và Mode 22 (0x62).
+     *
+     * @param knownPids  Danh sách PID của xe (từ ProtocolConfig.livePids).
+     *                   Tra cứu ở đây trước; fallback sang OBD2Pids.ALL nếu không tìm thấy.
      */
-    fun decodeLiveData(frame: CanFrame, expectedCanId: Int): SensorReading? {
+    fun decodeLiveData(
+        frame: CanFrame,
+        expectedCanId: Int,
+        knownPids: List<OBD2PidDef> = emptyList()
+    ): SensorReading? {
         if (frame.id != expectedCanId) return null
         val d = frame.data
         if (d.size < 4) return null
+
+        fun findPid(mode: Int, pid: Int): OBD2PidDef? =
+            knownPids.firstOrNull { it.mode == mode && it.pid == pid }
+                ?: OBD2Pids.byModeAndPid(mode, pid)
 
         return when (d[1].toUByte().toInt()) {
             // ── Mode 01 response: 0x41 ─────────────────────────────────────
             0x41 -> {
                 val responsePid = d[2].toUByte().toInt()
-                val pid = OBD2Pids.byModeAndPid(0x01, responsePid) ?: return null
+                val pid = findPid(0x01, responsePid) ?: return null
                 val dataStart = 3
                 if (frame.dlc - dataStart < pid.minBytes) return null
                 val valueBytes = d.copyOfRange(dataStart, (dataStart + pid.minBytes).coerceAtMost(d.size))
@@ -111,7 +122,7 @@ object OBD2Protocol {
             0x62 -> {
                 if (d.size < 5) return null
                 val did = (d[2].toUByte().toInt() shl 8) or d[3].toUByte().toInt()
-                val pid = OBD2Pids.byModeAndPid(0x22, did) ?: return null
+                val pid = findPid(0x22, did) ?: return null
                 val dataStart = 4
                 if (frame.dlc - dataStart < pid.minBytes) return null
                 val valueBytes = d.copyOfRange(dataStart, (dataStart + pid.minBytes).coerceAtMost(d.size))

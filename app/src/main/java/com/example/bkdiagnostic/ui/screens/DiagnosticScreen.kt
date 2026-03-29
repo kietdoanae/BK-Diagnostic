@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BrokenImage
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Cable
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
@@ -57,24 +58,28 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bkdiagnostic.communication.UsbSerialManager
+import com.example.bkdiagnostic.DiagnosticsSettings
 import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
+import com.example.bkdiagnostic.ui.components.AppTopBar
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Màn hình Hub Chẩn đoán — quản lý sub-screens bằng internal state
 //  DiagnosticViewModel được chia sẻ cho tất cả sub-views
 // ─────────────────────────────────────────────────────────────────────────────
 
-private enum class DiagView { HUB, LIVE_DATA }
+private enum class DiagView { HUB, LIVE_DATA, RAW_MONITOR, ACTIVE_TEST }
 
 @Composable
 fun DiagnosticScreen(
     brandId: String,
     modelId: String,
     onBack: () -> Unit,
-    application: android.app.Application
+    application: android.app.Application,
+    isAdmin: Boolean = false,
+    diagSettings: DiagnosticsSettings = DiagnosticsSettings()
 ) {
     val viewModel: DiagnosticViewModel = viewModel(
-        factory = DiagnosticViewModel.Factory(application, brandId, modelId)
+        factory = DiagnosticViewModel.Factory(application, brandId, modelId, diagSettings)
     )
 
     var currentView by remember { mutableStateOf(DiagView.HUB) }
@@ -89,10 +94,21 @@ fun DiagnosticScreen(
             DiagnosticHub(
                 viewModel = viewModel,
                 onBack = onBack,
-                onNavigate = { currentView = it }
+                onNavigate = { currentView = it },
+                isAdmin = isAdmin
             )
         DiagView.LIVE_DATA ->
             LiveDataScreen(
+                viewModel = viewModel,
+                onBack = { currentView = DiagView.HUB }
+            )
+        DiagView.RAW_MONITOR ->
+            RawMonitorScreen(
+                viewModel = viewModel,
+                onBack = { currentView = DiagView.HUB }
+            )
+        DiagView.ACTIVE_TEST ->
+            ActiveTestScreen(
                 viewModel = viewModel,
                 onBack = { currentView = DiagView.HUB }
             )
@@ -107,7 +123,8 @@ fun DiagnosticScreen(
 private fun DiagnosticHub(
     viewModel: DiagnosticViewModel,
     onBack: () -> Unit,
-    onNavigate: (DiagView) -> Unit
+    onNavigate: (DiagView) -> Unit,
+    isAdmin: Boolean = false
 ) {
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
     val dtcList by viewModel.dtcList.collectAsStateWithLifecycle()
@@ -126,10 +143,15 @@ private fun DiagnosticHub(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .background(Color(0xFFF1F4F9))
         ) {
+            // TopBar nằm ngoài padding của Scaffold để không bị đẩy xuống bởi status bar inset
             DiagnosticTopBar(config = viewModel.protocolConfig, onBack = onBack)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = padding.calculateBottomPadding())
+            ) {
 
             ConnectionStatusBar(
                 state = connectionState,
@@ -150,56 +172,83 @@ private fun DiagnosticHub(
                 // 1. Live Data
                 DiagnosticFunctionCard(
                     icon = Icons.Default.Speed,
-                    title = "Dữ liệu thời gian thực",
-                    description = "RPM, tốc độ, nhiệt độ, tải động cơ…",
+                    title = "Live Data",
+                    description = "RPM, speed, engine temp, load & more",
                     accentColor = Color(0xFF1565C0),
                     enabled = isConnected,
                     actionIcon = Icons.Default.Speed,
-                    actionLabel = "Xem",
+                    actionLabel = "View",
                     onClick = { onNavigate(DiagView.LIVE_DATA) }
                 )
 
                 // 2. Đọc DTC
                 DiagnosticFunctionCard(
                     icon = Icons.Default.Warning,
-                    title = "Đọc mã lỗi (DTC)",
+                    title = "Read Fault Codes (DTC)",
                     description = when {
-                        isDtcLoading -> "Đang quét mã lỗi…"
-                        dtcList.isEmpty() -> "Quét mã lỗi từ tất cả ECU"
-                        else -> "${dtcList.size} mã lỗi: ${dtcList.take(3).joinToString(", ")}"
+                        isDtcLoading -> "Scanning fault codes…"
+                        dtcList.isEmpty() -> "Scan all ECUs for fault codes"
+                        else -> "${dtcList.size} fault code(s): ${dtcList.take(3).joinToString(", ")}"
                     },
                     accentColor = Color(0xFFE65100),
                     enabled = isConnected,
                     actionIcon = Icons.Default.FindReplace,
-                    actionLabel = if (isDtcLoading) "..." else "Quét",
+                    actionLabel = if (isDtcLoading) "..." else "Scan",
                     onClick = { viewModel.readDtcs() }
                 )
 
                 // 3. Xóa DTC
                 DiagnosticFunctionCard(
                     icon = Icons.Default.Delete,
-                    title = "Xóa mã lỗi",
-                    description = if (dtcList.isEmpty()) "Xóa DTC và tắt đèn Check Engine"
-                    else "Xóa ${dtcList.size} mã lỗi đã tìm thấy",
+                    title = "Clear Fault Codes",
+                    description = if (dtcList.isEmpty()) "Clear DTCs and reset Check Engine light"
+                    else "Clear ${dtcList.size} fault code(s) found",
                     accentColor = Color(0xFFC62828),
                     enabled = isConnected && dtcList.isNotEmpty(),
                     actionIcon = Icons.Default.Delete,
-                    actionLabel = "Xóa",
+                    actionLabel = "Clear",
                     onClick = { viewModel.clearDtcs() }
                 )
 
-                // 4–7. Placeholder (sắp có)
+                // Raw Frame Monitor — chỉ hiện với Admin
+                if (isAdmin) {
+                    DiagnosticFunctionCard(
+                        icon = Icons.Default.BugReport,
+                        title = "Raw Frame Monitor",
+                        description = "Inspect raw CAN bytes alongside decoded values",
+                        accentColor = Color(0xFF37474F),
+                        enabled = true,
+                        actionIcon = Icons.Default.BugReport,
+                        actionLabel = "Open",
+                        onClick = { onNavigate(DiagView.RAW_MONITOR) }
+                    )
+                }
+
+                // 4. Active Test — Kích hoạt cơ cấu chấp hành
+                DiagnosticFunctionCard(
+                    icon = Icons.Default.DirectionsCar,
+                    title = "Active Test",
+                    description = "Kích hoạt đèn, còi, khóa cửa & các cơ cấu chấp hành qua BCM",
+                    accentColor = Color(0xFF7C3AED),
+                    enabled = true,
+                    actionIcon = Icons.Default.DirectionsCar,
+                    actionLabel = "Open",
+                    onClick = { onNavigate(DiagView.ACTIVE_TEST) }
+                )
+
+                // 5–7. Placeholder (sắp có)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ComingSoonCard(Modifier.weight(1f), Icons.Default.DirectionsCar, "Kiểm tra cơ cấu chấp hành")
-                    ComingSoonCard(Modifier.weight(1f), Icons.Default.Info, "Thông tin ECU & VIN")
+                    ComingSoonCard(Modifier.weight(1f), Icons.Default.Info, "ECU & VIN Info")
+                    ComingSoonCard(Modifier.weight(1f), Icons.Default.BrokenImage, "Data Graph")
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ComingSoonCard(Modifier.weight(1f), Icons.Default.BrokenImage, "Đồ thị & ghi dữ liệu")
-                    ComingSoonCard(Modifier.weight(1f), Icons.Default.Cable, "Cài đặt cảm biến")
+                    ComingSoonCard(Modifier.weight(1f), Icons.Default.Cable, "Sensor Config")
+                    ComingSoonCard(Modifier.weight(1f), Icons.Default.BrokenImage, "Data Logger")
                 }
             }
-        }
-    }
+        }   // end inner Column (bottom padding)
+    }       // end outer Column
+    }       // end Scaffold
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -211,38 +260,11 @@ private fun DiagnosticTopBar(
     config: com.example.bkdiagnostic.protocol.ProtocolConfig?,
     onBack: () -> Unit
 ) {
-    val gradient = Brush.horizontalGradient(
-        listOf(Color(0xFF0A1E6E), Color(0xFF1565C0), Color(0xFF1E88E5))
+    AppTopBar(
+        title = config?.displayName ?: "Vehicle Diagnostics",
+        subtitle = "Select diagnostic function",
+        onBack = onBack
     )
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(gradient)
-            .padding(horizontal = 4.dp, vertical = 10.dp)
-    ) {
-        Box(
-            Modifier
-                .size(90.dp)
-                .align(Alignment.CenterEnd)
-                .padding(end = 8.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.06f))
-        )
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-            }
-            Column {
-                Text(
-                    config?.displayName ?: "Chẩn đoán xe",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-                Text("Chọn chức năng chẩn đoán", color = Color.White.copy(alpha = 0.75f), fontSize = 12.sp)
-            }
-        }
-    }
 }
 
 @Composable
@@ -253,17 +275,17 @@ private fun ConnectionStatusBar(
 ) {
     val (icon, label, bgColor, textColor) = when (state) {
         is UsbSerialManager.ConnectionState.Connected ->
-            Quadruple(Icons.Default.CheckCircle, "Đã kết nối: ${state.deviceName}",
+            Quadruple(Icons.Default.CheckCircle, "Connected: ${state.deviceName}",
                 Color(0xFFE8F5E9), Color(0xFF2E7D32))
         is UsbSerialManager.ConnectionState.Searching,
         is UsbSerialManager.ConnectionState.AwaitingPermission ->
-            Quadruple(Icons.Default.FindReplace, "Đang tìm kiếm thiết bị USB…",
+            Quadruple(Icons.Default.FindReplace, "Searching for USB device…",
                 Color(0xFFFFF8E1), Color(0xFFF57F17))
         is UsbSerialManager.ConnectionState.Error ->
-            Quadruple(Icons.Default.Error, "Lỗi: ${state.message}",
+            Quadruple(Icons.Default.Error, "Error: ${state.message}",
                 Color(0xFFFFEBEE), Color(0xFFC62828))
         UsbSerialManager.ConnectionState.Disconnected ->
-            Quadruple(Icons.Default.LinkOff, "Chưa kết nối với thiết bị OBD2",
+            Quadruple(Icons.Default.LinkOff, "No OBD2 device connected",
                 Color(0xFFF5F5F5), Color(0xFF757575))
     }
     Row(
@@ -284,7 +306,7 @@ private fun ConnectionStatusBar(
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1565C0)),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                ) { Text("Kết nối", fontSize = 12.sp, color = Color.White) }
+                ) { Text("Connect", fontSize = 12.sp, color = Color.White) }
             }
             is UsbSerialManager.ConnectionState.Connected -> {
                 Button(
@@ -292,7 +314,7 @@ private fun ConnectionStatusBar(
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                ) { Text("Ngắt", fontSize = 12.sp, color = Color.White) }
+                ) { Text("Disconnect", fontSize = 12.sp, color = Color.White) }
             }
             else -> {}
         }

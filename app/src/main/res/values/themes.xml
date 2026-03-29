@@ -7,7 +7,7 @@
     <!-- Theme cho system splash screen (Android 12+) -->
     <style name="Theme.BKDiagnostic.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_logo</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/icon_bkdiagnostic</item>
         <item name="postSplashScreenTheme">@style/Theme.BKDiagnostic</item>
     </style>
 </resources>

@@ -1,6 +1,8 @@
 package com.example.bkdiagnostic.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -14,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -34,14 +37,36 @@ fun LoginScreen(
     onNavigateToForgotPassword: () -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("bk_login_prefs", Context.MODE_PRIVATE) }
+
     var emailOrUsername by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var rememberMe by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Load saved credentials on first launch
+    LaunchedEffect(Unit) {
+        if (prefs.getBoolean("remember_me", false)) {
+            emailOrUsername = prefs.getString("saved_email", "") ?: ""
+            password       = prefs.getString("saved_password", "") ?: ""
+            rememberMe     = true
+        }
+    }
+
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.LoginSuccess) {
+            if (rememberMe) {
+                prefs.edit()
+                    .putBoolean("remember_me", true)
+                    .putString("saved_email",    emailOrUsername.trim())
+                    .putString("saved_password", password)
+                    .apply()
+            } else {
+                prefs.edit().clear().apply()
+            }
             viewModel.resetState()
             onLoginSuccess()
         }
@@ -80,7 +105,7 @@ fun LoginScreen(
                     emailOrUsername = it
                     if (uiState is AuthUiState.Error) viewModel.resetState()
                 },
-                label = { Text("Email hoặc Tên đăng nhập") },
+                label = { Text("Email or Username") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -97,7 +122,7 @@ fun LoginScreen(
                     password = it
                     if (uiState is AuthUiState.Error) viewModel.resetState()
                 },
-                label = { Text("Mật khẩu") },
+                label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingIcon = {
@@ -125,14 +150,29 @@ fun LoginScreen(
                 )
             }
 
-            TextButton(
-                onClick = onNavigateToForgotPassword,
-                modifier = Modifier.align(Alignment.End)
+            // ── Remember me + Forgot password ───────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Quên mật khẩu?")
+                Checkbox(
+                    checked = rememberMe,
+                    onCheckedChange = { rememberMe = it }
+                )
+                Text(
+                    text = "Remember me",
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .clickable { rememberMe = !rememberMe }
+                        .padding(end = 4.dp)
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(onClick = onNavigateToForgotPassword) {
+                    Text("Forgot password?")
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Button(
                 onClick = {
@@ -155,7 +195,7 @@ fun LoginScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("ĐĂNG NHẬP", fontWeight = FontWeight.Bold)
+                    Text("SIGN IN", fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -172,7 +212,7 @@ fun LoginScreen(
                     .height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("TẠO TÀI KHOẢN MỚI", fontWeight = FontWeight.Medium)
+                Text("CREATE ACCOUNT", fontWeight = FontWeight.Medium)
             }
         }
 

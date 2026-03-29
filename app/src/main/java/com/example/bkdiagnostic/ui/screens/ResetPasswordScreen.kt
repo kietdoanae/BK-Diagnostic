@@ -81,7 +81,7 @@ fun ResetPasswordScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Đặt mật khẩu mới",
+                    text = "Set a new password.",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -90,7 +90,7 @@ fun ResetPasswordScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Nhập mật khẩu mới cho tài khoản của bạn.",
+                    text = "Enter a new password for your account.",
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -102,7 +102,7 @@ fun ResetPasswordScreen(
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it; localError = null },
-                    label = { Text("Mật khẩu mới") },
+                    label = { Text("New password") },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
@@ -126,7 +126,7 @@ fun ResetPasswordScreen(
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it; localError = null },
-                    label = { Text("Xác nhận mật khẩu mới") },
+                    label = { Text("Confirm new password") },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.LockOpen, contentDescription = null) },
                     trailingIcon = {
@@ -162,11 +162,11 @@ fun ResetPasswordScreen(
                     onClick = {
                         when {
                             newPassword.isBlank() || confirmPassword.isBlank() ->
-                                localError = "Vui lòng điền đầy đủ thông tin."
+                                localError = "Please fill in all the information."
                             newPassword.length < 6 ->
-                                localError = "Mật khẩu phải có ít nhất 6 ký tự."
+                                localError = "The password must have at least 6 characters."
                             newPassword != confirmPassword ->
-                                localError = "Mật khẩu xác nhận không khớp."
+                                localError = "The confirmation password does not match."
                             else -> viewModel.updatePassword(newPassword)
                         }
                     },
@@ -185,7 +185,7 @@ fun ResetPasswordScreen(
                     } else {
                         Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("CẬP NHẬT MẬT KHẨU", fontWeight = FontWeight.Bold)
+                        Text("UPDATE PASSWORD", fontWeight = FontWeight.Bold)
                     }
                 }
             }

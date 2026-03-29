@@ -27,7 +27,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.alpha
+import com.example.bkdiagnostic.ActivityLogger
 import com.example.bkdiagnostic.R
+import com.example.bkdiagnostic.ui.components.AppTopBar
+import com.example.bkdiagnostic.ui.components.AppTopBarChip
 
 data class CarBrand(
     val id: String,
@@ -38,15 +42,18 @@ data class CarBrand(
     @field:DrawableRes val logoRes: Int
 )
 
+/** Brand IDs đã hỗ trợ đầy đủ — các hãng khác hiện "Under Development" */
+private val availableBrandIds: Set<String> = setOf("ford")
+
 val carBrands = listOf(
-    CarBrand("toyota",      "Toyota",      "Nhật Bản", Color(0xFFCC0000), Color(0xFF8B0000), R.drawable.brand_toyota),
-    CarBrand("honda",       "Honda",       "Nhật Bản", Color(0xFFE40012), Color(0xFF9C0010), R.drawable.brand_honda),
-    CarBrand("suzuki",      "Suzuki",      "Nhật Bản", Color(0xFF1A5EA8), Color(0xFF0D3D6E), R.drawable.brand_suzuki),
-    CarBrand("mazda",       "Mazda",       "Nhật Bản", Color(0xFF910000), Color(0xFF5C0000), R.drawable.brand_mazda),
-    CarBrand("hyundai",     "Hyundai",     "Hàn Quốc", Color(0xFF002C5F), Color(0xFF004A9F), R.drawable.brand_hyundai),
-    CarBrand("kia",         "KIA",         "Hàn Quốc", Color(0xFF05141F), Color(0xFFBB162B), R.drawable.brand_kia),
-    CarBrand("mitsubishi",  "Mitsubishi",  "Nhật Bản", Color(0xFFE4002B), Color(0xFF9C001D), R.drawable.brand_mitsubishi),
-    CarBrand("ford",        "Ford",        "Hoa Kỳ",   Color(0xFF003087), Color(0xFF0055C8), R.drawable.brand_ford),
+    CarBrand("toyota",      "Toyota",      "Japan",       Color(0xFFCC0000), Color(0xFF8B0000), R.drawable.brand_toyota),
+    CarBrand("honda",       "Honda",       "Japan",       Color(0xFFE40012), Color(0xFF9C0010), R.drawable.brand_honda),
+    CarBrand("suzuki",      "Suzuki",      "Japan",       Color(0xFF1A5EA8), Color(0xFF0D3D6E), R.drawable.brand_suzuki),
+    CarBrand("mazda",       "Mazda",       "Japan",       Color(0xFF910000), Color(0xFF5C0000), R.drawable.brand_mazda),
+    CarBrand("hyundai",     "Hyundai",     "South Korea", Color(0xFF002C5F), Color(0xFF004A9F), R.drawable.brand_hyundai),
+    CarBrand("kia",         "KIA",         "South Korea", Color(0xFF05141F), Color(0xFFBB162B), R.drawable.brand_kia),
+    CarBrand("mitsubishi",  "Mitsubishi",  "Japan",       Color(0xFFE4002B), Color(0xFF9C001D), R.drawable.brand_mitsubishi),
+    CarBrand("ford",        "Ford",        "USA",         Color(0xFF003087), Color(0xFF0055C8), R.drawable.brand_ford),
 )
 
 @Composable
@@ -107,7 +114,7 @@ fun BrandSelectionScreen(
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
-                                text = "Đang phát triển",
+                                text = "Under Development",
                                 color = Color(0xFF856404),
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp
@@ -115,7 +122,7 @@ fun BrandSelectionScreen(
                         }
                     }
                     Text(
-                        text = "Hãng xe ${brand.name} đang trong giai đoạn phát triển. Vui lòng quay lại sau!",
+                        text = "${brand.name} is currently under development. Please check back later!",
                         color = Color(0xFF6B6B80),
                         fontSize = 14.sp,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -128,7 +135,7 @@ fun BrandSelectionScreen(
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = brand.primaryColor)
                 ) {
-                    Text("Đã hiểu", fontWeight = FontWeight.SemiBold)
+                    Text("Got It", fontWeight = FontWeight.SemiBold)
                 }
             }
         )
@@ -140,102 +147,33 @@ fun BrandSelectionScreen(
             .background(Color(0xFFEEF2F7))
     ) {
         // ─── Top bar ─────────────────────────────────────────────────────────
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(Color(0xFF0A1E6E), Color(0xFF1565C0), Color(0xFF1E88E5))
-                    )
-                )
-        ) {
-            // Decorative circles
-            Box(
-                modifier = Modifier
-                    .size(130.dp)
-                    .offset(x = (-35).dp, y = (-35).dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.06f))
-            )
-            Box(
-                modifier = Modifier
-                    .size(70.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 20.dp, y = 20.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.04f))
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Back button
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.12f))
-                ) {
+        AppTopBar(
+            title = "Car Brand Selection",
+            subtitle = "Select a brand to diagnose",
+            onBack = onBack,
+            trailingContent = {
+                AppTopBarChip {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Quay lại",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        imageVector = Icons.Filled.Build,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.size(14.dp)
                     )
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
+                    Icon(
+                        imageVector = Icons.Filled.ChevronRight,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.5f),
+                        modifier = Modifier.size(13.dp)
+                    )
                     Text(
-                        text = "CAR BRAND SELECTION",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp,
+                        text = "Car Brand",
                         color = Color.White,
-                        letterSpacing = 0.5.sp
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp
                     )
-                    Text(
-                        text = "Chọn hãng xe cần chẩn đoán",
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.65f)
-                    )
-                }
-
-                // Breadcrumb chip
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = Color.White.copy(alpha = 0.14f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Build,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.8f),
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Icon(
-                            imageVector = Icons.Filled.ChevronRight,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.5f),
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = "Car Brand",
-                            color = Color.White,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
-                        )
-                    }
                 }
             }
-        }
+        )
 
         // ─── Brand grid (4×2, fills remaining screen) ────────────────────────
         Column(
@@ -254,12 +192,18 @@ fun BrandSelectionScreen(
                     rowBrands.forEach { brand ->
                         BrandCard(
                             brand = brand,
+                            isAvailable = brand.id in availableBrandIds,
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight(),
                             onClick = {
-                                if (brand.id == "ford") onBrandSelected(brand)
-                                else comingSoonBrand = brand
+                                if (brand.id in availableBrandIds) {
+                                    ActivityLogger.brandSelected(brand.name)
+                                    onBrandSelected(brand)
+                                } else {
+                                    ActivityLogger.brandComingSoon(brand.name)
+                                    comingSoonBrand = brand
+                                }
                             }
                         )
                     }
@@ -276,14 +220,20 @@ fun BrandSelectionScreen(
 @Composable
 private fun BrandCard(
     brand: CarBrand,
+    isAvailable: Boolean = true,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val accentColor = if (isAvailable) brand.primaryColor else Color(0xFF9E9E9E)
+    val accentSecondary = if (isAvailable) brand.secondaryColor else Color(0xFFBDBDBD)
+
     Card(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = if (isAvailable) Color.White else Color(0xFFF5F5F5)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isAvailable) 5.dp else 1.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
@@ -294,7 +244,7 @@ private fun BrandCard(
                     .height(10.dp)
                     .background(
                         Brush.horizontalGradient(
-                            colors = listOf(brand.primaryColor, brand.secondaryColor)
+                            colors = listOf(accentColor, accentSecondary)
                         )
                     )
             )
@@ -307,7 +257,7 @@ private fun BrandCard(
                     .background(
                         Brush.radialGradient(
                             colors = listOf(
-                                brand.primaryColor.copy(alpha = 0.07f),
+                                accentColor.copy(alpha = if (isAvailable) 0.07f else 0.03f),
                                 Color(0xFFF8FAFF)
                             )
                         )
@@ -319,9 +269,40 @@ private fun BrandCard(
                     contentDescription = "${brand.name} logo",
                     modifier = Modifier
                         .fillMaxSize(0.72f)
-                        .padding(12.dp),
+                        .padding(12.dp)
+                        .then(if (!isAvailable) Modifier.alpha(0.40f) else Modifier),
                     contentScale = ContentScale.Fit
                 )
+
+                // Coming soon badge — top left
+                if (!isAvailable) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(10.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFFFF3CD)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Construction,
+                                contentDescription = null,
+                                tint = Color(0xFF856404),
+                                modifier = Modifier.size(11.dp)
+                            )
+                            Text(
+                                text = "Coming Soon",
+                                color = Color(0xFF856404),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
             }
 
             // ── Bottom gradient separator ─────────────────────────────────────
@@ -332,8 +313,8 @@ private fun BrandCard(
                     .background(
                         Brush.horizontalGradient(
                             colors = listOf(
-                                brand.primaryColor.copy(alpha = 0.4f),
-                                brand.secondaryColor.copy(alpha = 0.1f)
+                                accentColor.copy(alpha = 0.4f),
+                                accentSecondary.copy(alpha = 0.1f)
                             )
                         )
                     )
@@ -343,7 +324,7 @@ private fun BrandCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(if (isAvailable) Color.White else Color(0xFFF5F5F5))
                     .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -355,7 +336,7 @@ private fun BrandCard(
                         .clip(RoundedCornerShape(2.dp))
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(brand.primaryColor, brand.secondaryColor)
+                                colors = listOf(accentColor, accentSecondary)
                             )
                         )
                 )
@@ -367,7 +348,7 @@ private fun BrandCard(
                         text = brand.name,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp,
-                        color = Color(0xFF1A1A2E)
+                        color = if (isAvailable) Color(0xFF1A1A2E) else Color(0xFF9E9E9E)
                     )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -387,18 +368,19 @@ private fun BrandCard(
                     }
                 }
 
-                // Arrow button
+                // Arrow / Lock button
                 Box(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(CircleShape)
-                        .background(brand.primaryColor.copy(alpha = 0.10f)),
+                        .background(accentColor.copy(alpha = 0.10f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        imageVector = if (isAvailable) Icons.AutoMirrored.Filled.ArrowForward
+                                      else Icons.Filled.Lock,
                         contentDescription = null,
-                        tint = brand.primaryColor,
+                        tint = accentColor,
                         modifier = Modifier.size(18.dp)
                     )
                 }

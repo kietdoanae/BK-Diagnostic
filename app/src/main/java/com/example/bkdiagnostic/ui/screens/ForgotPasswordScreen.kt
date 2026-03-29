@@ -67,7 +67,7 @@ fun ForgotPasswordScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "Quên mật khẩu",
+                        text = "Forgot Password",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -76,7 +76,7 @@ fun ForgotPasswordScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Nhập email đăng ký để nhận link đặt lại mật khẩu.",
+                        text = "Enter your registered email to receive a password reset link.",
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -127,7 +127,7 @@ fun ForgotPasswordScreen(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("GỬI LINK ĐẶT LẠI MẬT KHẨU", fontWeight = FontWeight.Bold)
+                            Text("SEND RESET LINK", fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -143,7 +143,7 @@ fun ForgotPasswordScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "Email đã được gửi!",
+                        text = "Email Sent!",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -152,7 +152,7 @@ fun ForgotPasswordScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Kiểm tra hộp thư của $email và nhấn vào link để đặt lại mật khẩu.",
+                        text = "Check your inbox at $email and click the link to reset your password.",
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -161,7 +161,7 @@ fun ForgotPasswordScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Nếu không thấy email, hãy kiểm tra thư mục spam.",
+                        text = "If you don't see it, check your spam folder.",
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -180,7 +180,7 @@ fun ForgotPasswordScreen(
                 ) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Quay lại đăng nhập")
+                    Text("Back to Sign In")
                 }
             }
         }

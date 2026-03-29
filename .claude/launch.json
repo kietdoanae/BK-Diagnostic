@@ -2,6 +2,15 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "Website Preview",
+      "runtimeExecutable": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+      "runtimeArgs": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "C:/Users/KIET/AndroidStudioProjects/BKDiagnostic/serve_preview.ps1"
+      ],
+      "port": 9090
+    },
+    {
       "name": "Build Debug APK",
       "runtimeExecutable": "./gradlew",
       "runtimeArgs": ["assembleDebug", "--stacktrace"],

@@ -9,6 +9,8 @@ import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -19,9 +21,13 @@ sealed class AuthUiState {
     object RegisterSuccess : AuthUiState()
     object EmailSent : AuthUiState()
     object PasswordUpdated : AuthUiState()
+    object ProfileUpdated : AuthUiState()
     object LoggedOut : AuthUiState()
     data class Error(val message: String) : AuthUiState()
 }
+
+@Serializable
+private data class ProfileUsernameUpdate(@SerialName("username") val username: String)
 
 class AuthViewModel : ViewModel() {
 
@@ -41,18 +47,39 @@ class AuthViewModel : ViewModel() {
             _uiState.value = AuthUiState.Loading
             try {
                 val resolvedEmail = resolveEmail(emailOrUsername)
-                    ?: throw Exception("Không tìm thấy tài khoản với username này.")
+                    ?: throw Exception("No account found with this username.")
                 supabaseClient.auth.signInWith(Email) {
                     this.email = resolvedEmail
                     this.password = password
                 }
                 loadUserProfile()
+
+                // Block non-active accounts
+                val profile = _userProfile.value
+                if (profile != null && profile.isBlocked) {
+                    runCatching { supabaseClient.auth.signOut() }
+                    _userProfile.value = null
+                    _uiState.value = AuthUiState.Error(profile.blockedMessage)
+                    return@launch
+                }
+
+                // Log login success
+                _userProfile.value?.let { p ->
+                    ActivityLogger.log(p.id, p.username, ActivityLogger.LOGIN,
+                        buildJsonObject { put("method", if (emailOrUsername.contains("@")) "email" else "username") })
+                }
+
                 _uiState.value = AuthUiState.LoginSuccess
             } catch (e: Exception) {
+                // Login failed = không có session → dùng logAnonymous
+                ActivityLogger.logAnonymous(ActivityLogger.LOGIN_FAILED,
+                    buildJsonObject { put("reason", mapErrorMessage(e.message)) })
                 _uiState.value = AuthUiState.Error(mapErrorMessage(e.message))
             }
         }
     }
+
+
 
     fun register(username: String, email: String, password: String) {
         viewModelScope.launch {
@@ -65,6 +92,8 @@ class AuthViewModel : ViewModel() {
                         put("username", username)
                     }
                 }
+                ActivityLogger.logCurrent(ActivityLogger.REGISTER,
+                    buildJsonObject { put("username", username) })
                 _uiState.value = AuthUiState.RegisterSuccess
             } catch (e: Exception) {
                 _uiState.value = AuthUiState.Error(mapErrorMessage(e.message))
@@ -80,6 +109,9 @@ class AuthViewModel : ViewModel() {
                     email = email,
                     redirectUrl = "bkdiagnostic://reset"
                 )
+                // Password reset = user chưa đăng nhập → dùng logAnonymous
+                ActivityLogger.logAnonymous(ActivityLogger.PASSWORD_RESET,
+                    buildJsonObject { put("email", email) })
                 _uiState.value = AuthUiState.EmailSent
             } catch (e: Exception) {
                 _uiState.value = AuthUiState.Error(mapErrorMessage(e.message))
@@ -104,9 +136,30 @@ class AuthViewModel : ViewModel() {
     fun logout() {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
+            // Log trước khi signOut (sau signOut sẽ không còn session)
+            _userProfile.value?.let { p ->
+                ActivityLogger.log(p.id, p.username, ActivityLogger.LOGOUT)
+            }
             runCatching { supabaseClient.auth.signOut() }
             _userProfile.value = null
             _uiState.value = AuthUiState.LoggedOut
+        }
+    }
+
+    fun updateUsername(newUsername: String) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            try {
+                val userId = supabaseClient.auth.currentUserOrNull()?.id ?: return@launch
+                supabaseClient.postgrest["profiles"]
+                    .update(ProfileUsernameUpdate(newUsername)) {
+                        filter { eq("id", userId) }
+                    }
+                loadUserProfile()
+                _uiState.value = AuthUiState.ProfileUpdated
+            } catch (e: Exception) {
+                _uiState.value = AuthUiState.Error(mapErrorMessage(e.message))
+            }
         }
     }
 
@@ -114,19 +167,38 @@ class AuthViewModel : ViewModel() {
         _uiState.value = AuthUiState.Idle
     }
 
+    // ── Reload profile (gọi từ bên ngoài sau khi session thay đổi) ──────────
+    fun reloadProfile() {
+        viewModelScope.launch { loadUserProfile() }
+    }
+
     // ── Tải profile từ bảng profiles ─────────────────────────────────────────
     private suspend fun loadUserProfile() {
-        val userId = supabaseClient.auth.currentUserOrNull()?.id ?: return
-        runCatching {
-            val profile = supabaseClient.postgrest["profiles"]
+        val user = supabaseClient.auth.currentUserOrNull() ?: return
+        val userId = user.id
+
+        // Use decodeList + firstOrNull instead of decodeSingle:
+        //   decodeSingle throws when no row exists → getOrElse fallback always
+        //   forces role = "user", so admins without a profiles row lose their role.
+        //   decodeList returns an empty list on zero rows — no exception thrown.
+        val found = runCatching {
+            supabaseClient.postgrest["profiles"]
                 .select {
-                    filter {
-                        eq("id", userId)
-                    }
+                    filter { eq("id", userId) }
                     limit(1)
                 }
-                .decodeSingle<UserProfile>()
-            _userProfile.value = profile
+                .decodeList<UserProfile>()
+                .firstOrNull()
+        }.getOrNull()   // null only on a real network/parse error
+
+        _userProfile.value = found ?: run {
+            // No profile row — build a minimal fallback from auth metadata
+            val meta = user.userMetadata?.toString() ?: ""
+            val username = Regex(""""username"\s*:\s*"([^"]+)"""")
+                .find(meta)?.groupValues?.get(1)
+                ?: user.email?.substringBefore("@")
+                ?: "User"
+            UserProfile(id = userId, username = username, role = "user")
         }
     }
 
@@ -145,26 +217,26 @@ class AuthViewModel : ViewModel() {
 
     private fun mapErrorMessage(rawMessage: String?): String {
         return when {
-            rawMessage == null -> "Đã xảy ra lỗi. Vui lòng thử lại."
+            rawMessage == null -> "An error occurred. Please try again."
             rawMessage.contains("Invalid login credentials", ignoreCase = true) ->
-                "Email/Username hoặc mật khẩu không đúng."
+                "Incorrect email/username or password."
             rawMessage.contains("User already registered", ignoreCase = true) ->
-                "Email này đã được đăng ký."
+                "This email is already registered."
             rawMessage.contains("Password should be at least", ignoreCase = true) ->
-                "Mật khẩu phải có ít nhất 6 ký tự."
+                "Password must be at least 6 characters."
             rawMessage.contains("Unable to validate email", ignoreCase = true) ->
-                "Email không hợp lệ."
+                "Invalid email address."
             rawMessage.contains("Email not confirmed", ignoreCase = true) ||
             rawMessage.contains("email_not_confirmed", ignoreCase = true) ->
-                "Email chưa được xác nhận. Vui lòng kiểm tra hộp thư và nhấn vào link xác nhận."
+                "Email not confirmed. Please check your inbox and click the confirmation link."
             rawMessage.contains("over_email_send_rate_limit", ignoreCase = true) ||
             rawMessage.contains("email rate limit", ignoreCase = true) ->
-                "Quá nhiều yêu cầu gửi email. Vui lòng thử lại sau vài phút."
-            rawMessage.contains("Không tìm thấy tài khoản", ignoreCase = true) ->
+                "Too many requests. Please try again in a few minutes."
+            rawMessage.contains("No account found", ignoreCase = true) ->
                 rawMessage
             rawMessage.contains("network", ignoreCase = true) ||
             rawMessage.contains("connect", ignoreCase = true) ->
-                "Không thể kết nối mạng. Kiểm tra lại kết nối."
+                "Unable to connect to the network. Check your connection."
             else -> rawMessage
         }
     }

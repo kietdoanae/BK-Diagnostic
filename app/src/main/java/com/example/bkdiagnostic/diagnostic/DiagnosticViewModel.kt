@@ -4,7 +4,9 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.bkdiagnostic.ActivityLogger
 import com.example.bkdiagnostic.BKDiagnosticApp
+import com.example.bkdiagnostic.DiagnosticsSettings
 import com.example.bkdiagnostic.communication.CanFrame
 import com.example.bkdiagnostic.communication.UsbSerialManager
 import com.example.bkdiagnostic.protocol.ProtocolConfig
@@ -25,11 +27,22 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
+
+/** Một entry trong Raw Frame Monitor log */
+data class RawFrameEntry(
+    val seq: Int,
+    val timestampMs: Long,
+    val canId: Int,
+    val rawBytes: ByteArray,
+    val decoded: String
+)
 
 class DiagnosticViewModel(
     application: Application,
     val brandId: String,
-    val modelId: String
+    val modelId: String,
+    val diagSettings: DiagnosticsSettings = DiagnosticsSettings()
 ) : AndroidViewModel(application) {
 
     // ── Protocol config ──────────────────────────────────────────────────────
@@ -70,6 +83,12 @@ class DiagnosticViewModel(
     val updateRate: StateFlow<Float> = _updateRate.asStateFlow()
     private val rateTimestamps = ArrayDeque<Long>()
 
+    // ── Raw Frame Monitor ────────────────────────────────────────────────────
+
+    private val _rawFrameLog = MutableStateFlow<List<RawFrameEntry>>(emptyList())
+    val rawFrameLog: StateFlow<List<RawFrameEntry>> = _rawFrameLog.asStateFlow()
+    private val rawSeq = AtomicInteger(0)
+
     // ── Nội bộ ───────────────────────────────────────────────────────────────
 
     /** Lưu các Deferred chờ response theo PID (key = pid code) */
@@ -82,7 +101,10 @@ class DiagnosticViewModel(
     init {
         // Lắng nghe CAN frames đến từ STM32
         viewModelScope.launch {
-            usbManager.canFrames.collect { frame -> dispatchFrame(frame) }
+            usbManager.canFrames.collect { frame ->
+                dispatchFrame(frame)
+                addToRawLog(frame)
+            }
         }
     }
 
@@ -105,11 +127,15 @@ class DiagnosticViewModel(
         val config = protocolConfig ?: return
         if (_isLiveDataRunning.value) return
 
+        ActivityLogger.liveDataStart(brandId, modelId)
         _isLiveDataRunning.value = true
         liveDataJob = viewModelScope.launch(Dispatchers.IO) {
             // Thông báo STM32 tốc độ CAN bus
             usbManager.setCanBaud(config.canBaudKbps)
             delay(300)
+
+            // Dùng pollIntervalMs từ settings nếu user đã cấu hình, fallback về protocol default
+            val pollMs = diagSettings.pollIntervalMs
 
             while (isActive) {
                 for (pid in config.livePids) {
@@ -118,13 +144,14 @@ class DiagnosticViewModel(
                     if (reading != null) {
                         _liveData.value = _liveData.value + (pid to reading)
                     }
-                    delay(config.pollIntervalMs)
+                    delay(pollMs)
                 }
             }
         }
     }
 
     fun stopLiveData() {
+        if (_isLiveDataRunning.value) ActivityLogger.liveDataStop(brandId, modelId)
         liveDataJob?.cancel()
         liveDataJob = null
         _isLiveDataRunning.value = false
@@ -138,11 +165,11 @@ class DiagnosticViewModel(
         val requestFrame = OBD2Protocol.buildLiveDataRequest(pid, config.requestCanId)
         usbManager.sendFrame(requestFrame)
 
-        val response = withTimeoutOrNull(config.responseTimeoutMs) { deferred.await() }
+        val response = withTimeoutOrNull(diagSettings.responseTimeoutMs) { deferred.await() }
         pendingRequests.remove(pid.pid)
 
         return response?.let {
-            OBD2Protocol.decodeLiveData(it, config.responseCanId)
+            OBD2Protocol.decodeLiveData(it, config.responseCanId, config.livePids)
         }
     }
 
@@ -167,10 +194,18 @@ class DiagnosticViewModel(
             if (response != null) {
                 val dtcs = OBD2Protocol.decodeDtcResponse(response, config.responseCanId)
                 _dtcList.value = dtcs ?: emptyList()
-                _message.value = if (dtcs.isNullOrEmpty()) "Không có mã lỗi nào."
-                else "Tìm thấy ${dtcs.size} mã lỗi."
+                ActivityLogger.dtcRead(brandId, modelId, dtcs?.size ?: 0)
+                if (dtcs.isNullOrEmpty()) {
+                    _message.value = "There is no error code."
+                } else {
+                    _message.value = "Found ${dtcs.size} error codes."
+                    if (diagSettings.autoClearDtc) {
+                        delay(300)
+                        clearDtcs()
+                    }
+                }
             } else {
-                _message.value = "Không nhận được phản hồi từ ECU."
+                _message.value = "No response from the ECU."
             }
 
             _isDtcLoading.value = false
@@ -179,15 +214,69 @@ class DiagnosticViewModel(
 
     fun clearDtcs() {
         val config = protocolConfig ?: return
+        ActivityLogger.dtcClear(brandId, modelId)
         viewModelScope.launch(Dispatchers.IO) {
             usbManager.sendFrame(OBD2Protocol.buildClearDtcRequest(config.requestCanId))
             delay(500)
             _dtcList.value = emptyList()
-            _message.value = "Đã gửi lệnh xóa mã lỗi."
+            _message.value = "Sent command to clear the error code."
         }
     }
 
     fun clearMessage() { _message.value = null }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  Active Test — gửi lệnh kích hoạt cơ cấu chấp hành
+    // ════════════════════════════════════════════════════════════════════════
+
+    fun sendActiveTestCommand(canId: Int, data: ByteArray) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val frame = CanFrame(
+                id = canId,
+                dlc = data.size.coerceAtMost(8),
+                data = ByteArray(8).also { buf -> data.copyInto(buf) }
+            )
+            usbManager.sendFrame(frame)
+        }
+    }
+
+    fun clearRawLog() { _rawFrameLog.value = emptyList() }
+
+    private fun addToRawLog(frame: CanFrame) {
+        val decoded = protocolConfig?.let { tryDecodeFrame(frame, it) } ?: "—"
+        val entry = RawFrameEntry(
+            seq = rawSeq.incrementAndGet(),
+            timestampMs = System.currentTimeMillis(),
+            canId = frame.id,
+            rawBytes = frame.effectiveData(),
+            decoded = decoded
+        )
+        val current = _rawFrameLog.value
+        _rawFrameLog.value =
+            if (current.size >= 500) current.drop(1) + entry else current + entry
+    }
+
+    /** Cố giải mã frame thành chuỗi mô tả, trả về "—" nếu không nhận dạng được */
+    private fun tryDecodeFrame(frame: CanFrame, config: com.example.bkdiagnostic.protocol.ProtocolConfig): String {
+        val reading = OBD2Protocol.decodeLiveData(frame, config.responseCanId, config.livePids)
+        if (reading != null) return "${reading.pid.name} = ${reading.formatted()}"
+
+        val data = frame.effectiveData()
+        if (data.size < 2) return "—"
+        return when (data[1].toUByte().toInt()) {
+            0x41 -> if (data.size >= 3)
+                "Mode 01, PID=0x${data[2].toUByte().toInt().toString(16).uppercase().padStart(2, '0')}"
+                else "Mode 01 response"
+            0x62 -> if (data.size >= 4) {
+                val did = (data[2].toUByte().toInt() shl 8) or data[3].toUByte().toInt()
+                "Mode 22, DID=0x${did.toString(16).uppercase().padStart(4, '0')}"
+            } else "Mode 22 response"
+            0x43 -> "DTC Response (Mode 03)"
+            0x44 -> "DTC cleared successfully (Mode 04)"
+            0x7F -> "Negative response (NRC)"
+            else -> "—"
+        }
+    }
 
     // ════════════════════════════════════════════════════════════════════════
     //  Frame dispatcher — route CAN frame đến đúng handler
@@ -217,7 +306,7 @@ class DiagnosticViewModel(
             0x43 -> pendingDtcRequest?.complete(frame)
 
             // Mode 04 clear DTC ACK (0x44)
-            0x44 -> _message.value = "Xóa mã lỗi thành công!"
+            0x44 -> _message.value = "Error code cleared successfully!"
         }
     }
 
@@ -241,10 +330,11 @@ class DiagnosticViewModel(
     class Factory(
         private val application: Application,
         private val brandId: String,
-        private val modelId: String
+        private val modelId: String,
+        private val diagSettings: DiagnosticsSettings = DiagnosticsSettings()
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T =
-            DiagnosticViewModel(application, brandId, modelId) as T
+            DiagnosticViewModel(application, brandId, modelId, diagSettings) as T
     }
 }

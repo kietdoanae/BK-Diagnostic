@@ -56,16 +56,16 @@ fun RegisterScreen(
         AlertDialog(
             onDismissRequest = {},
             icon = { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            title = { Text("Đăng ký thành công!") },
+            title = { Text("Registration Successful!") },
             text = {
-                Text("Tài khoản đã được tạo. Vui lòng kiểm tra email để xác nhận tài khoản trước khi đăng nhập.")
+                Text("Account created. Please check your email to confirm your account before signing in.")
             },
             confirmButton = {
                 Button(onClick = {
                     showSuccessDialog = false
                     onNavigateToLogin()
                 }) {
-                    Text("Về trang đăng nhập")
+                    Text("Back to Sign In")
                 }
             }
         )
@@ -91,7 +91,7 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Tạo tài khoản",
+                text = "Create Account",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -109,7 +109,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it; localError = null },
-                label = { Text("Tên người dùng") },
+                label = { Text("Username") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 shape = RoundedCornerShape(12.dp),
@@ -138,7 +138,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it; localError = null },
-                label = { Text("Mật khẩu") },
+                label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingIcon = {
@@ -162,7 +162,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it; localError = null },
-                label = { Text("Xác nhận mật khẩu") },
+                label = { Text("Confirm Password") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.LockOpen, contentDescription = null) },
                 trailingIcon = {
@@ -199,11 +199,11 @@ fun RegisterScreen(
                 onClick = {
                     when {
                         username.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() ->
-                            localError = "Vui lòng điền đầy đủ thông tin."
+                            localError = "Please fill in all fields."
                         password != confirmPassword ->
-                            localError = "Mật khẩu xác nhận không khớp."
+                            localError = "Passwords do not match."
                         password.length < 6 ->
-                            localError = "Mật khẩu phải có ít nhất 6 ký tự."
+                            localError = "Password must be at least 6 characters."
                         else -> viewModel.register(username.trim(), email.trim(), password)
                     }
                 },
@@ -220,7 +220,7 @@ fun RegisterScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("ĐĂNG KÝ", fontWeight = FontWeight.Bold)
+                    Text("SIGN UP", fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -228,9 +228,9 @@ fun RegisterScreen(
 
             // Link về đăng nhập
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Đã có tài khoản?", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Already have an account?", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick = onNavigateToLogin) {
-                    Text("Đăng nhập")
+                    Text("Sign In")
                 }
             }
         }

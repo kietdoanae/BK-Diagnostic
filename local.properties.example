@@ -1,0 +1,8 @@
+## Sao chép file này thành local.properties và điền giá trị thực
+## Copy this file to local.properties and fill in your values
+
+sdk.dir=/path/to/Android/Sdk
+
+# Supabase credentials — lấy từ https://supabase.com/dashboard → Project Settings → API
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_KEY=your-anon-public-key

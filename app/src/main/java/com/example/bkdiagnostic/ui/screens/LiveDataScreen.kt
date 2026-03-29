@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.bkdiagnostic.communication.UsbSerialManager
+import com.example.bkdiagnostic.ui.components.AppTopBar
 import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
 import com.example.bkdiagnostic.protocol.obd2.OBD2PidDef
 import com.example.bkdiagnostic.protocol.obd2.OBD2Pids
@@ -177,7 +178,7 @@ fun LiveDataScreen(
                         color = Color.White.copy(alpha = 0.1f)
                     )
                     Text(
-                        "  TẤT CẢ THÔNG SỐ  ",
+                        "  ALL PARAMETERS  ",
                         color = TextSub,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
@@ -211,45 +212,48 @@ private fun LiveDataTopBar(
     connectionState: UsbSerialManager.ConnectionState,
     onBack: () -> Unit
 ) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .background(Brush.horizontalGradient(listOf(Color(0xFF0A1E6E), Color(0xFF1565C0))))
-            .padding(horizontal = 4.dp, vertical = 8.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "Dữ liệu thời gian thực",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Text(vehicleName, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
-            }
-            // Connection dot
-            val dotColor = when (connectionState) {
-                is UsbSerialManager.ConnectionState.Connected -> GreenOk
-                is UsbSerialManager.ConnectionState.Searching,
-                is UsbSerialManager.ConnectionState.AwaitingPermission -> YellowWarn
-                else -> RedCrit
-            }
-            Box(
-                Modifier
-                    .padding(end = 16.dp)
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(dotColor)
-            )
-        }
+    val dotColor = when (connectionState) {
+        is UsbSerialManager.ConnectionState.Connected              -> GreenOk
+        is UsbSerialManager.ConnectionState.Searching,
+        is UsbSerialManager.ConnectionState.AwaitingPermission     -> YellowWarn
+        else                                                       -> RedCrit
     }
+    val statusLabel = when (connectionState) {
+        is UsbSerialManager.ConnectionState.Connected              -> "Connected"
+        is UsbSerialManager.ConnectionState.Searching              -> "Searching…"
+        is UsbSerialManager.ConnectionState.AwaitingPermission     -> "Awaiting permission"
+        else                                                       -> "Disconnected"
+    }
+    AppTopBar(
+        title = "Live Data",
+        subtitle = vehicleName,
+        onBack = onBack,
+        trailingContent = {
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                color = Color.White.copy(alpha = 0.14f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(dotColor)
+                    )
+                    Text(
+                        text = statusLabel,
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+    )
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -290,14 +294,14 @@ private fun LiveDataControlBar(
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                if (isRunning) "Đang đọc dữ liệu..." else "Đã dừng",
+                if (isRunning) "Reading data..." else "Stopped",
                 color = if (isRunning) GreenOk else TextSub,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold
             )
             if (isRunning && updateRate > 0f) {
                 Text(
-                    "%.1f cập nhật/giây".format(updateRate),
+                    "%.1f updates/sec".format(updateRate),
                     color = TextSub,
                     fontSize = 11.sp
                 )
@@ -321,7 +325,7 @@ private fun LiveDataControlBar(
             )
             Spacer(Modifier.width(4.dp))
             Text(
-                if (isRunning) "Dừng" else "Bắt đầu",
+                if (isRunning) "Stop" else "Start",
                 color = Color.White,
                 fontSize = 13.sp
             )

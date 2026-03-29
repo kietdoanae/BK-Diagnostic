@@ -3,6 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Export CSV to Downloads (Android < 10 only; Android 10+ dùng MediaStore không cần quyền này) -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"
+        tools:ignore="ScopedStorage" />
 
     <!-- USB Host mode: kết nối với STM32 qua CP2102 -->
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />

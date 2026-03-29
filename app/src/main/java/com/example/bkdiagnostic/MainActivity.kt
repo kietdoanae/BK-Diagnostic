@@ -8,10 +8,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import android.view.WindowManager
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -24,6 +29,9 @@ import com.example.bkdiagnostic.ui.screens.LoginScreen
 import com.example.bkdiagnostic.ui.screens.RegisterScreen
 import com.example.bkdiagnostic.ui.screens.ResetPasswordScreen
 import com.example.bkdiagnostic.ui.screens.SplashScreen
+import com.example.bkdiagnostic.SettingsViewModel
+import com.example.bkdiagnostic.ui.screens.SettingsScreen
+import com.example.bkdiagnostic.ui.screens.WiringDiagramScreen
 import com.example.bkdiagnostic.ui.theme.BKDiagnosticTheme
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
@@ -38,7 +46,21 @@ class MainActivity : ComponentActivity() {
         handleAuthDeeplink(intent)
 
         setContent {
-            BKDiagnosticTheme {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            val displaySettings by settingsViewModel.displaySettings.collectAsStateWithLifecycle()
+
+            SideEffect {
+                val flags = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                if (displaySettings.keepScreenOn) window.addFlags(flags)
+                else window.clearFlags(flags)
+            }
+
+            BKDiagnosticTheme(displaySettings = displaySettings) {
+                val authViewModel: AuthViewModel = viewModel()
+                val userProfile by authViewModel.userProfile.collectAsStateWithLifecycle()
+                val isAdmin        = userProfile?.isAdmin == true
+                val canViewRawFrame = userProfile?.canViewRawFrame == true
+
                 val navController = rememberNavController()
 
                 // Lắng nghe navigation event từ deep link handler
@@ -67,6 +89,8 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onNavigateToMain = {
+                                    // Session đã tồn tại — reload profile trên Activity ViewModel
+                                    authViewModel.reloadProfile()
                                     navController.navigate("main") {
                                         popUpTo("splash") { inclusive = true }
                                     }
@@ -76,6 +100,9 @@ class MainActivity : ComponentActivity() {
                         composable("login") {
                             LoginScreen(
                                 onLoginSuccess = {
+                                    // Login thành công — reload profile trên Activity-scoped ViewModel
+                                    // để isAdmin được cập nhật đúng cho DiagnosticScreen
+                                    authViewModel.reloadProfile()
                                     navController.navigate("main") {
                                         popUpTo("login") { inclusive = true }
                                     }
@@ -120,8 +147,29 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onDiagnosticsClick = {
                                     navController.navigate("brand_selection")
+                                },
+                                onWiringDiagramClick = {
+                                    navController.navigate("wiring_diagram")
+                                },
+                                onSettingsClick = {
+                                    navController.navigate("settings")
                                 }
                             )
+                        }
+                        composable("settings") {
+                            SettingsScreen(
+                                onBack = { navController.popBackStack() },
+                                onLogout = {
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                },
+                                authViewModel    = authViewModel,
+                                settingsViewModel = settingsViewModel
+                            )
+                        }
+                        composable("wiring_diagram") {
+                            WiringDiagramScreen(onBack = { navController.popBackStack() })
                         }
                         composable("brand_selection") {
                             BrandSelectionScreen(
@@ -148,15 +196,30 @@ class MainActivity : ComponentActivity() {
                         composable("diagnostic/{brandId}/{modelId}") { backStack ->
                             val brandId = backStack.arguments?.getString("brandId") ?: "ford"
                             val modelId = backStack.arguments?.getString("modelId") ?: "ranger"
+                            val diagSettings by settingsViewModel.diagnosticsSettings
+                                .collectAsStateWithLifecycle()
                             DiagnosticScreen(
-                                brandId = brandId,
-                                modelId = modelId,
-                                onBack = { navController.popBackStack() },
-                                application = application
+                                brandId      = brandId,
+                                modelId      = modelId,
+                                onBack       = { navController.popBackStack() },
+                                application  = application,
+                                isAdmin      = canViewRawFrame,
+                                diagSettings = diagSettings
                             )
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /** Tự động đăng xuất khi user tắt app (isFinishing = true).
+     *  Không sign out khi xoay màn hình / thay đổi cấu hình (isFinishing = false). */
+    override fun onDestroy() {
+        super.onDestroy()
+        if (isFinishing) {
+            lifecycleScope.launch {
+                runCatching { supabaseClient.auth.signOut() }
             }
         }
     }
