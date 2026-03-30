@@ -521,12 +521,12 @@ fun SettingsScreen(
 
     // ── Sign Out Confirm ──────────────────────────────────────────────────────
     if (showSignOutConfirm) {
-        val appColorsDialog = LocalAppColors.current
+        val appColors = LocalAppColors.current
         AlertDialog(
             onDismissRequest = { showSignOutConfirm = false },
-            containerColor   = appColorsDialog.cardSurface,
-            title  = { Text(strBtnSignOut, color = appColorsDialog.primaryText, fontWeight = FontWeight.SemiBold) },
-            text   = { Text(strSignOutConfirm, color = appColorsDialog.secondaryText) },
+            containerColor   = appColors.cardSurface,
+            title  = { Text(strBtnSignOut, color = appColors.primaryText, fontWeight = FontWeight.SemiBold) },
+            text   = { Text(strSignOutConfirm, color = appColors.secondaryText) },
             confirmButton = {
                 TextButton(onClick = { showSignOutConfirm = false; authViewModel.logout() }) {
                     Text(strBtnSignOut, color = Color(0xFFFF5252), fontWeight = FontWeight.SemiBold)
@@ -534,7 +534,7 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showSignOutConfirm = false }) {
-                    Text(strCancel, color = appColorsDialog.iconTintOnTopBar)
+                    Text(strCancel, color = appColors.iconTintOnTopBar)
                 }
             }
         )
@@ -969,12 +969,14 @@ private fun <T> RadioPickerDialog(
 // ── Shared TextField colors ───────────────────────────────────────────────────
 
 @Composable
-private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor     = LocalAppColors.current.primaryText,
-    unfocusedTextColor   = LocalAppColors.current.primaryText,
-    focusedBorderColor   = LocalAppColors.current.iconTintOnTopBar,
-    unfocusedBorderColor = LocalAppColors.current.dividerColor,
-    focusedLabelColor    = LocalAppColors.current.iconTintOnTopBar,
-    unfocusedLabelColor  = LocalAppColors.current.secondaryText,
-    cursorColor          = LocalAppColors.current.iconTintOnTopBar
-)
+private fun textFieldColors() = LocalAppColors.current.run {
+    OutlinedTextFieldDefaults.colors(
+        focusedTextColor     = primaryText,
+        unfocusedTextColor   = primaryText,
+        focusedBorderColor   = iconTintOnTopBar,
+        unfocusedBorderColor = dividerColor,
+        focusedLabelColor    = iconTintOnTopBar,
+        unfocusedLabelColor  = secondaryText,
+        cursorColor          = iconTintOnTopBar
+    )
+}
