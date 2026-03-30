@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -33,9 +34,12 @@ import com.example.bkdiagnostic.AuthViewModel
 import com.example.bkdiagnostic.ConnectionSettings
 import com.example.bkdiagnostic.DiagnosticsSettings
 import com.example.bkdiagnostic.DisplaySettings
+import com.example.bkdiagnostic.R
 import com.example.bkdiagnostic.SettingsViewModel
 import com.example.bkdiagnostic.ThemeMode
 import com.example.bkdiagnostic.supabaseClient
+import com.example.bkdiagnostic.ui.theme.AppColors
+import com.example.bkdiagnostic.ui.theme.LocalAppColors
 import io.github.jan.supabase.auth.auth
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -84,10 +88,13 @@ fun SettingsScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val strUsernameUpdated  = stringResource(R.string.settings_toast_username_updated)
+    val strPasswordChanged  = stringResource(R.string.settings_toast_password_changed)
+
     LaunchedEffect(uiState) {
         val msg = when (val s = uiState) {
-            is AuthUiState.ProfileUpdated  -> "Username updated successfully"
-            is AuthUiState.PasswordUpdated -> "Password changed successfully"
+            is AuthUiState.ProfileUpdated  -> strUsernameUpdated
+            is AuthUiState.PasswordUpdated -> strPasswordChanged
             is AuthUiState.Error           -> s.message
             is AuthUiState.LoggedOut       -> { authViewModel.resetState(); onLogout(); null }
             else                           -> null
@@ -105,15 +112,61 @@ fun SettingsScreen(
         }
     }
 
+    val strSettings         = stringResource(R.string.settings_title)
+    val strAccount          = stringResource(R.string.settings_section_account)
+    val strUsername         = stringResource(R.string.settings_label_username)
+    val strEmail            = stringResource(R.string.settings_label_email)
+    val strSecurity         = stringResource(R.string.settings_section_security)
+    val strChangePassword   = stringResource(R.string.settings_label_change_password)
+    val strConnection       = stringResource(R.string.settings_section_connection)
+    val strUsbBaud          = stringResource(R.string.settings_label_usb_baud)
+    val strCanSpeed         = stringResource(R.string.settings_label_can_speed)
+    val strKbps             = stringResource(R.string.settings_unit_kbps)
+    val strAutoReconnect    = stringResource(R.string.settings_label_auto_reconnect)
+    val strAutoReconnectSub = stringResource(R.string.settings_sublabel_auto_reconnect)
+    val strDiagnostics      = stringResource(R.string.settings_section_diagnostics)
+    val strRefreshRate      = stringResource(R.string.settings_label_refresh_rate)
+    val strMs               = stringResource(R.string.settings_unit_ms)
+    val strTimeout          = stringResource(R.string.settings_label_timeout)
+    val strImperial         = stringResource(R.string.settings_label_imperial)
+    val strImperialSub      = stringResource(R.string.settings_sublabel_imperial)
+    val strAutoClearDtc     = stringResource(R.string.settings_label_auto_clear_dtc)
+    val strAutoClearDtcSub  = stringResource(R.string.settings_sublabel_auto_clear_dtc)
+    val strDisplay          = stringResource(R.string.settings_section_display)
+    val strTheme            = stringResource(R.string.settings_label_theme)
+    val strDark             = stringResource(R.string.settings_theme_dark)
+    val strLight            = stringResource(R.string.settings_theme_light)
+    val strSystem           = stringResource(R.string.settings_theme_system)
+    val strKeepScreenOn     = stringResource(R.string.settings_label_keep_screen_on)
+    val strKeepScreenOnSub  = stringResource(R.string.settings_sublabel_keep_screen_on)
+    val strLanguage         = stringResource(R.string.settings_label_language)
+    val strLangVi           = stringResource(R.string.settings_lang_vi)
+    val strLangEn           = stringResource(R.string.settings_lang_en)
+    val strSession          = stringResource(R.string.settings_section_session)
+    val strSignOut          = stringResource(R.string.settings_label_sign_out)
+    val strSignOutConfirm   = stringResource(R.string.settings_signout_confirm)
+    val strBtnSignOut       = stringResource(R.string.settings_btn_sign_out)
+    val strCancel           = stringResource(R.string.btn_cancel)
+    val strPickerTheme      = stringResource(R.string.settings_picker_theme)
+    val strSystemDefault    = stringResource(R.string.settings_theme_system_default)
+    val strPickerLanguage   = stringResource(R.string.settings_picker_language)
+    val strLangNote         = stringResource(R.string.settings_lang_localization_note)
+    val strPickerRefresh    = stringResource(R.string.settings_picker_refresh_rate)
+    val strPickerTimeout    = stringResource(R.string.settings_picker_timeout)
+    val strPickerBaud       = stringResource(R.string.settings_picker_baud)
+    val strPickerCan        = stringResource(R.string.settings_picker_can)
+
+    val appColors = LocalAppColors.current
+
     Scaffold(
         snackbarHost    = { SnackbarHost(snackbarHostState) },
-        containerColor  = Color(0xFF0A0E1A),
+        containerColor  = appColors.screenBackground,
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        "Settings",
-                        color      = Color.White,
+                        strSettings,
+                        color      = appColors.primaryText,
                         fontWeight = FontWeight.SemiBold,
                         fontSize   = 18.sp
                     )
@@ -123,12 +176,12 @@ fun SettingsScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color(0xFF5BC8F5)
+                            tint = appColors.iconTintOnTopBar
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0A0E1A)
+                    containerColor = appColors.topBarBackground
                 )
             )
         }
@@ -154,13 +207,13 @@ fun SettingsScreen(
 
             // ── Section: Account ─────────────────────────────────────────────
             item {
-                SectionLabel("ACCOUNT")
+                SectionLabel(strAccount)
                 Spacer(Modifier.height(6.dp))
                 SettingsCard {
                     SettingsRow(
                         icon         = Icons.Filled.Person,
                         iconBg       = Color(0xFF1565C0),
-                        label        = "Username",
+                        label        = strUsername,
                         trailingText = username,
                         showChevron  = true,
                         onClick      = { showEditUsername = true }
@@ -169,7 +222,7 @@ fun SettingsScreen(
                     SettingsRow(
                         icon         = Icons.Filled.Email,
                         iconBg       = Color(0xFF2E7D32),
-                        label        = "Email",
+                        label        = strEmail,
                         trailingText = userEmail.ifEmpty { "—" },
                         showChevron  = false,
                         onClick      = null
@@ -180,13 +233,13 @@ fun SettingsScreen(
 
             // ── Section: Security ────────────────────────────────────────────
             item {
-                SectionLabel("SECURITY")
+                SectionLabel(strSecurity)
                 Spacer(Modifier.height(6.dp))
                 SettingsCard {
                     SettingsRow(
                         icon        = Icons.Filled.Lock,
                         iconBg      = Color(0xFF6A1B9A),
-                        label       = "Change Password",
+                        label       = strChangePassword,
                         showChevron = true,
                         onClick     = { showChangePassword = true }
                     )
@@ -196,13 +249,13 @@ fun SettingsScreen(
 
             // ── Section: Connection ──────────────────────────────────────────
             item {
-                SectionLabel("CONNECTION")
+                SectionLabel(strConnection)
                 Spacer(Modifier.height(6.dp))
                 SettingsCard {
                     SettingsRow(
                         icon         = Icons.Filled.Speed,
                         iconBg       = Color(0xFF00695C),
-                        label        = "USB Baud Rate",
+                        label        = strUsbBaud,
                         trailingText = connSettings.usbBaudRate.toString(),
                         showChevron  = true,
                         onClick      = { showBaudPicker = true }
@@ -211,8 +264,8 @@ fun SettingsScreen(
                     SettingsRow(
                         icon         = Icons.Filled.NetworkCheck,
                         iconBg       = Color(0xFF1565C0),
-                        label        = "CAN Bus Speed",
-                        trailingText = "${connSettings.canSpeedKbps} kbps",
+                        label        = strCanSpeed,
+                        trailingText = "${connSettings.canSpeedKbps} $strKbps",
                         showChevron  = true,
                         onClick      = { showCanPicker = true }
                     )
@@ -220,8 +273,8 @@ fun SettingsScreen(
                     SettingsToggleRow(
                         icon    = Icons.Filled.Autorenew,
                         iconBg  = Color(0xFF37474F),
-                        label   = "Auto-reconnect",
-                        subLabel = "Reconnect on transient disconnect",
+                        label   = strAutoReconnect,
+                        subLabel = strAutoReconnectSub,
                         checked = connSettings.autoReconnect,
                         onCheckedChange = { enabled ->
                             settingsViewModel.saveConnectionSettings(
@@ -235,14 +288,14 @@ fun SettingsScreen(
 
             // ── Section: Diagnostics ─────────────────────────────────────────
             item {
-                SectionLabel("DIAGNOSTICS")
+                SectionLabel(strDiagnostics)
                 Spacer(Modifier.height(6.dp))
                 SettingsCard {
                     SettingsRow(
                         icon         = Icons.Filled.Refresh,
                         iconBg       = Color(0xFF00695C),
-                        label        = "Live Data Refresh Rate",
-                        trailingText = "${diagSettings.pollIntervalMs} ms",
+                        label        = strRefreshRate,
+                        trailingText = "${diagSettings.pollIntervalMs} $strMs",
                         showChevron  = true,
                         onClick      = { showPollPicker = true }
                     )
@@ -250,8 +303,8 @@ fun SettingsScreen(
                     SettingsRow(
                         icon         = Icons.Filled.Timer,
                         iconBg       = Color(0xFF283593),
-                        label        = "ECU Response Timeout",
-                        trailingText = "${diagSettings.responseTimeoutMs} ms",
+                        label        = strTimeout,
+                        trailingText = "${diagSettings.responseTimeoutMs} $strMs",
                         showChevron  = true,
                         onClick      = { showTimeoutPicker = true }
                     )
@@ -259,8 +312,8 @@ fun SettingsScreen(
                     SettingsToggleRow(
                         icon    = Icons.Filled.Language,
                         iconBg  = Color(0xFF6A1B9A),
-                        label   = "Use Imperial Units",
-                        subLabel = "mph, °F, psi instead of km/h, °C, kPa",
+                        label   = strImperial,
+                        subLabel = strImperialSub,
                         checked = diagSettings.useImperial,
                         onCheckedChange = { enabled ->
                             settingsViewModel.saveDiagnosticsSettings(
@@ -272,8 +325,8 @@ fun SettingsScreen(
                     SettingsToggleRow(
                         icon     = Icons.Filled.DeleteSweep,
                         iconBg   = Color(0xFFC62828),
-                        label    = "Auto-clear DTC",
-                        subLabel = "Clear codes automatically after reading",
+                        label    = strAutoClearDtc,
+                        subLabel = strAutoClearDtcSub,
                         checked  = diagSettings.autoClearDtc,
                         onCheckedChange = { enabled ->
                             settingsViewModel.saveDiagnosticsSettings(
@@ -287,17 +340,17 @@ fun SettingsScreen(
 
             // ── Section: Display ─────────────────────────────────────────────
             item {
-                SectionLabel("DISPLAY")
+                SectionLabel(strDisplay)
                 Spacer(Modifier.height(6.dp))
                 SettingsCard {
                     SettingsRow(
                         icon         = Icons.Filled.DarkMode,
                         iconBg       = Color(0xFF37474F),
-                        label        = "Theme",
+                        label        = strTheme,
                         trailingText = when (dispSettings.themeMode) {
-                            ThemeMode.DARK   -> "Dark"
-                            ThemeMode.LIGHT  -> "Light"
-                            ThemeMode.SYSTEM -> "System"
+                            ThemeMode.DARK   -> strDark
+                            ThemeMode.LIGHT  -> strLight
+                            ThemeMode.SYSTEM -> strSystem
                         },
                         showChevron  = true,
                         onClick      = { showThemePicker = true }
@@ -306,8 +359,8 @@ fun SettingsScreen(
                     SettingsToggleRow(
                         icon     = Icons.Outlined.Lightbulb,
                         iconBg   = Color(0xFFE65100),
-                        label    = "Keep Screen On",
-                        subLabel = "Prevent screen timeout during diagnostics",
+                        label    = strKeepScreenOn,
+                        subLabel = strKeepScreenOnSub,
                         checked  = dispSettings.keepScreenOn,
                         onCheckedChange = { enabled ->
                             settingsViewModel.saveDisplaySettings(
@@ -319,8 +372,8 @@ fun SettingsScreen(
                     SettingsRow(
                         icon         = Icons.Filled.Translate,
                         iconBg       = Color(0xFF00695C),
-                        label        = "Language",
-                        trailingText = if (dispSettings.language == "vi") "Tiếng Việt" else "English",
+                        label        = strLanguage,
+                        trailingText = if (dispSettings.language == "vi") strLangVi else strLangEn,
                         showChevron  = true,
                         onClick      = { showLanguagePicker = true }
                     )
@@ -330,13 +383,13 @@ fun SettingsScreen(
 
             // ── Section: Session ─────────────────────────────────────────────
             item {
-                SectionLabel("SESSION")
+                SectionLabel(strSession)
                 Spacer(Modifier.height(6.dp))
                 SettingsCard {
                     SettingsRow(
                         icon        = Icons.AutoMirrored.Filled.Logout,
                         iconBg      = Color(0xFFC62828),
-                        label       = "Sign Out",
+                        label       = strSignOut,
                         labelColor  = Color(0xFFFF5252),
                         showChevron = false,
                         onClick     = { showSignOutConfirm = true }
@@ -374,13 +427,13 @@ fun SettingsScreen(
     // ── Theme Picker ──────────────────────────────────────────────────────────
     if (showThemePicker) {
         RadioPickerDialog(
-            title    = "Theme",
+            title    = strPickerTheme,
             options  = ThemeMode.entries,
             selected = dispSettings.themeMode,
             label    = { when (it) {
-                ThemeMode.DARK   -> "Dark"
-                ThemeMode.LIGHT  -> "Light"
-                ThemeMode.SYSTEM -> "System default"
+                ThemeMode.DARK   -> strDark
+                ThemeMode.LIGHT  -> strLight
+                ThemeMode.SYSTEM -> strSystemDefault
             }},
             onSelect  = { mode ->
                 settingsViewModel.saveDisplaySettings(dispSettings.copy(themeMode = mode))
@@ -393,11 +446,11 @@ fun SettingsScreen(
     // ── Language Picker ───────────────────────────────────────────────────────
     if (showLanguagePicker) {
         RadioPickerDialog(
-            title    = "Language",
+            title    = strPickerLanguage,
             options  = listOf("en", "vi"),
             selected = dispSettings.language,
-            label    = { if (it == "vi") "Tiếng Việt" else "English" },
-            subNote  = "Full localization coming in a future update",
+            label    = { if (it == "vi") strLangVi else strLangEn },
+            subNote  = strLangNote,
             onSelect  = { lang ->
                 settingsViewModel.saveDisplaySettings(dispSettings.copy(language = lang))
                 showLanguagePicker = false
@@ -409,10 +462,10 @@ fun SettingsScreen(
     // ── Live Data Refresh Rate Picker ─────────────────────────────────────────
     if (showPollPicker) {
         RadioPickerDialog(
-            title    = "Live Data Refresh Rate",
+            title    = strPickerRefresh,
             options  = listOf(100L, 250L, 500L, 1000L),
             selected = diagSettings.pollIntervalMs,
-            label    = { "$it ms" },
+            label    = { "$it $strMs" },
             onSelect = { ms ->
                 settingsViewModel.saveDiagnosticsSettings(diagSettings.copy(pollIntervalMs = ms))
                 showPollPicker = false
@@ -424,10 +477,10 @@ fun SettingsScreen(
     // ── ECU Response Timeout Picker ───────────────────────────────────────────
     if (showTimeoutPicker) {
         RadioPickerDialog(
-            title    = "ECU Response Timeout",
+            title    = strPickerTimeout,
             options  = listOf(250L, 500L, 1000L, 2000L),
             selected = diagSettings.responseTimeoutMs,
-            label    = { "$it ms" },
+            label    = { "$it $strMs" },
             onSelect = { ms ->
                 settingsViewModel.saveDiagnosticsSettings(diagSettings.copy(responseTimeoutMs = ms))
                 showTimeoutPicker = false
@@ -439,7 +492,7 @@ fun SettingsScreen(
     // ── USB Baud Rate Picker ──────────────────────────────────────────────────
     if (showBaudPicker) {
         RadioPickerDialog(
-            title    = "USB Baud Rate",
+            title    = strPickerBaud,
             options  = listOf(9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600),
             selected = connSettings.usbBaudRate,
             label    = { it.toString() },
@@ -454,10 +507,10 @@ fun SettingsScreen(
     // ── CAN Bus Speed Picker ──────────────────────────────────────────────────
     if (showCanPicker) {
         RadioPickerDialog(
-            title    = "CAN Bus Speed",
+            title    = strPickerCan,
             options  = listOf(125, 250, 500, 1000),
             selected = connSettings.canSpeedKbps,
-            label    = { "$it kbps" },
+            label    = { "$it $strKbps" },
             onSelect = { kbps ->
                 settingsViewModel.saveConnectionSettings(connSettings.copy(canSpeedKbps = kbps))
                 showCanPicker = false
@@ -468,22 +521,20 @@ fun SettingsScreen(
 
     // ── Sign Out Confirm ──────────────────────────────────────────────────────
     if (showSignOutConfirm) {
+        val appColorsDialog = LocalAppColors.current
         AlertDialog(
             onDismissRequest = { showSignOutConfirm = false },
-            containerColor   = Color(0xFF141B2D),
-            title  = { Text("Sign Out", color = Color.White, fontWeight = FontWeight.SemiBold) },
-            text   = { Text("Are you sure you want to sign out?", color = Color(0xFF8B9AB8)) },
+            containerColor   = appColorsDialog.cardSurface,
+            title  = { Text(strBtnSignOut, color = appColorsDialog.primaryText, fontWeight = FontWeight.SemiBold) },
+            text   = { Text(strSignOutConfirm, color = appColorsDialog.secondaryText) },
             confirmButton = {
-                TextButton(onClick = {
-                    showSignOutConfirm = false
-                    authViewModel.logout()
-                }) {
-                    Text("Sign Out", color = Color(0xFFFF5252), fontWeight = FontWeight.SemiBold)
+                TextButton(onClick = { showSignOutConfirm = false; authViewModel.logout() }) {
+                    Text(strBtnSignOut, color = Color(0xFFFF5252), fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showSignOutConfirm = false }) {
-                    Text("Cancel", color = Color(0xFF5BC8F5))
+                    Text(strCancel, color = appColorsDialog.iconTintOnTopBar)
                 }
             }
         )
@@ -499,6 +550,7 @@ private fun ProfileHeaderCard(
     isAdmin: Boolean,
     isModerator: Boolean
 ) {
+    val appColors = LocalAppColors.current
     val initials = username.take(2).uppercase()
     val avatarColors = remember(username) {
         val palette = listOf(
@@ -517,62 +569,31 @@ private fun ProfileHeaderCard(
         isModerator -> Color(0xFFFFA000) to "Moderator"
         else        -> Color(0xFF43A047) to "User"
     }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape    = RoundedCornerShape(16.dp),
-        colors   = CardDefaults.cardColors(containerColor = Color(0xFF141B2D))
+        colors   = CardDefaults.cardColors(containerColor = appColors.cardSurface)
     ) {
         Row(
-            modifier          = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier          = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier          = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(Brush.linearGradient(avatarColors)),
-                contentAlignment  = Alignment.Center
+                modifier         = Modifier.size(64.dp).clip(CircleShape).background(Brush.linearGradient(avatarColors)),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text       = initials,
-                    color      = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize   = 24.sp
-                )
+                Text(initials, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
             }
-
             Spacer(Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text       = username,
-                    color      = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize   = 18.sp
-                )
+                Text(username, color = appColors.primaryText, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 if (email.isNotEmpty()) {
-                    Text(
-                        text     = email,
-                        color    = Color(0xFF8B9AB8),
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
+                    Text(email, color = appColors.secondaryText, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
                 }
                 Spacer(Modifier.height(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = badgeColor.copy(alpha = 0.15f)
-                ) {
-                    Text(
-                        text       = badgeText,
-                        color      = badgeColor,
-                        fontSize   = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier   = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
+                Surface(shape = RoundedCornerShape(6.dp), color = badgeColor.copy(alpha = 0.15f)) {
+                    Text(badgeText, color = badgeColor, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                 }
             }
         }
@@ -583,9 +604,10 @@ private fun ProfileHeaderCard(
 
 @Composable
 private fun SectionLabel(text: String) {
+    val appColors = LocalAppColors.current
     Text(
         text          = text,
-        color         = Color(0xFF5A6B8A),
+        color         = appColors.sectionLabelColor,
         fontSize      = 11.sp,
         fontWeight    = FontWeight.SemiBold,
         letterSpacing = 0.8.sp,
@@ -597,10 +619,11 @@ private fun SectionLabel(text: String) {
 
 @Composable
 private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+    val appColors = LocalAppColors.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape    = RoundedCornerShape(12.dp),
-        colors   = CardDefaults.cardColors(containerColor = Color(0xFF141B2D)),
+        colors   = CardDefaults.cardColors(containerColor = appColors.cardSurface),
         content  = { Column(content = content) }
     )
 }
@@ -609,9 +632,10 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 private fun SettingsDivider() {
+    val appColors = LocalAppColors.current
     HorizontalDivider(
         modifier  = Modifier.padding(start = 56.dp),
-        color     = Color(0xFF1E2A40),
+        color     = appColors.dividerColor,
         thickness = 0.5.dp
     )
 }
@@ -623,11 +647,13 @@ private fun SettingsRow(
     icon: ImageVector,
     iconBg: Color,
     label: String,
-    labelColor: Color = Color.White,
+    labelColor: Color = Color.Unspecified,
     trailingText: String? = null,
     showChevron: Boolean = true,
     onClick: (() -> Unit)?
 ) {
+    val appColors = LocalAppColors.current
+    val resolvedLabelColor = if (labelColor == Color.Unspecified) appColors.primaryText else labelColor
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -646,38 +672,34 @@ private fun SettingsRow(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector    = icon,
+                imageVector        = icon,
                 contentDescription = null,
-                tint           = Color.White,
-                modifier       = Modifier.size(18.dp)
+                tint               = Color.White,
+                modifier           = Modifier.size(18.dp)
             )
         }
-
         Spacer(Modifier.width(12.dp))
-
         Text(
             text       = label,
-            color      = labelColor,
+            color      = resolvedLabelColor,
             fontSize   = 15.sp,
             fontWeight = FontWeight.Normal,
             modifier   = Modifier.weight(1f)
         )
-
         if (trailingText != null) {
             Text(
                 text     = trailingText,
-                color    = Color(0xFF5A6B8A),
+                color    = appColors.secondaryText,
                 fontSize = 14.sp,
                 maxLines = 1
             )
             if (showChevron) Spacer(Modifier.width(4.dp))
         }
-
         if (showChevron) {
             Icon(
                 Icons.Filled.ChevronRight,
                 contentDescription = null,
-                tint     = Color(0xFF3A4B6A),
+                tint     = appColors.secondaryText,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -695,17 +717,25 @@ private fun EditUsernameDialog(
 ) {
     var value by remember { mutableStateOf(currentUsername) }
     var error by remember { mutableStateOf<String?>(null) }
+    val appColors = LocalAppColors.current
+
+    val strTitle         = stringResource(R.string.settings_dialog_edit_username)
+    val strLabelUsername = stringResource(R.string.settings_label_username)
+    val strErrorEmpty    = stringResource(R.string.settings_error_username_empty)
+    val strErrorShort    = stringResource(R.string.settings_error_username_short)
+    val strSave          = stringResource(R.string.btn_save)
+    val strCancel        = stringResource(R.string.btn_cancel)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = Color(0xFF141B2D),
-        title  = { Text("Edit Username", color = Color.White, fontWeight = FontWeight.SemiBold) },
+        containerColor   = appColors.cardSurface,
+        title  = { Text(strTitle, color = appColors.primaryText, fontWeight = FontWeight.SemiBold) },
         text   = {
             Column {
                 OutlinedTextField(
                     value           = value,
                     onValueChange   = { value = it; error = null },
-                    label           = { Text("Username") },
+                    label           = { Text(strLabelUsername) },
                     singleLine      = true,
                     isError         = error != null,
                     supportingText  = error?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
@@ -719,28 +749,22 @@ private fun EditUsernameDialog(
                 onClick = {
                     val trimmed = value.trim()
                     when {
-                        trimmed.isEmpty()       -> error = "Username cannot be empty"
-                        trimmed.length < 3      -> error = "At least 3 characters required"
+                        trimmed.isEmpty()          -> error = strErrorEmpty
+                        trimmed.length < 3         -> error = strErrorShort
                         trimmed == currentUsername -> onDismiss()
-                        else                    -> onConfirm(trimmed)
+                        else                       -> onConfirm(trimmed)
                     }
                 }
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier    = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color       = Color(0xFF5BC8F5)
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = appColors.iconTintOnTopBar)
                 } else {
-                    Text("Save", color = Color(0xFF5BC8F5), fontWeight = FontWeight.SemiBold)
+                    Text(strSave, color = appColors.iconTintOnTopBar, fontWeight = FontWeight.SemiBold)
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color(0xFF8B9AB8))
-            }
+            TextButton(onClick = onDismiss) { Text(strCancel, color = appColors.secondaryText) }
         }
     )
 }
@@ -758,52 +782,53 @@ private fun ChangePasswordDialog(
     var showNew    by remember { mutableStateOf(false) }
     var showConf   by remember { mutableStateOf(false) }
     var error      by remember { mutableStateOf<String?>(null) }
+    val appColors  = LocalAppColors.current
+
+    val strTitle         = stringResource(R.string.settings_dialog_change_password)
+    val strHintNewPwd    = stringResource(R.string.settings_hint_new_password)
+    val strHintConfPwd   = stringResource(R.string.settings_hint_confirm_password)
+    val strErrorShort    = stringResource(R.string.settings_error_password_short)
+    val strErrorMismatch = stringResource(R.string.settings_error_password_mismatch)
+    val strSave          = stringResource(R.string.btn_save)
+    val strCancel        = stringResource(R.string.btn_cancel)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = Color(0xFF141B2D),
-        title  = { Text("Change Password", color = Color.White, fontWeight = FontWeight.SemiBold) },
+        containerColor   = appColors.cardSurface,
+        title  = { Text(strTitle, color = appColors.primaryText, fontWeight = FontWeight.SemiBold) },
         text   = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
-                    value               = newPwd,
-                    onValueChange       = { newPwd = it; error = null },
-                    label               = { Text("New Password") },
-                    singleLine          = true,
-                    visualTransformation = if (showNew) VisualTransformation.None
-                                          else PasswordVisualTransformation(),
-                    keyboardOptions     = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    trailingIcon        = {
+                    value                = newPwd,
+                    onValueChange        = { newPwd = it; error = null },
+                    label                = { Text(strHintNewPwd) },
+                    singleLine           = true,
+                    visualTransformation = if (showNew) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions      = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    trailingIcon         = {
                         IconButton(onClick = { showNew = !showNew }) {
-                            Icon(
-                                if (showNew) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                contentDescription = null,
-                                tint = Color(0xFF5A6B8A)
-                            )
+                            Icon(if (showNew) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = null, tint = appColors.secondaryText)
                         }
                     },
-                    colors              = textFieldColors()
+                    colors = textFieldColors()
                 )
                 OutlinedTextField(
-                    value               = confirmPwd,
-                    onValueChange       = { confirmPwd = it; error = null },
-                    label               = { Text("Confirm Password") },
-                    singleLine          = true,
-                    isError             = error != null,
-                    supportingText      = error?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                    visualTransformation = if (showConf) VisualTransformation.None
-                                          else PasswordVisualTransformation(),
-                    keyboardOptions     = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    trailingIcon        = {
+                    value                = confirmPwd,
+                    onValueChange        = { confirmPwd = it; error = null },
+                    label                = { Text(strHintConfPwd) },
+                    singleLine           = true,
+                    isError              = error != null,
+                    supportingText       = error?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    visualTransformation = if (showConf) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions      = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    trailingIcon         = {
                         IconButton(onClick = { showConf = !showConf }) {
-                            Icon(
-                                if (showConf) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                contentDescription = null,
-                                tint = Color(0xFF5A6B8A)
-                            )
+                            Icon(if (showConf) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = null, tint = appColors.secondaryText)
                         }
                     },
-                    colors              = textFieldColors()
+                    colors = textFieldColors()
                 )
             }
         },
@@ -812,27 +837,21 @@ private fun ChangePasswordDialog(
                 enabled = !isLoading,
                 onClick = {
                     when {
-                        newPwd.length < 6       -> error = "At least 6 characters required"
-                        newPwd != confirmPwd    -> error = "Passwords do not match"
-                        else                    -> onConfirm(newPwd)
+                        newPwd.length < 6    -> error = strErrorShort
+                        newPwd != confirmPwd -> error = strErrorMismatch
+                        else                 -> onConfirm(newPwd)
                     }
                 }
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier    = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color       = Color(0xFF5BC8F5)
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = appColors.iconTintOnTopBar)
                 } else {
-                    Text("Save", color = Color(0xFF5BC8F5), fontWeight = FontWeight.SemiBold)
+                    Text(strSave, color = appColors.iconTintOnTopBar, fontWeight = FontWeight.SemiBold)
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color(0xFF8B9AB8))
-            }
+            TextButton(onClick = onDismiss) { Text(strCancel, color = appColors.secondaryText) }
         }
     )
 }
@@ -848,6 +867,7 @@ private fun SettingsToggleRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier          = Modifier
             .fillMaxWidth()
@@ -863,26 +883,27 @@ private fun SettingsToggleRow(
         ) {
             Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
         }
-
         Spacer(Modifier.width(12.dp))
-
         Column(modifier = Modifier.weight(1f)) {
-            Text(label, color = Color.White, fontSize = 15.sp)
+            Text(label, color = appColors.primaryText, fontSize = 15.sp)
             if (subLabel != null) {
-                Text(subLabel, color = Color(0xFF5A6B8A), fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 1.dp))
+                Text(
+                    subLabel,
+                    color    = appColors.secondaryText,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 1.dp)
+                )
             }
         }
-
         Switch(
             checked         = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor       = Color.White,
-                checkedTrackColor       = Color(0xFF1565C0),
-                uncheckedThumbColor     = Color(0xFF5A6B8A),
-                uncheckedTrackColor     = Color(0xFF1E2A40),
-                uncheckedBorderColor    = Color(0xFF2A3A5A)
+                checkedThumbColor    = Color.White,
+                checkedTrackColor    = Color(0xFF1565C0),
+                uncheckedThumbColor  = appColors.secondaryText,
+                uncheckedTrackColor  = appColors.dividerColor,
+                uncheckedBorderColor = appColors.dividerColor
             )
         )
     }
@@ -900,25 +921,22 @@ private fun <T> RadioPickerDialog(
     onSelect: (T) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val strCancel = stringResource(R.string.btn_cancel)
+    val appColors = LocalAppColors.current
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = Color(0xFF141B2D),
-        title  = { Text(title, color = Color.White, fontWeight = FontWeight.SemiBold) },
+        containerColor   = appColors.cardSurface,
+        title  = { Text(title, color = appColors.primaryText, fontWeight = FontWeight.SemiBold) },
         text   = {
             Column {
                 if (subNote != null) {
-                    Text(
-                        subNote,
-                        color    = Color(0xFF5A6B8A),
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Text(subNote, color = appColors.secondaryText, fontSize = 11.sp,
+                        modifier = Modifier.padding(bottom = 8.dp))
                 }
                 options.forEach { option ->
                     Row(
-                        modifier          = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSelect(option) }
+                        modifier          = Modifier.fillMaxWidth().clickable { onSelect(option) }
                             .padding(vertical = 10.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -926,15 +944,15 @@ private fun <T> RadioPickerDialog(
                             selected = option == selected,
                             onClick  = { onSelect(option) },
                             colors   = RadioButtonDefaults.colors(
-                                selectedColor   = Color(0xFF5BC8F5),
-                                unselectedColor = Color(0xFF3A4B6A)
+                                selectedColor   = appColors.iconTintOnTopBar,
+                                unselectedColor = appColors.secondaryText
                             )
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             label(option),
-                            color    = if (option == selected) Color(0xFF5BC8F5) else Color.White,
-                            fontSize = 15.sp,
+                            color      = if (option == selected) appColors.iconTintOnTopBar else appColors.primaryText,
+                            fontSize   = 15.sp,
                             fontWeight = if (option == selected) FontWeight.SemiBold else FontWeight.Normal
                         )
                     }
@@ -943,9 +961,7 @@ private fun <T> RadioPickerDialog(
         },
         confirmButton = {},
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color(0xFF8B9AB8))
-            }
+            TextButton(onClick = onDismiss) { Text(strCancel, color = appColors.secondaryText) }
         }
     )
 }
@@ -954,11 +970,11 @@ private fun <T> RadioPickerDialog(
 
 @Composable
 private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor    = Color.White,
-    unfocusedTextColor  = Color.White,
-    focusedBorderColor  = Color(0xFF5BC8F5),
-    unfocusedBorderColor = Color(0xFF2A3A5A),
-    focusedLabelColor   = Color(0xFF5BC8F5),
-    unfocusedLabelColor = Color(0xFF5A6B8A),
-    cursorColor         = Color(0xFF5BC8F5)
+    focusedTextColor     = LocalAppColors.current.primaryText,
+    unfocusedTextColor   = LocalAppColors.current.primaryText,
+    focusedBorderColor   = LocalAppColors.current.iconTintOnTopBar,
+    unfocusedBorderColor = LocalAppColors.current.dividerColor,
+    focusedLabelColor    = LocalAppColors.current.iconTintOnTopBar,
+    unfocusedLabelColor  = LocalAppColors.current.secondaryText,
+    cursorColor          = LocalAppColors.current.iconTintOnTopBar
 )
