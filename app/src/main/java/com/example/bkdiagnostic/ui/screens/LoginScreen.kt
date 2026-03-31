@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -84,14 +85,14 @@ fun LoginScreen(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.logo),
-                contentDescription = "BK Logo",
+                contentDescription = stringResource(R.string.cd_bk_logo),
                 modifier = Modifier.size(100.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "BK Diagnostic",
+                text = stringResource(R.string.app_name),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -105,7 +106,7 @@ fun LoginScreen(
                     emailOrUsername = it
                     if (uiState is AuthUiState.Error) viewModel.resetState()
                 },
-                label = { Text("Email or Username") },
+                label = { Text(stringResource(R.string.login_hint_email_or_username)) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -122,7 +123,7 @@ fun LoginScreen(
                     password = it
                     if (uiState is AuthUiState.Error) viewModel.resetState()
                 },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.login_hint_password)) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingIcon = {
@@ -160,7 +161,7 @@ fun LoginScreen(
                     onCheckedChange = { rememberMe = it }
                 )
                 Text(
-                    text = "Remember me",
+                    text = stringResource(R.string.login_remember_me),
                     fontSize = 14.sp,
                     modifier = Modifier
                         .clickable { rememberMe = !rememberMe }
@@ -168,7 +169,7 @@ fun LoginScreen(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 TextButton(onClick = onNavigateToForgotPassword) {
-                    Text("Forgot password?")
+                    Text(stringResource(R.string.login_forgot_password))
                 }
             }
 
@@ -195,7 +196,7 @@ fun LoginScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("SIGN IN", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.login_btn_sign_in), fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -212,7 +213,7 @@ fun LoginScreen(
                     .height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("CREATE ACCOUNT", fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.login_btn_create_account), fontWeight = FontWeight.Medium)
             }
         }
 
@@ -225,7 +226,7 @@ fun LoginScreen(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.campus),
-                contentDescription = "BK Campus",
+                contentDescription = stringResource(R.string.cd_campus_bg),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )

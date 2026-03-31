@@ -46,12 +46,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.bkdiagnostic.R
 import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
 import com.example.bkdiagnostic.diagnostic.RawFrameEntry
 import com.example.bkdiagnostic.ui.components.AppTopBar
@@ -98,6 +100,10 @@ fun RawMonitorScreen(
     var exportMessage by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
 
+    // Resolve strings needed inside non-composable lambdas
+    val strExportSuccess = stringResource(R.string.raw_monitor_export_success)
+    val strExportError   = stringResource(R.string.raw_monitor_export_error)
+
     // Auto-scroll xuống cuối khi có frame mới (chỉ khi đang live)
     LaunchedEffect(rawLog.size, paused) {
         if (!paused && rawLog.isNotEmpty()) {
@@ -120,7 +126,7 @@ fun RawMonitorScreen(
     ) {
         // ── Top bar ──────────────────────────────────────────────────────────
         AppTopBar(
-            title = "Raw Frame Monitor",
+            title = stringResource(R.string.raw_monitor_title),
             subtitle = if (paused)
                 "⏸  Paused · ${displayLog.size} frames captured"
             else
@@ -195,9 +201,9 @@ fun RawMonitorScreen(
             onExport = {
                 val name = exportToCsv(context, displayLog)
                 exportMessage = if (name != null)
-                    "✓  Saved to Downloads: $name"
+                    "$strExportSuccess $name"
                 else
-                    "✗  Export failed — check storage permission"
+                    strExportError
             }
         )
     }
@@ -217,13 +223,13 @@ private fun FrameTableHeader() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         // weight() phải gọi trong RowScope — truyền Modifier từ đây xuống HeaderCell
-        HeaderCell(text = "#",               modifier = Modifier.width(W_SEQ),    align = TextAlign.End)
+        HeaderCell(text = stringResource(R.string.raw_monitor_col_seq),       modifier = Modifier.width(W_SEQ),    align = TextAlign.End)
         Spacer(Modifier.width(12.dp))
-        HeaderCell(text = "ADDRESS",         modifier = Modifier.width(W_ADDR))
-        HeaderCell(text = "CAN FRAME (HEX)", modifier = Modifier.weight(1f))
-        HeaderCell(text = "DELAY",           modifier = Modifier.width(W_DELAY),  align = TextAlign.End)
+        HeaderCell(text = stringResource(R.string.raw_monitor_col_address),   modifier = Modifier.width(W_ADDR))
+        HeaderCell(text = stringResource(R.string.raw_monitor_col_can_frame), modifier = Modifier.weight(1f))
+        HeaderCell(text = stringResource(R.string.raw_monitor_col_delay),     modifier = Modifier.width(W_DELAY),  align = TextAlign.End)
         Spacer(Modifier.width(14.dp))
-        HeaderCell(text = "DECODED",         modifier = Modifier.width(W_DECODED))
+        HeaderCell(text = stringResource(R.string.raw_monitor_col_decoded),   modifier = Modifier.width(W_DECODED))
     }
     Box(
         modifier = Modifier
@@ -371,9 +377,9 @@ private fun EmptyState() {
                 tint = ColorGray.copy(alpha = 0.30f),
                 modifier = Modifier.size(56.dp)
             )
-            Text("No CAN frames captured", color = ColorGray, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Text(stringResource(R.string.raw_monitor_empty_title), color = ColorGray, fontSize = 15.sp, fontWeight = FontWeight.Medium)
             Text(
-                "Connect USB and start the engine to receive data",
+                stringResource(R.string.raw_monitor_empty_message),
                 color = ColorGray.copy(alpha = 0.55f),
                 fontSize = 12.sp
             )
@@ -409,7 +415,7 @@ private fun BottomActionBar(
     ) {
         // ── STOP / RESUME ────────────────────────────────────────────────────
         ActionButton(
-            label = if (paused) "RESUME" else "STOP",
+            label = if (paused) stringResource(R.string.raw_monitor_btn_resume) else stringResource(R.string.raw_monitor_btn_stop),
             icon = if (paused) Icons.Filled.PlayArrow else Icons.Filled.Stop,
             color = if (paused) ColorGreen else ColorRed,
             modifier = Modifier.weight(1.8f),
@@ -418,7 +424,7 @@ private fun BottomActionBar(
 
         // ── CLEAR ────────────────────────────────────────────────────────────
         ActionButton(
-            label = "CLEAR",
+            label = stringResource(R.string.raw_monitor_btn_clear),
             icon = Icons.Filled.Delete,
             color = ColorOrange,
             modifier = Modifier.weight(1f),
@@ -428,7 +434,7 @@ private fun BottomActionBar(
 
         // ── EXPORT ───────────────────────────────────────────────────────────
         ActionButton(
-            label = "EXPORT .CSV",
+            label = stringResource(R.string.raw_monitor_btn_export),
             icon = Icons.Filled.FileDownload,
             color = ColorBlue,
             modifier = Modifier.weight(1.4f),

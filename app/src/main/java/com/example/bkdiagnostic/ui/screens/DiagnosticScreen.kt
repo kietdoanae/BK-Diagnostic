@@ -52,11 +52,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bkdiagnostic.R
 import com.example.bkdiagnostic.communication.UsbSerialManager
 import com.example.bkdiagnostic.DiagnosticsSettings
 import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
@@ -163,6 +165,12 @@ private fun DiagnosticHub(
 
             val isConnected = connectionState is UsbSerialManager.ConnectionState.Connected
 
+            // Resolve strings needed in description lambdas (non-composable context)
+            val strScanning   = stringResource(R.string.diagnostic_read_dtc_scanning)
+            val strDtcEmpty   = stringResource(R.string.diagnostic_read_dtc_empty)
+            val strDtcCount   = stringResource(R.string.diagnostic_dtc_count_label)
+            val strClearDesc  = stringResource(R.string.diagnostic_clear_dtc_desc)
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -172,41 +180,41 @@ private fun DiagnosticHub(
                 // 1. Live Data
                 DiagnosticFunctionCard(
                     icon = Icons.Default.Speed,
-                    title = "Live Data",
-                    description = "RPM, speed, engine temp, load & more",
+                    title = stringResource(R.string.diagnostic_live_data_title),
+                    description = stringResource(R.string.diagnostic_live_data_desc),
                     accentColor = Color(0xFF1565C0),
                     enabled = isConnected,
                     actionIcon = Icons.Default.Speed,
-                    actionLabel = "View",
+                    actionLabel = stringResource(R.string.diagnostic_btn_view),
                     onClick = { onNavigate(DiagView.LIVE_DATA) }
                 )
 
                 // 2. Đọc DTC
                 DiagnosticFunctionCard(
                     icon = Icons.Default.Warning,
-                    title = "Read Fault Codes (DTC)",
+                    title = stringResource(R.string.diagnostic_read_dtc_title),
                     description = when {
-                        isDtcLoading -> "Scanning fault codes…"
-                        dtcList.isEmpty() -> "Scan all ECUs for fault codes"
-                        else -> "${dtcList.size} fault code(s): ${dtcList.take(3).joinToString(", ")}"
+                        isDtcLoading -> strScanning
+                        dtcList.isEmpty() -> strDtcEmpty
+                        else -> "${dtcList.size} $strDtcCount ${dtcList.take(3).joinToString(", ")}"
                     },
                     accentColor = Color(0xFFE65100),
                     enabled = isConnected,
                     actionIcon = Icons.Default.FindReplace,
-                    actionLabel = if (isDtcLoading) "..." else "Scan",
+                    actionLabel = if (isDtcLoading) "..." else stringResource(R.string.diagnostic_btn_scan),
                     onClick = { viewModel.readDtcs() }
                 )
 
                 // 3. Xóa DTC
                 DiagnosticFunctionCard(
                     icon = Icons.Default.Delete,
-                    title = "Clear Fault Codes",
-                    description = if (dtcList.isEmpty()) "Clear DTCs and reset Check Engine light"
+                    title = stringResource(R.string.diagnostic_clear_dtc_title),
+                    description = if (dtcList.isEmpty()) strClearDesc
                     else "Clear ${dtcList.size} fault code(s) found",
                     accentColor = Color(0xFFC62828),
                     enabled = isConnected && dtcList.isNotEmpty(),
                     actionIcon = Icons.Default.Delete,
-                    actionLabel = "Clear",
+                    actionLabel = stringResource(R.string.diagnostic_btn_clear),
                     onClick = { viewModel.clearDtcs() }
                 )
 
@@ -214,12 +222,12 @@ private fun DiagnosticHub(
                 if (isAdmin) {
                     DiagnosticFunctionCard(
                         icon = Icons.Default.BugReport,
-                        title = "Raw Frame Monitor",
-                        description = "Inspect raw CAN bytes alongside decoded values",
+                        title = stringResource(R.string.diagnostic_raw_monitor_title),
+                        description = stringResource(R.string.diagnostic_raw_monitor_desc),
                         accentColor = Color(0xFF37474F),
                         enabled = true,
                         actionIcon = Icons.Default.BugReport,
-                        actionLabel = "Open",
+                        actionLabel = stringResource(R.string.diagnostic_btn_open),
                         onClick = { onNavigate(DiagView.RAW_MONITOR) }
                     )
                 }
@@ -227,23 +235,23 @@ private fun DiagnosticHub(
                 // 4. Active Test — Kích hoạt cơ cấu chấp hành
                 DiagnosticFunctionCard(
                     icon = Icons.Default.DirectionsCar,
-                    title = "Active Test",
-                    description = "Kích hoạt đèn, còi, khóa cửa & các cơ cấu chấp hành qua BCM",
+                    title = stringResource(R.string.diagnostic_active_test_title),
+                    description = stringResource(R.string.diagnostic_active_test_desc),
                     accentColor = Color(0xFF7C3AED),
                     enabled = true,
                     actionIcon = Icons.Default.DirectionsCar,
-                    actionLabel = "Open",
+                    actionLabel = stringResource(R.string.diagnostic_btn_open),
                     onClick = { onNavigate(DiagView.ACTIVE_TEST) }
                 )
 
                 // 5–7. Placeholder (sắp có)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ComingSoonCard(Modifier.weight(1f), Icons.Default.Info, "ECU & VIN Info")
-                    ComingSoonCard(Modifier.weight(1f), Icons.Default.BrokenImage, "Data Graph")
+                    ComingSoonCard(Modifier.weight(1f), Icons.Default.Info, stringResource(R.string.diagnostic_coming_soon_ecu))
+                    ComingSoonCard(Modifier.weight(1f), Icons.Default.BrokenImage, stringResource(R.string.diagnostic_coming_soon_graph))
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ComingSoonCard(Modifier.weight(1f), Icons.Default.Cable, "Sensor Config")
-                    ComingSoonCard(Modifier.weight(1f), Icons.Default.BrokenImage, "Data Logger")
+                    ComingSoonCard(Modifier.weight(1f), Icons.Default.Cable, stringResource(R.string.diagnostic_coming_soon_sensor))
+                    ComingSoonCard(Modifier.weight(1f), Icons.Default.BrokenImage, stringResource(R.string.diagnostic_coming_soon_logger))
                 }
             }
         }   // end inner Column (bottom padding)
@@ -261,8 +269,8 @@ private fun DiagnosticTopBar(
     onBack: () -> Unit
 ) {
     AppTopBar(
-        title = config?.displayName ?: "Vehicle Diagnostics",
-        subtitle = "Select diagnostic function",
+        title = config?.displayName ?: stringResource(R.string.diagnostic_hub_title),
+        subtitle = stringResource(R.string.diagnostic_hub_subtitle),
         onBack = onBack
     )
 }
@@ -273,19 +281,26 @@ private fun ConnectionStatusBar(
     onConnect: () -> Unit,
     onDisconnect: () -> Unit
 ) {
+    val strConnected  = stringResource(R.string.diagnostic_status_connected)
+    val strSearching  = stringResource(R.string.diagnostic_status_searching)
+    val strNoDevice   = stringResource(R.string.diagnostic_status_no_device)
+    val strError      = stringResource(R.string.diagnostic_status_error)
+    val strConnect    = stringResource(R.string.diagnostic_btn_connect)
+    val strDisconnect = stringResource(R.string.diagnostic_btn_disconnect)
+
     val (icon, label, bgColor, textColor) = when (state) {
         is UsbSerialManager.ConnectionState.Connected ->
-            Quadruple(Icons.Default.CheckCircle, "Connected: ${state.deviceName}",
+            Quadruple(Icons.Default.CheckCircle, "$strConnected ${state.deviceName}",
                 Color(0xFFE8F5E9), Color(0xFF2E7D32))
         is UsbSerialManager.ConnectionState.Searching,
         is UsbSerialManager.ConnectionState.AwaitingPermission ->
-            Quadruple(Icons.Default.FindReplace, "Searching for USB device…",
+            Quadruple(Icons.Default.FindReplace, strSearching,
                 Color(0xFFFFF8E1), Color(0xFFF57F17))
         is UsbSerialManager.ConnectionState.Error ->
-            Quadruple(Icons.Default.Error, "Error: ${state.message}",
+            Quadruple(Icons.Default.Error, "$strError ${state.message}",
                 Color(0xFFFFEBEE), Color(0xFFC62828))
         UsbSerialManager.ConnectionState.Disconnected ->
-            Quadruple(Icons.Default.LinkOff, "No OBD2 device connected",
+            Quadruple(Icons.Default.LinkOff, strNoDevice,
                 Color(0xFFF5F5F5), Color(0xFF757575))
     }
     Row(
@@ -306,7 +321,7 @@ private fun ConnectionStatusBar(
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1565C0)),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                ) { Text("Connect", fontSize = 12.sp, color = Color.White) }
+                ) { Text(strConnect, fontSize = 12.sp, color = Color.White) }
             }
             is UsbSerialManager.ConnectionState.Connected -> {
                 Button(
@@ -314,7 +329,7 @@ private fun ConnectionStatusBar(
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                ) { Text("Disconnect", fontSize = 12.sp, color = Color.White) }
+                ) { Text(strDisconnect, fontSize = 12.sp, color = Color.White) }
             }
             else -> {}
         }

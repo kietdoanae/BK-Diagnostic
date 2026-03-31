@@ -76,6 +76,8 @@ import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
 import com.example.bkdiagnostic.protocol.ActiveTestCategory
 import com.example.bkdiagnostic.protocol.ActiveTestCommand
 import com.example.bkdiagnostic.protocol.ActiveTestRegistry
+import androidx.compose.ui.res.stringResource
+import com.example.bkdiagnostic.R
 import com.example.bkdiagnostic.ui.components.AppTopBar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -100,6 +102,10 @@ fun ActiveTestScreen(
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    val strErrorNotConnected = stringResource(R.string.active_test_error_not_connected)
+    val strActuatorControl   = stringResource(R.string.active_test_subtitle)
+    val strTitle             = stringResource(R.string.active_test_title)
+
     DisposableEffect(Unit) {
         onDispose {
             activeStates.filter { it.value }.forEach { (id, _) ->
@@ -112,7 +118,7 @@ fun ActiveTestScreen(
 
     fun toggle(cmd: ActiveTestCommand) {
         if (!isConnected) {
-            scope.launch { snackbarHost.showSnackbar("OBD2 device not connected!") }
+            scope.launch { snackbarHost.showSnackbar(strErrorNotConnected) }
         }
         // Always allow UI simulation even without connection
         val isOn = activeStates[cmd.id] == true
@@ -141,8 +147,8 @@ fun ActiveTestScreen(
                 .padding(bottom = padding.calculateBottomPadding())
         ) {
             AppTopBar(
-                title = "Active Test",
-                subtitle = viewModel.protocolConfig?.displayName ?: "Actuator Control",
+                title = strTitle,
+                subtitle = viewModel.protocolConfig?.displayName ?: strActuatorControl,
                 onBack = onBack
             )
 
@@ -196,6 +202,9 @@ private fun FordRangerCluster2019(
         label = "blink_phase"
     )
 
+    val strUnitKmh = stringResource(R.string.active_test_unit_kmh)
+    val strUnitRpm = stringResource(R.string.active_test_unit_rpm)
+
     val leftOn  = activeStates["left_turn"]  == true || activeStates["hazard"] == true
     val rightOn = activeStates["right_turn"] == true || activeStates["hazard"] == true
     val highBeam  = activeStates["high_beam"]    == true
@@ -224,7 +233,9 @@ private fun FordRangerCluster2019(
                 brakeOn = brakeOn,
                 reverseOn = reverseOn,
                 doorOn = doorOn,
-                hazardBlink = hazardOn && blinkPhase > 0.5f
+                hazardBlink = hazardOn && blinkPhase > 0.5f,
+                unitKmh = strUnitKmh,
+                unitRpm = strUnitRpm
             )
         }
 
@@ -294,7 +305,7 @@ private fun FordRangerCluster2019(
                 fontFamily = FontFamily.Monospace
             )
             Text(
-                "km/h",
+                strUnitKmh,
                 color = Color(0xFF6B7280),
                 fontSize = 9.sp,
                 letterSpacing = 1.sp
@@ -302,7 +313,7 @@ private fun FordRangerCluster2019(
             Spacer(Modifier.height(4.dp))
             // Status
             Text(
-                if (isConnected) "● LIVE" else "○ SIM",
+                if (isConnected) stringResource(R.string.active_test_status_live) else stringResource(R.string.active_test_status_sim),
                 color = if (isConnected) Color(0xFF22C55E) else Color(0xFFF59E0B),
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
@@ -338,7 +349,9 @@ private fun DrawScope.drawFordRangerCluster(
     brakeOn: Boolean,
     reverseOn: Boolean,
     doorOn: Boolean,
-    hazardBlink: Boolean
+    hazardBlink: Boolean,
+    unitKmh: String,
+    unitRpm: String
 ) {
     val w = size.width
     val h = size.height
@@ -372,7 +385,7 @@ private fun DrawScope.drawFordRangerCluster(
         labels = listOf("0", "1", "2", "3", "4", "5", "6"),
         accentColor = Color(0xFF2563EB),
         dangerFrom = 5.2f,
-        unitLabel = "RPM ×1000"
+        unitLabel = unitRpm
     )
 
     // ── Speed gauge (right) ──────────────────────────────────────────────
@@ -383,7 +396,7 @@ private fun DrawScope.drawFordRangerCluster(
         labels = listOf("0", "40", "80", "120", "160", "200", ""),
         accentColor = Color(0xFF2563EB),
         dangerFrom = 190f,
-        unitLabel = "km/h"
+        unitLabel = unitKmh
     )
 
     // ── Fuel sub-gauge (bottom of RPM) ───────────────────────────────────
@@ -815,7 +828,7 @@ private fun ActiveTestControlPanel(
         // ── Commands grid (3 columns, compact) ────────────────────────────
         if (filtered.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Không có lệnh nào", color = Color(0xFF6B7280))
+                Text(stringResource(R.string.active_test_no_commands), color = Color(0xFF6B7280))
             }
         } else {
             LazyVerticalGrid(

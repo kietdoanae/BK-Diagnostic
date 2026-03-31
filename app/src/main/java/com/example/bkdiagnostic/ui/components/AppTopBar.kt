@@ -16,9 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.bkdiagnostic.R
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Shared App Top Bar
@@ -82,7 +84,7 @@ fun AppTopBar(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.cd_back),
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )

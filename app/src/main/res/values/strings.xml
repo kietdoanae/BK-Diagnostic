@@ -1,3 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">BK Diagnostic</string>
+
+    <!-- Common -->
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_got_it">Got It</string>
+    <string name="btn_back_to_sign_in">Back to Sign In</string>
+    <string name="label_coming_soon">Coming Soon</string>
+    <string name="label_under_development">Under Development</string>
+    <string name="cd_bk_logo">BK Logo</string>
+    <string name="cd_campus_bg">BK Campus</string>
+    <string name="cd_back">Back</string>
+
+    <!-- Login -->
+    <string name="login_hint_email_or_username">Email or Username</string>
+    <string name="login_hint_password">Password</string>
+    <string name="login_remember_me">Remember me</string>
+    <string name="login_forgot_password">Forgot password?</string>
+    <string name="login_btn_sign_in">SIGN IN</string>
+    <string name="login_btn_create_account">CREATE ACCOUNT</string>
+
+    <!-- Register -->
+    <string name="register_title">Create Account</string>
+    <string name="register_hint_username">Username</string>
+    <string name="register_hint_email">Email</string>
+    <string name="register_hint_password">Password</string>
+    <string name="register_hint_confirm_password">Confirm Password</string>
+    <string name="register_success_title">Registration Successful!</string>
+    <string name="register_success_message">Account created. Please check your email to confirm your account before signing in.</string>
+    <string name="register_error_all_fields">Please fill in all fields.</string>
+    <string name="register_error_passwords_mismatch">Passwords do not match.</string>
+    <string name="register_error_password_short">Password must be at least 6 characters.</string>
+    <string name="register_btn_sign_up">SIGN UP</string>
+    <string name="register_have_account">Already have an account?</string>
+    <string name="register_sign_in_link">Sign In</string>
+
+    <!-- Forgot Password -->
+    <string name="forgot_title">Forgot Password</string>
+    <string name="forgot_subtitle">Enter your registered email to receive a password reset link.</string>
+    <string name="forgot_hint_email">Email</string>
+    <string name="forgot_btn_send">SEND RESET LINK</string>
+    <string name="forgot_success_title">Email Sent!</string>
+    <string name="forgot_success_message">Check your inbox at</string>
+    <string name="forgot_success_message2">and click the link to reset your password.</string>
+    <string name="forgot_spam_warning">If you don\'t see it, check your spam folder.</string>
+
+    <!-- Reset Password -->
+    <string name="reset_title">Set a new password.</string>
+    <string name="reset_subtitle">Enter a new password for your account.</string>
+    <string name="reset_hint_new_password">New password</string>
+    <string name="reset_hint_confirm_password">Confirm new password</string>
+    <string name="reset_error_all_fields">Please fill in all the information.</string>
+    <string name="reset_error_password_short">The password must have at least 6 characters.</string>
+    <string name="reset_error_mismatch">The confirmation password does not match.</string>
+    <string name="reset_btn_update">UPDATE PASSWORD</string>
+
+    <!-- Dashboard -->
+    <string name="app_tagline">Intelligent vehicle diagnostics · HCMUT</string>
+    <string name="dashboard_btn_sign_out">Sign out</string>
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_evening">Good evening</string>
+    <string name="dashboard_status_online">Online</string>
+    <string name="dashboard_status_active">Active</string>
+    <string name="feature_diagnostics">Diagnostics</string>
+    <string name="feature_service">Service</string>
+    <string name="feature_data_manager">Data Manager</string>
+    <string name="feature_settings">Settings</string>
+    <string name="feature_update">Update</string>
+    <string name="feature_remote_desktop">Remote Desktop</string>
+    <string name="feature_wiring_diagram">Wiring Diagram</string>
+    <string name="feature_support">Support</string>
+    <string name="feature_not_available">Not available yet</string>
+
+    <!-- Brand Selection -->
+    <string name="brand_selection_title">Car Brand Selection</string>
+    <string name="brand_selection_subtitle">Select a brand to diagnose</string>
+    <string name="brand_selection_breadcrumb">Car Brand</string>
+    <string name="brand_coming_soon_message">is currently under development. Please check back later!</string>
+    <string name="brand_origin_japan">Japan</string>
+    <string name="brand_origin_south_korea">South Korea</string>
+    <string name="brand_origin_usa">USA</string>
+
+    <!-- Model Selection -->
+    <string name="model_selection_title">Model Selection</string>
+    <string name="model_selection_subtitle">Select a model to start diagnostics</string>
+    <string name="model_selection_breadcrumb">Model</string>
+    <string name="model_coming_soon_message">is currently under development. Please check back later!</string>
+    <string name="model_category_pickup">Pickup</string>
+    <string name="model_category_suv_7seat">SUV 7-seat</string>
+    <string name="model_category_suv_5seat">SUV 5-seat</string>
+    <string name="model_category_minivan">Minivan</string>
+    <string name="model_category_suv">SUV</string>
+    <string name="model_category_coupe">Coupe</string>
+    <string name="model_category_crossover">Crossover</string>
+    <string name="model_category_electric_suv">Electric SUV</string>
+
+    <!-- Diagnostic Hub -->
+    <string name="diagnostic_hub_title">Vehicle Diagnostics</string>
+    <string name="diagnostic_hub_subtitle">Select diagnostic function</string>
+    <string name="diagnostic_status_connected">Connected:</string>
+    <string name="diagnostic_status_searching">Searching for USB device…</string>
+    <string name="diagnostic_status_no_device">No OBD2 device connected</string>
+    <string name="diagnostic_status_error">Error:</string>
+    <string name="diagnostic_live_data_title">Live Data</string>
+    <string name="diagnostic_live_data_desc">RPM, speed, engine temp, load &amp; more</string>
+    <string name="diagnostic_btn_view">View</string>
+    <string name="diagnostic_read_dtc_title">Read Fault Codes (DTC)</string>
+    <string name="diagnostic_read_dtc_scanning">Scanning fault codes…</string>
+    <string name="diagnostic_read_dtc_empty">Scan all ECUs for fault codes</string>
+    <string name="diagnostic_dtc_count_label">fault code(s):</string>
+    <string name="diagnostic_btn_scan">Scan</string>
+    <string name="diagnostic_clear_dtc_title">Clear Fault Codes</string>
+    <string name="diagnostic_clear_dtc_desc">Clear DTCs and reset Check Engine light</string>
+    <string name="diagnostic_btn_clear">Clear</string>
+    <string name="diagnostic_raw_monitor_title">Raw Frame Monitor</string>
+    <string name="diagnostic_raw_monitor_desc">Inspect raw CAN bytes alongside decoded values</string>
+    <string name="diagnostic_btn_open">Open</string>
+    <string name="diagnostic_active_test_title">Active Test</string>
+    <string name="diagnostic_active_test_desc">Activate lights, horn, door locks &amp; actuators via BCM</string>
+    <string name="diagnostic_coming_soon_ecu">ECU &amp; VIN Info</string>
+    <string name="diagnostic_coming_soon_graph">Data Graph</string>
+    <string name="diagnostic_coming_soon_sensor">Sensor Config</string>
+    <string name="diagnostic_coming_soon_logger">Data Logger</string>
+    <string name="diagnostic_btn_connect">Connect</string>
+    <string name="diagnostic_btn_disconnect">Disconnect</string>
+
+    <!-- Live Data -->
+    <string name="live_data_title">Live Data</string>
+    <string name="live_data_status_connected">Connected</string>
+    <string name="live_data_status_searching">Searching…</string>
+    <string name="live_data_status_awaiting">Awaiting permission</string>
+    <string name="live_data_status_disconnected">Disconnected</string>
+    <string name="live_data_running">Reading data...</string>
+    <string name="live_data_stopped">Stopped</string>
+    <string name="live_data_btn_stop">Stop</string>
+    <string name="live_data_btn_start">Start</string>
+    <string name="live_data_all_parameters">ALL PARAMETERS</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_account">ACCOUNT</string>
+    <string name="settings_label_username">Username</string>
+    <string name="settings_label_email">Email</string>
+    <string name="settings_section_security">SECURITY</string>
+    <string name="settings_label_change_password">Change Password</string>
+    <string name="settings_section_connection">CONNECTION</string>
+    <string name="settings_label_usb_baud">USB Baud Rate</string>
+    <string name="settings_label_can_speed">CAN Bus Speed</string>
+    <string name="settings_unit_kbps">kbps</string>
+    <string name="settings_label_auto_reconnect">Auto-reconnect</string>
+    <string name="settings_sublabel_auto_reconnect">Reconnect on transient disconnect</string>
+    <string name="settings_section_diagnostics">DIAGNOSTICS</string>
+    <string name="settings_label_refresh_rate">Live Data Refresh Rate</string>
+    <string name="settings_unit_ms">ms</string>
+    <string name="settings_label_timeout">ECU Response Timeout</string>
+    <string name="settings_label_imperial">Use Imperial Units</string>
+    <string name="settings_sublabel_imperial">mph, °F, psi instead of km/h, °C, kPa</string>
+    <string name="settings_label_auto_clear_dtc">Auto-clear DTC</string>
+    <string name="settings_sublabel_auto_clear_dtc">Clear codes automatically after reading</string>
+    <string name="settings_section_display">DISPLAY</string>
+    <string name="settings_label_theme">Theme</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_label_keep_screen_on">Keep Screen On</string>
+    <string name="settings_sublabel_keep_screen_on">Prevent screen timeout during diagnostics</string>
+    <string name="settings_label_language">Language</string>
+    <string name="settings_lang_vi">Tiếng Việt</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_section_session">SESSION</string>
+    <string name="settings_label_sign_out">Sign Out</string>
+    <string name="settings_dialog_edit_username">Edit Username</string>
+    <string name="settings_dialog_change_password">Change Password</string>
+    <string name="settings_picker_theme">Theme</string>
+    <string name="settings_theme_system_default">System default</string>
+    <string name="settings_picker_language">Language</string>
+    <string name="settings_lang_localization_note">Full localization coming in a future update</string>
+    <string name="settings_picker_refresh_rate">Live Data Refresh Rate</string>
+    <string name="settings_picker_timeout">ECU Response Timeout</string>
+    <string name="settings_picker_baud">USB Baud Rate</string>
+    <string name="settings_picker_can">CAN Bus Speed</string>
+    <string name="settings_signout_confirm">Are you sure you want to sign out?</string>
+    <string name="settings_btn_sign_out">Sign Out</string>
+    <string name="settings_toast_username_updated">Username updated successfully</string>
+    <string name="settings_toast_password_changed">Password changed successfully</string>
+    <string name="settings_error_username_empty">Username cannot be empty</string>
+    <string name="settings_error_username_short">At least 3 characters required</string>
+    <string name="settings_hint_new_password">New Password</string>
+    <string name="settings_hint_confirm_password">Confirm Password</string>
+    <string name="settings_error_password_short">At least 6 characters required</string>
+    <string name="settings_error_password_mismatch">Passwords do not match</string>
+
+    <!-- Active Test -->
+    <string name="active_test_title">Active Test</string>
+    <string name="active_test_subtitle">Actuator Control</string>
+    <string name="active_test_status_live">● LIVE</string>
+    <string name="active_test_status_sim">○ SIM</string>
+    <string name="active_test_error_not_connected">OBD2 device not connected!</string>
+    <string name="active_test_no_commands">No commands available</string>
+    <string name="active_test_unit_kmh">km/h</string>
+    <string name="active_test_unit_rpm">RPM ×1000</string>
+
+    <!-- Wiring Diagram -->
+    <string name="wiring_diagram_title">Wiring Diagram</string>
+
+    <!-- Raw Monitor -->
+    <string name="raw_monitor_title">Raw Frame Monitor</string>
+    <string name="raw_monitor_col_seq">#</string>
+    <string name="raw_monitor_col_address">ADDRESS</string>
+    <string name="raw_monitor_col_can_frame">CAN FRAME (HEX)</string>
+    <string name="raw_monitor_col_delay">DELAY</string>
+    <string name="raw_monitor_col_decoded">DECODED</string>
+    <string name="raw_monitor_empty_title">No CAN frames captured</string>
+    <string name="raw_monitor_empty_message">Connect USB and start the engine to receive data</string>
+    <string name="raw_monitor_btn_resume">RESUME</string>
+    <string name="raw_monitor_btn_stop">STOP</string>
+    <string name="raw_monitor_btn_clear">CLEAR</string>
+    <string name="raw_monitor_btn_export">EXPORT .CSV</string>
+    <string name="raw_monitor_export_success">✓  Saved to Downloads:</string>
+    <string name="raw_monitor_export_error">✗  Export failed — check storage permission</string>
 </resources>

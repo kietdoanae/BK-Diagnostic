@@ -1,6 +1,7 @@
 package com.example.bkdiagnostic.ui.screens
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,19 +25,21 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.alpha
 import com.example.bkdiagnostic.ActivityLogger
 import com.example.bkdiagnostic.R
+import androidx.compose.ui.text.style.TextAlign
 import com.example.bkdiagnostic.ui.components.AppTopBar
 import com.example.bkdiagnostic.ui.components.AppTopBarChip
 
 data class CarBrand(
     val id: String,
     val name: String,
-    val origin: String,
+    @StringRes val originRes: Int,
     val primaryColor: Color,
     val secondaryColor: Color,
     @field:DrawableRes val logoRes: Int
@@ -46,14 +49,14 @@ data class CarBrand(
 private val availableBrandIds: Set<String> = setOf("ford")
 
 val carBrands = listOf(
-    CarBrand("toyota",      "Toyota",      "Japan",       Color(0xFFCC0000), Color(0xFF8B0000), R.drawable.brand_toyota),
-    CarBrand("honda",       "Honda",       "Japan",       Color(0xFFE40012), Color(0xFF9C0010), R.drawable.brand_honda),
-    CarBrand("suzuki",      "Suzuki",      "Japan",       Color(0xFF1A5EA8), Color(0xFF0D3D6E), R.drawable.brand_suzuki),
-    CarBrand("mazda",       "Mazda",       "Japan",       Color(0xFF910000), Color(0xFF5C0000), R.drawable.brand_mazda),
-    CarBrand("hyundai",     "Hyundai",     "South Korea", Color(0xFF002C5F), Color(0xFF004A9F), R.drawable.brand_hyundai),
-    CarBrand("kia",         "KIA",         "South Korea", Color(0xFF05141F), Color(0xFFBB162B), R.drawable.brand_kia),
-    CarBrand("mitsubishi",  "Mitsubishi",  "Japan",       Color(0xFFE4002B), Color(0xFF9C001D), R.drawable.brand_mitsubishi),
-    CarBrand("ford",        "Ford",        "USA",         Color(0xFF003087), Color(0xFF0055C8), R.drawable.brand_ford),
+    CarBrand("toyota",     "Toyota",     R.string.brand_origin_japan,       Color(0xFFCC0000), Color(0xFF8B0000), R.drawable.brand_toyota),
+    CarBrand("honda",      "Honda",      R.string.brand_origin_japan,       Color(0xFFE40012), Color(0xFF9C0010), R.drawable.brand_honda),
+    CarBrand("suzuki",     "Suzuki",     R.string.brand_origin_japan,       Color(0xFF1A5EA8), Color(0xFF0D3D6E), R.drawable.brand_suzuki),
+    CarBrand("mazda",      "Mazda",      R.string.brand_origin_japan,       Color(0xFF910000), Color(0xFF5C0000), R.drawable.brand_mazda),
+    CarBrand("hyundai",    "Hyundai",    R.string.brand_origin_south_korea, Color(0xFF002C5F), Color(0xFF004A9F), R.drawable.brand_hyundai),
+    CarBrand("kia",        "KIA",        R.string.brand_origin_south_korea, Color(0xFF05141F), Color(0xFFBB162B), R.drawable.brand_kia),
+    CarBrand("mitsubishi", "Mitsubishi", R.string.brand_origin_japan,       Color(0xFFE4002B), Color(0xFF9C001D), R.drawable.brand_mitsubishi),
+    CarBrand("ford",       "Ford",       R.string.brand_origin_usa,         Color(0xFF003087), Color(0xFF0055C8), R.drawable.brand_ford),
 )
 
 @Composable
@@ -114,7 +117,7 @@ fun BrandSelectionScreen(
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
-                                text = "Under Development",
+                                text = stringResource(R.string.label_under_development),
                                 color = Color(0xFF856404),
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp
@@ -122,7 +125,7 @@ fun BrandSelectionScreen(
                         }
                     }
                     Text(
-                        text = "${brand.name} is currently under development. Please check back later!",
+                        text = "${brand.name} ${stringResource(R.string.brand_coming_soon_message)}",
                         color = Color(0xFF6B6B80),
                         fontSize = 14.sp,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -135,7 +138,7 @@ fun BrandSelectionScreen(
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = brand.primaryColor)
                 ) {
-                    Text("Got It", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.btn_got_it), fontWeight = FontWeight.SemiBold)
                 }
             }
         )
@@ -148,8 +151,8 @@ fun BrandSelectionScreen(
     ) {
         // ─── Top bar ─────────────────────────────────────────────────────────
         AppTopBar(
-            title = "Car Brand Selection",
-            subtitle = "Select a brand to diagnose",
+            title = stringResource(R.string.brand_selection_title),
+            subtitle = stringResource(R.string.brand_selection_subtitle),
             onBack = onBack,
             trailingContent = {
                 AppTopBarChip {
@@ -166,7 +169,7 @@ fun BrandSelectionScreen(
                         modifier = Modifier.size(13.dp)
                     )
                     Text(
-                        text = "Car Brand",
+                        text = stringResource(R.string.brand_selection_breadcrumb),
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp
@@ -295,7 +298,7 @@ private fun BrandCard(
                                 modifier = Modifier.size(11.dp)
                             )
                             Text(
-                                text = "Coming Soon",
+                                text = stringResource(R.string.label_coming_soon),
                                 color = Color(0xFF856404),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -361,7 +364,7 @@ private fun BrandCard(
                             modifier = Modifier.size(11.dp)
                         )
                         Text(
-                            text = brand.origin,
+                            text = stringResource(brand.originRes),
                             fontSize = 11.sp,
                             color = Color(0xFF9A9AB0)
                         )

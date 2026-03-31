@@ -17,7 +17,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.bkdiagnostic.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,7 +27,7 @@ fun WiringDiagramScreen(onBack: () -> Unit = {}) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Wiring Diagram", color = Color.White) },
+                title = { Text(stringResource(R.string.wiring_diagram_title), color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

@@ -1,6 +1,8 @@
 package com.example.bkdiagnostic
 
+import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +14,9 @@ import android.view.WindowManager
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,6 +42,18 @@ import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        val lang = newBase
+            .getSharedPreferences("bk_settings", Context.MODE_PRIVATE)
+            .getString("language", "en") ?: "en"
+        val locale = java.util.Locale.forLanguageTag(lang)
+        java.util.Locale.setDefault(locale)
+        val config = Configuration(newBase.resources.configuration)
+        config.setLocale(locale)
+        super.attachBaseContext(newBase.createConfigurationContext(config))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -54,6 +71,20 @@ class MainActivity : ComponentActivity() {
                 if (displaySettings.keepScreenOn) window.addFlags(flags)
                 else window.clearFlags(flags)
             }
+
+            // Locale switching: khi language thay đổi → lưu vào SharedPreferences → recreate()
+            var prevLanguage by remember { mutableStateOf(displaySettings.language) }
+            LaunchedEffect(displaySettings.language) {
+                if (displaySettings.language != prevLanguage) {
+                    prevLanguage = displaySettings.language
+                    getSharedPreferences("bk_settings", Context.MODE_PRIVATE)
+                        .edit()
+                        .putString("language", displaySettings.language)
+                        .apply()
+                    recreate()
+                }
+            }
+
 
             BKDiagnosticTheme(displaySettings = displaySettings) {
                 val authViewModel: AuthViewModel = viewModel()

@@ -1,6 +1,7 @@
 package com.example.bkdiagnostic.ui.screens
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,25 +37,25 @@ import com.example.bkdiagnostic.ui.components.AppTopBarChip
 data class CarModel(
     val id: String,
     val name: String,
-    val category: String,
+    @StringRes val categoryRes: Int,
     val years: String,
     @field:DrawableRes val imageRes: Int
 )
 
 // ── Ford model list ──────────────────────────────────────────────────────────
 val fordModels = listOf(
-    CarModel("ranger",        "Ford Ranger",       "Pickup",      "2022 – 2024", R.drawable.ford_ranger),
-    CarModel("ranger_raptor", "Ranger Raptor",     "Pickup",      "2022 – 2024", R.drawable.ford_ranger_raptor),
-    CarModel("everest",       "Ford Everest",      "SUV 7-seat",  "2022 – 2024", R.drawable.ford_everest),
-    CarModel("territory",     "Ford Territory",    "SUV 5-seat",  "2021 – 2024", R.drawable.ford_territory),
-    CarModel("transit",       "Ford Transit",      "Minivan",     "2022 – 2024", R.drawable.ford_transit),
-    CarModel("bronco",        "Ford Bronco",       "SUV",         "2021 – 2024", R.drawable.ford_bronco),
-    CarModel("mustang",       "Ford Mustang",      "Coupe",       "2022 – 2024", R.drawable.ford_mustang),
-    CarModel("explorer",      "Ford Explorer",     "SUV 7-seat",  "2022 – 2024", R.drawable.ford_explorer),
-    CarModel("escape",        "Ford Escape",       "Crossover",   "2022 – 2024", R.drawable.ford_escape),
-    CarModel("ecosport",      "Ford EcoSport",     "Crossover",   "2020 – 2023", R.drawable.ford_ecosport),
-    CarModel("f150",          "Ford F-150",        "Pickup",      "2022 – 2024", R.drawable.ford_f150),
-    CarModel("mach_e",        "Mustang Mach-E",    "Electric SUV","2022 – 2024", R.drawable.ford_mach_e),
+    CarModel("ranger",        "Ford Ranger",       R.string.model_category_pickup,       "2022 – 2024", R.drawable.ford_ranger),
+    CarModel("ranger_raptor", "Ranger Raptor",     R.string.model_category_pickup,       "2022 – 2024", R.drawable.ford_ranger_raptor),
+    CarModel("everest",       "Ford Everest",      R.string.model_category_suv_7seat,    "2022 – 2024", R.drawable.ford_everest),
+    CarModel("territory",     "Ford Territory",    R.string.model_category_suv_5seat,    "2021 – 2024", R.drawable.ford_territory),
+    CarModel("transit",       "Ford Transit",      R.string.model_category_minivan,      "2022 – 2024", R.drawable.ford_transit),
+    CarModel("bronco",        "Ford Bronco",       R.string.model_category_suv,          "2021 – 2024", R.drawable.ford_bronco),
+    CarModel("mustang",       "Ford Mustang",      R.string.model_category_coupe,        "2022 – 2024", R.drawable.ford_mustang),
+    CarModel("explorer",      "Ford Explorer",     R.string.model_category_suv_7seat,    "2022 – 2024", R.drawable.ford_explorer),
+    CarModel("escape",        "Ford Escape",       R.string.model_category_crossover,    "2022 – 2024", R.drawable.ford_escape),
+    CarModel("ecosport",      "Ford EcoSport",     R.string.model_category_crossover,    "2020 – 2023", R.drawable.ford_ecosport),
+    CarModel("f150",          "Ford F-150",        R.string.model_category_pickup,       "2022 – 2024", R.drawable.ford_f150),
+    CarModel("mach_e",        "Mustang Mach-E",    R.string.model_category_electric_suv, "2022 – 2024", R.drawable.ford_mach_e),
 )
 
 private val brandModels: Map<String, List<CarModel>> = mapOf(
@@ -126,7 +128,7 @@ fun ModelSelectionScreen(
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
-                                text = "Under Development",
+                                text = stringResource(R.string.label_under_development),
                                 color = Color(0xFF856404),
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp
@@ -134,7 +136,7 @@ fun ModelSelectionScreen(
                         }
                     }
                     Text(
-                        text = "${model.name} is currently under development. Please check back later!",
+                        text = "${model.name} ${stringResource(R.string.model_coming_soon_message)}",
                         color = Color(0xFF6B6B80),
                         fontSize = 14.sp,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -147,7 +149,7 @@ fun ModelSelectionScreen(
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = brandColor)
                 ) {
-                    Text("Got It", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.btn_got_it), fontWeight = FontWeight.SemiBold)
                 }
             }
         )
@@ -160,8 +162,8 @@ fun ModelSelectionScreen(
     ) {
         // ─── Top bar ─────────────────────────────────────────────────────────
         AppTopBar(
-            title = "Model Selection",
-            subtitle = "Select a model to start diagnostics",
+            title = stringResource(R.string.model_selection_title),
+            subtitle = stringResource(R.string.model_selection_subtitle),
             onBack = onBack,
             trailingContent = {
                 AppTopBarChip {
@@ -190,7 +192,7 @@ fun ModelSelectionScreen(
                         modifier = Modifier.size(13.dp)
                     )
                     Text(
-                        text = "Model",
+                        text = stringResource(R.string.model_selection_breadcrumb),
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp
@@ -210,8 +212,10 @@ fun ModelSelectionScreen(
             contentPadding = PaddingValues(bottom = 8.dp)
         ) {
             items(models) { model ->
+                val categoryLabel = stringResource(model.categoryRes)
                 ModelCard(
                     model = model,
+                    categoryLabel = categoryLabel,
                     brandColor = brandColor,
                     isAvailable = model.id in availableModelIds,
                     onClick = {
@@ -219,7 +223,7 @@ fun ModelSelectionScreen(
                             ActivityLogger.modelSelected(
                                 brandName = brand?.name ?: brandId,
                                 modelName = model.name,
-                                category = model.category,
+                                category = categoryLabel,
                                 years = model.years
                             )
                             onModelSelected(model)
@@ -236,6 +240,7 @@ fun ModelSelectionScreen(
 @Composable
 private fun ModelCard(
     model: CarModel,
+    categoryLabel: String,
     brandColor: Color,
     isAvailable: Boolean = true,
     onClick: () -> Unit
@@ -315,7 +320,7 @@ private fun ModelCard(
                                 modifier = Modifier.size(10.dp)
                             )
                             Text(
-                                text = "Coming Soon",
+                                text = stringResource(R.string.label_coming_soon),
                                 color = Color(0xFF856404),
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -359,7 +364,7 @@ private fun ModelCard(
                         color = cardColor.copy(alpha = 0.10f)
                     ) {
                         Text(
-                            text = model.category,
+                            text = categoryLabel,
                             color = cardColor,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,

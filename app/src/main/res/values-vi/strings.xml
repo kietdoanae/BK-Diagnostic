@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BK Diagnostic</string>
+
+    <!-- Common -->
+    <string name="btn_cancel">Hủy</string>
+    <string name="btn_save">Lưu</string>
+    <string name="btn_got_it">Đã hiểu</string>
+    <string name="btn_back_to_sign_in">Quay lại Đăng nhập</string>
+    <string name="label_coming_soon">Sắp ra mắt</string>
+    <string name="label_under_development">Đang phát triển</string>
+    <string name="cd_bk_logo">Logo BK</string>
+    <string name="cd_campus_bg">Cơ sở BK</string>
+    <string name="cd_back">Quay lại</string>
+
+    <!-- Login -->
+    <string name="login_hint_email_or_username">Email hoặc Tên đăng nhập</string>
+    <string name="login_hint_password">Mật khẩu</string>
+    <string name="login_remember_me">Ghi nhớ đăng nhập</string>
+    <string name="login_forgot_password">Quên mật khẩu?</string>
+    <string name="login_btn_sign_in">ĐĂNG NHẬP</string>
+    <string name="login_btn_create_account">TẠO TÀI KHOẢN</string>
+
+    <!-- Register -->
+    <string name="register_title">Tạo tài khoản</string>
+    <string name="register_hint_username">Tên đăng nhập</string>
+    <string name="register_hint_email">Email</string>
+    <string name="register_hint_password">Mật khẩu</string>
+    <string name="register_hint_confirm_password">Xác nhận mật khẩu</string>
+    <string name="register_success_title">Đăng ký thành công!</string>
+    <string name="register_success_message">Tài khoản đã được tạo. Vui lòng kiểm tra email để xác nhận tài khoản trước khi đăng nhập.</string>
+    <string name="register_error_all_fields">Vui lòng điền đầy đủ thông tin.</string>
+    <string name="register_error_passwords_mismatch">Mật khẩu không khớp.</string>
+    <string name="register_error_password_short">Mật khẩu phải có ít nhất 6 ký tự.</string>
+    <string name="register_btn_sign_up">ĐĂNG KÝ</string>
+    <string name="register_have_account">Đã có tài khoản?</string>
+    <string name="register_sign_in_link">Đăng nhập</string>
+
+    <!-- Forgot Password -->
+    <string name="forgot_title">Quên mật khẩu</string>
+    <string name="forgot_subtitle">Nhập email đã đăng ký để nhận liên kết đặt lại mật khẩu.</string>
+    <string name="forgot_hint_email">Email</string>
+    <string name="forgot_btn_send">GỬI LINK ĐẶT LẠI</string>
+    <string name="forgot_success_title">Đã gửi email!</string>
+    <string name="forgot_success_message">Kiểm tra hộp thư đến tại</string>
+    <string name="forgot_success_message2">và nhấp vào liên kết để đặt lại mật khẩu.</string>
+    <string name="forgot_spam_warning">Nếu không thấy, hãy kiểm tra thư mục spam.</string>
+
+    <!-- Reset Password -->
+    <string name="reset_title">Đặt mật khẩu mới.</string>
+    <string name="reset_subtitle">Nhập mật khẩu mới cho tài khoản của bạn.</string>
+    <string name="reset_hint_new_password">Mật khẩu mới</string>
+    <string name="reset_hint_confirm_password">Xác nhận mật khẩu mới</string>
+    <string name="reset_error_all_fields">Vui lòng điền đầy đủ thông tin.</string>
+    <string name="reset_error_password_short">Mật khẩu phải có ít nhất 6 ký tự.</string>
+    <string name="reset_error_mismatch">Mật khẩu xác nhận không khớp.</string>
+    <string name="reset_btn_update">CẬP NHẬT MẬT KHẨU</string>
+
+    <!-- Dashboard -->
+    <string name="app_tagline">Chẩn đoán xe thông minh · HCMUT</string>
+    <string name="dashboard_btn_sign_out">Đăng xuất</string>
+    <string name="greeting_morning">Chào buổi sáng</string>
+    <string name="greeting_afternoon">Chào buổi chiều</string>
+    <string name="greeting_evening">Chào buổi tối</string>
+    <string name="dashboard_status_online">Trực tuyến</string>
+    <string name="dashboard_status_active">Hoạt động</string>
+    <string name="feature_diagnostics">Chẩn đoán</string>
+    <string name="feature_service">Dịch vụ</string>
+    <string name="feature_data_manager">Quản lý dữ liệu</string>
+    <string name="feature_settings">Cài đặt</string>
+    <string name="feature_update">Cập nhật</string>
+    <string name="feature_remote_desktop">Điều khiển từ xa</string>
+    <string name="feature_wiring_diagram">Sơ đồ dây điện</string>
+    <string name="feature_support">Hỗ trợ</string>
+    <string name="feature_not_available">Chưa khả dụng</string>
+
+    <!-- Brand Selection -->
+    <string name="brand_selection_title">Chọn hãng xe</string>
+    <string name="brand_selection_subtitle">Chọn hãng xe để chẩn đoán</string>
+    <string name="brand_selection_breadcrumb">Hãng xe</string>
+    <string name="brand_coming_soon_message">hiện đang được phát triển. Vui lòng quay lại sau!</string>
+    <string name="brand_origin_japan">Nhật Bản</string>
+    <string name="brand_origin_south_korea">Hàn Quốc</string>
+    <string name="brand_origin_usa">Mỹ</string>
+
+    <!-- Model Selection -->
+    <string name="model_selection_title">Chọn dòng xe</string>
+    <string name="model_selection_subtitle">Chọn dòng xe để bắt đầu chẩn đoán</string>
+    <string name="model_selection_breadcrumb">Dòng xe</string>
+    <string name="model_coming_soon_message">hiện đang được phát triển. Vui lòng quay lại sau!</string>
+    <string name="model_category_pickup">Bán tải</string>
+    <string name="model_category_suv_7seat">SUV 7 chỗ</string>
+    <string name="model_category_suv_5seat">SUV 5 chỗ</string>
+    <string name="model_category_minivan">Minivan</string>
+    <string name="model_category_suv">SUV</string>
+    <string name="model_category_coupe">Coupe</string>
+    <string name="model_category_crossover">Crossover</string>
+    <string name="model_category_electric_suv">SUV điện</string>
+
+    <!-- Diagnostic Hub -->
+    <string name="diagnostic_hub_title">Chẩn đoán xe</string>
+    <string name="diagnostic_hub_subtitle">Chọn chức năng chẩn đoán</string>
+    <string name="diagnostic_status_connected">Đã kết nối:</string>
+    <string name="diagnostic_status_searching">Đang tìm thiết bị USB…</string>
+    <string name="diagnostic_status_no_device">Không tìm thấy thiết bị OBD2</string>
+    <string name="diagnostic_status_error">Lỗi:</string>
+    <string name="diagnostic_live_data_title">Dữ liệu trực tiếp</string>
+    <string name="diagnostic_live_data_desc">RPM, tốc độ, nhiệt độ động cơ, tải &amp; nhiều hơn</string>
+    <string name="diagnostic_btn_view">Xem</string>
+    <string name="diagnostic_read_dtc_title">Đọc mã lỗi (DTC)</string>
+    <string name="diagnostic_read_dtc_scanning">Đang quét mã lỗi…</string>
+    <string name="diagnostic_read_dtc_empty">Quét tất cả ECU để tìm mã lỗi</string>
+    <string name="diagnostic_dtc_count_label">mã lỗi:</string>
+    <string name="diagnostic_btn_scan">Quét</string>
+    <string name="diagnostic_clear_dtc_title">Xóa mã lỗi</string>
+    <string name="diagnostic_clear_dtc_desc">Xóa DTC và tắt đèn Check Engine</string>
+    <string name="diagnostic_btn_clear">Xóa</string>
+    <string name="diagnostic_raw_monitor_title">Màn hình CAN thô</string>
+    <string name="diagnostic_raw_monitor_desc">Xem byte CAN thô cùng với giá trị đã giải mã</string>
+    <string name="diagnostic_btn_open">Mở</string>
+    <string name="diagnostic_active_test_title">Kiểm tra kích hoạt</string>
+    <string name="diagnostic_active_test_desc">Kích hoạt đèn, còi, khóa cửa &amp; các cơ cấu chấp hành qua BCM</string>
+    <string name="diagnostic_coming_soon_ecu">Thông tin ECU &amp; VIN</string>
+    <string name="diagnostic_coming_soon_graph">Đồ thị dữ liệu</string>
+    <string name="diagnostic_coming_soon_sensor">Cấu hình cảm biến</string>
+    <string name="diagnostic_coming_soon_logger">Ghi dữ liệu</string>
+    <string name="diagnostic_btn_connect">Kết nối</string>
+    <string name="diagnostic_btn_disconnect">Ngắt kết nối</string>
+
+    <!-- Live Data -->
+    <string name="live_data_title">Dữ liệu trực tiếp</string>
+    <string name="live_data_status_connected">Đã kết nối</string>
+    <string name="live_data_status_searching">Đang tìm kiếm…</string>
+    <string name="live_data_status_awaiting">Chờ cấp quyền</string>
+    <string name="live_data_status_disconnected">Mất kết nối</string>
+    <string name="live_data_running">Đang đọc dữ liệu...</string>
+    <string name="live_data_stopped">Đã dừng</string>
+    <string name="live_data_btn_stop">Dừng</string>
+    <string name="live_data_btn_start">Bắt đầu</string>
+    <string name="live_data_all_parameters">TẤT CẢ THÔNG SỐ</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Cài đặt</string>
+    <string name="settings_section_account">TÀI KHOẢN</string>
+    <string name="settings_label_username">Tên đăng nhập</string>
+    <string name="settings_label_email">Email</string>
+    <string name="settings_section_security">BẢO MẬT</string>
+    <string name="settings_label_change_password">Đổi mật khẩu</string>
+    <string name="settings_section_connection">KẾT NỐI</string>
+    <string name="settings_label_usb_baud">Tốc độ baud USB</string>
+    <string name="settings_label_can_speed">Tốc độ CAN Bus</string>
+    <string name="settings_unit_kbps">kbps</string>
+    <string name="settings_label_auto_reconnect">Tự động kết nối lại</string>
+    <string name="settings_sublabel_auto_reconnect">Kết nối lại khi mất kết nối tạm thời</string>
+    <string name="settings_section_diagnostics">CHẨN ĐOÁN</string>
+    <string name="settings_label_refresh_rate">Tần suất làm mới dữ liệu</string>
+    <string name="settings_unit_ms">ms</string>
+    <string name="settings_label_timeout">Thời gian chờ phản hồi ECU</string>
+    <string name="settings_label_imperial">Dùng đơn vị Anh</string>
+    <string name="settings_sublabel_imperial">mph, °F, psi thay vì km/h, °C, kPa</string>
+    <string name="settings_label_auto_clear_dtc">Tự động xóa DTC</string>
+    <string name="settings_sublabel_auto_clear_dtc">Xóa mã lỗi tự động sau khi đọc</string>
+    <string name="settings_section_display">HIỂN THỊ</string>
+    <string name="settings_label_theme">Giao diện</string>
+    <string name="settings_theme_dark">Tối</string>
+    <string name="settings_theme_light">Sáng</string>
+    <string name="settings_theme_system">Hệ thống</string>
+    <string name="settings_label_keep_screen_on">Giữ màn hình sáng</string>
+    <string name="settings_sublabel_keep_screen_on">Không tắt màn hình khi đang chẩn đoán</string>
+    <string name="settings_label_language">Ngôn ngữ</string>
+    <string name="settings_lang_vi">Tiếng Việt</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_section_session">PHIÊN LÀM VIỆC</string>
+    <string name="settings_label_sign_out">Đăng xuất</string>
+    <string name="settings_dialog_edit_username">Chỉnh sửa tên đăng nhập</string>
+    <string name="settings_dialog_change_password">Đổi mật khẩu</string>
+    <string name="settings_picker_theme">Giao diện</string>
+    <string name="settings_theme_system_default">Mặc định hệ thống</string>
+    <string name="settings_picker_language">Ngôn ngữ</string>
+    <string name="settings_lang_localization_note">Bản dịch đầy đủ sẽ có trong phiên bản tới</string>
+    <string name="settings_picker_refresh_rate">Tần suất làm mới dữ liệu</string>
+    <string name="settings_picker_timeout">Thời gian chờ phản hồi ECU</string>
+    <string name="settings_picker_baud">Tốc độ baud USB</string>
+    <string name="settings_picker_can">Tốc độ CAN Bus</string>
+    <string name="settings_signout_confirm">Bạn có chắc muốn đăng xuất không?</string>
+    <string name="settings_btn_sign_out">Đăng xuất</string>
+    <string name="settings_toast_username_updated">Cập nhật tên đăng nhập thành công</string>
+    <string name="settings_toast_password_changed">Đổi mật khẩu thành công</string>
+    <string name="settings_error_username_empty">Tên đăng nhập không được để trống</string>
+    <string name="settings_error_username_short">Cần ít nhất 3 ký tự</string>
+    <string name="settings_hint_new_password">Mật khẩu mới</string>
+    <string name="settings_hint_confirm_password">Xác nhận mật khẩu</string>
+    <string name="settings_error_password_short">Cần ít nhất 6 ký tự</string>
+    <string name="settings_error_password_mismatch">Mật khẩu không khớp</string>
+
+    <!-- Active Test -->
+    <string name="active_test_title">Kiểm tra kích hoạt</string>
+    <string name="active_test_subtitle">Điều khiển cơ cấu chấp hành</string>
+    <string name="active_test_status_live">● TRỰC TIẾP</string>
+    <string name="active_test_status_sim">○ MÔ PHỎNG</string>
+    <string name="active_test_error_not_connected">Chưa kết nối thiết bị OBD2!</string>
+    <string name="active_test_no_commands">Không có lệnh nào</string>
+    <string name="active_test_unit_kmh">km/h</string>
+    <string name="active_test_unit_rpm">RPM ×1000</string>
+
+    <!-- Wiring Diagram -->
+    <string name="wiring_diagram_title">Sơ đồ dây điện</string>
+
+    <!-- Raw Monitor -->
+    <string name="raw_monitor_title">Màn hình CAN thô</string>
+    <string name="raw_monitor_col_seq">#</string>
+    <string name="raw_monitor_col_address">ĐỊA CHỈ</string>
+    <string name="raw_monitor_col_can_frame">KHUNG CAN (HEX)</string>
+    <string name="raw_monitor_col_delay">ĐỘ TRỄ</string>
+    <string name="raw_monitor_col_decoded">ĐÃ GIẢI MÃ</string>
+    <string name="raw_monitor_empty_title">Chưa có khung CAN nào</string>
+    <string name="raw_monitor_empty_message">Kết nối USB và khởi động động cơ để nhận dữ liệu</string>
+    <string name="raw_monitor_btn_resume">TIẾP TỤC</string>
+    <string name="raw_monitor_btn_stop">DỪNG</string>
+    <string name="raw_monitor_btn_clear">XÓA</string>
+    <string name="raw_monitor_btn_export">XUẤT .CSV</string>
+    <string name="raw_monitor_export_success">✓  Đã lưu vào Downloads:</string>
+    <string name="raw_monitor_export_error">✗  Xuất thất bại — kiểm tra quyền bộ nhớ</string>
+</resources>

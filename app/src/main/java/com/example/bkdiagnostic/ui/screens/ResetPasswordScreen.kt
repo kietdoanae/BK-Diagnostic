@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -33,6 +34,10 @@ fun ResetPasswordScreen(
     onPasswordUpdated: () -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
+    val strErrAllFields = stringResource(R.string.reset_error_all_fields)
+    val strErrShort     = stringResource(R.string.reset_error_password_short)
+    val strErrMismatch  = stringResource(R.string.reset_error_mismatch)
+
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var newPasswordVisible by remember { mutableStateOf(false) }
@@ -65,7 +70,7 @@ fun ResetPasswordScreen(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logo),
-                    contentDescription = "BK Logo",
+                    contentDescription = stringResource(R.string.cd_bk_logo),
                     modifier = Modifier.size(72.dp)
                 )
 
@@ -81,7 +86,7 @@ fun ResetPasswordScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Set a new password.",
+                    text = stringResource(R.string.reset_title),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -90,7 +95,7 @@ fun ResetPasswordScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Enter a new password for your account.",
+                    text = stringResource(R.string.reset_subtitle),
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -102,7 +107,7 @@ fun ResetPasswordScreen(
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it; localError = null },
-                    label = { Text("New password") },
+                    label = { Text(stringResource(R.string.reset_hint_new_password)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
@@ -126,7 +131,7 @@ fun ResetPasswordScreen(
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it; localError = null },
-                    label = { Text("Confirm new password") },
+                    label = { Text(stringResource(R.string.reset_hint_confirm_password)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.LockOpen, contentDescription = null) },
                     trailingIcon = {
@@ -162,11 +167,11 @@ fun ResetPasswordScreen(
                     onClick = {
                         when {
                             newPassword.isBlank() || confirmPassword.isBlank() ->
-                                localError = "Please fill in all the information."
+                                localError = strErrAllFields
                             newPassword.length < 6 ->
-                                localError = "The password must have at least 6 characters."
+                                localError = strErrShort
                             newPassword != confirmPassword ->
-                                localError = "The confirmation password does not match."
+                                localError = strErrMismatch
                             else -> viewModel.updatePassword(newPassword)
                         }
                     },
@@ -185,7 +190,7 @@ fun ResetPasswordScreen(
                     } else {
                         Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("UPDATE PASSWORD", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.reset_btn_update), fontWeight = FontWeight.Bold)
                     }
                 }
             }

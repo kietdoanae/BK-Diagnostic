@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -31,6 +32,10 @@ fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
+    val strErrAllFields    = stringResource(R.string.register_error_all_fields)
+    val strErrMismatch     = stringResource(R.string.register_error_passwords_mismatch)
+    val strErrShort        = stringResource(R.string.register_error_password_short)
+
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -56,16 +61,14 @@ fun RegisterScreen(
         AlertDialog(
             onDismissRequest = {},
             icon = { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            title = { Text("Registration Successful!") },
-            text = {
-                Text("Account created. Please check your email to confirm your account before signing in.")
-            },
+            title = { Text(stringResource(R.string.register_success_title)) },
+            text = { Text(stringResource(R.string.register_success_message)) },
             confirmButton = {
                 Button(onClick = {
                     showSuccessDialog = false
                     onNavigateToLogin()
                 }) {
-                    Text("Back to Sign In")
+                    Text(stringResource(R.string.btn_back_to_sign_in))
                 }
             }
         )
@@ -84,21 +87,21 @@ fun RegisterScreen(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.logo),
-                contentDescription = "BK Logo",
+                contentDescription = stringResource(R.string.cd_bk_logo),
                 modifier = Modifier.size(80.dp)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Create Account",
+                text = stringResource(R.string.register_title),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
 
             Text(
-                text = "BK Diagnostic",
+                text = stringResource(R.string.app_name),
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -109,7 +112,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it; localError = null },
-                label = { Text("Username") },
+                label = { Text(stringResource(R.string.register_hint_username)) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 shape = RoundedCornerShape(12.dp),
@@ -123,7 +126,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it; localError = null },
-                label = { Text("Email") },
+                label = { Text(stringResource(R.string.register_hint_email)) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -138,7 +141,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it; localError = null },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.register_hint_password)) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingIcon = {
@@ -162,7 +165,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it; localError = null },
-                label = { Text("Confirm Password") },
+                label = { Text(stringResource(R.string.register_hint_confirm_password)) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.LockOpen, contentDescription = null) },
                 trailingIcon = {
@@ -199,11 +202,11 @@ fun RegisterScreen(
                 onClick = {
                     when {
                         username.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() ->
-                            localError = "Please fill in all fields."
+                            localError = strErrAllFields
                         password != confirmPassword ->
-                            localError = "Passwords do not match."
+                            localError = strErrMismatch
                         password.length < 6 ->
-                            localError = "Password must be at least 6 characters."
+                            localError = strErrShort
                         else -> viewModel.register(username.trim(), email.trim(), password)
                     }
                 },
@@ -220,7 +223,7 @@ fun RegisterScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("SIGN UP", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.register_btn_sign_up), fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -228,9 +231,9 @@ fun RegisterScreen(
 
             // Link về đăng nhập
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Already have an account?", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.register_have_account), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick = onNavigateToLogin) {
-                    Text("Sign In")
+                    Text(stringResource(R.string.register_sign_in_link))
                 }
             }
         }
@@ -243,7 +246,7 @@ fun RegisterScreen(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.campus),
-                contentDescription = "BK Campus",
+                contentDescription = stringResource(R.string.cd_campus_bg),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
