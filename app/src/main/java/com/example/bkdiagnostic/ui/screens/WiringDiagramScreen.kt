@@ -1,5 +1,6 @@
 package com.example.bkdiagnostic.ui.screens
 
+import android.content.Context
 import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -15,8 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.bkdiagnostic.R
@@ -24,6 +27,12 @@ import com.example.bkdiagnostic.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WiringDiagramScreen(onBack: () -> Unit = {}) {
+    val context = LocalContext.current
+    val lang = remember {
+        context.getSharedPreferences("bk_settings", Context.MODE_PRIVATE)
+            .getString("language", "en") ?: "en"
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -47,10 +56,9 @@ fun WiringDiagramScreen(onBack: () -> Unit = {}) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            factory = { context ->
-                WebView(context).apply {
-                    // Software rendering: bắt buộc để SVG phức tạp render đúng
-                    // trên mọi thiết bị Android (tránh lỗi GPU/hardware accel)
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    // Software rendering: required for complex SVG on all Android devices
                     setLayerType(View.LAYER_TYPE_SOFTWARE, null)
                     webViewClient = WebViewClient()
                     settings.javaScriptEnabled = true
@@ -60,7 +68,7 @@ fun WiringDiagramScreen(onBack: () -> Unit = {}) {
                     settings.builtInZoomControls = true
                     settings.displayZoomControls = false
                     settings.setSupportZoom(true)
-                    loadUrl("file:///android_asset/wiring_diagram.html")
+                    loadUrl("file:///android_asset/wiring_diagram.html?lang=$lang")
                 }
             }
         )

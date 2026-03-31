@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html{background:#070b10}
-body{background:#070b10;color:#c9d1d9;font-family:'Courier New',monospace;padding-top:44px}
+body{background:#070b10;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;padding-top:44px}
 #topbar{
   position:fixed;top:0;left:0;right:0;height:44px;z-index:300;
   background:linear-gradient(180deg,#0d1117,#0a1628);
@@ -46,14 +46,14 @@ svg#dia{display:block;width:1580px;height:510px}
   -webkit-box-shadow:0 0 50px rgba(0,0,0,.9);
   box-shadow:0 0 50px rgba(0,0,0,.9);
 }
-#card h2{color:#5bc8f5;font-size:14px;letter-spacing:1.2px;margin-bottom:4px}
-#card .sub{color:#6e7681;font-size:11px;margin-bottom:14px}
-.sr{display:flex;justify-content:space-between;align-items:center;
-  padding:7px 0;border-bottom:1px solid rgba(30,58,95,.4);font-size:11.5px}
-.sl{color:#8b949e}.sv{color:#f0f6fc;font-weight:600;text-align:right;max-width:60%}
-.tip{background:#0d2137;border-left:3px solid #5bc8f5;
-  padding:10px 12px;border-radius:4px;font-size:11px;color:#a0c4e0;
-  margin-top:12px;line-height:1.65}
+#card h2{color:#5bc8f5;font-size:16px;font-weight:700;letter-spacing:.6px;margin-bottom:5px}
+#card .sub{color:#8b949e;font-size:12px;margin-bottom:16px;font-weight:400}
+.sr{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+  padding:9px 0;border-bottom:1px solid rgba(30,58,95,.4);font-size:13px}
+.sl{color:#8b949e;flex-shrink:0;line-height:1.4}.sv{color:#e6edf3;font-weight:600;text-align:right;line-height:1.4}
+.tip{background:rgba(13,33,55,.7);border-left:3px solid #5bc8f5;
+  padding:12px 14px;border-radius:6px;font-size:13px;color:#b8d4ee;
+  margin-top:14px;line-height:1.7;font-weight:400}
 #xbtn{
   position:absolute;top:10px;right:10px;background:#1e2d3d;
   border:none;color:#8b949e;width:22px;height:22px;border-radius:50%;
@@ -92,7 +92,7 @@ svg#dia{display:block;width:1580px;height:510px}
   <div id="brand">&#x2699; OBD-II &middot; MCP2515 &middot; STM32 &middot; CP2102 &middot; Android</div>
   <button class="btn" id="btnFlow" onclick="toggleFlow()">&#x26A1; Data Flow</button>
   <button class="btn" id="btnLearn" onclick="toggleLearn()">&#x1F4DA; Layer Mode</button>
-  <button class="btn" onclick="openTbl()">&#x1F4CB; Protocol Table</button>
+  <button class="btn" id="btnTbl" onclick="openTbl()">&#x1F4CB; Protocol Table</button>
 </div>
 
 <div id="wrap">
@@ -1967,120 +1967,209 @@ svg#dia{display:block;width:1580px;height:510px}
 
 <script>
 var flowOn=false,learnOn=false;
+var lang=(new URLSearchParams(location.search).get('lang')||'en').toLowerCase();
+var isVi=lang==='vi';
+
+/* ── Bilingual UI labels ─────────────────────────────── */
+var UI={
+  btnFlow:   isVi?'⚡ Luồng Data'   :'⚡ Data Flow',
+  btnLearn:  isVi?'📚 Chế Độ Layer' :'📚 Layer Mode',
+  btnTbl:    isVi?'📋 Bảng Protocol' :'📋 Protocol Table',
+  legTitle:  isVi?'CHÚ THÍCH TÍN HIỆU':'SIGNAL LEGEND',
+  legPwr:    isVi?'Nguồn 12V / 3.3V' :'Power 12V / 3.3V',
+  legGnd:    isVi?'Mass (GND)'        :'Ground (GND)',
+  legCanH:   'CAN High (CAN_H)',
+  legCanL:   'CAN Low (CAN_L)',
+  legSpi:    isVi?'Bus SPI'           :'SPI Bus',
+  legUart:   isVi?'UART nối tiếp'    :'UART Serial',
+  legUsb:    isVi?'Dữ liệu USB'      :'USB Data',
+  legInt:    isVi?'Ngắt (INT)'       :'Interrupt (INT)'
+};
+
+/* ── Component data ──────────────────────────────────── */
 var COMP={
-  car:{t:'VEHICLE ECU / OBD-II',s:'Automotive On-Board Diagnostics Port',
-    d:[['Standard','OBD-II / ISO 15765-4'],['Connector','SAE J1962 (16-pin)'],
-      ['Pin 6','CAN_H - dominant 3.5V, recessive 2.5V'],
-      ['Pin 14','CAN_L - dominant 1.5V, recessive 2.5V'],
-      ['Pin 16','Battery+ (9-16V DC)'],['Pin 4/5','Chassis / Signal GND'],
-      ['Protocol','ISO 15765-4 CAN 500 kbps']],
-    tip:'TIP: Dung oscilloscope che do differential (CAN_H - CAN_L). Khi bus hoat dong: 2V dominant, 0V recessive. Neu luon 0V: thieu termination hoac khong co CAN traffic.'},
-  mcp2515:{t:'MCP2515 MODULE',s:'CAN Controller + TJA1050 Transceiver',
-    d:[['Supply','5V VCC (hoac 3.3V tuy module)'],['SPI Speed','10 MHz max'],
-      ['CAN Speed','Den 1 Mbps'],['Crystal','8 MHz -> CNF1/2/3 registers'],
-      ['INT Pin','Active LOW -> kich EXTI PB0 falling edge'],
-      ['TJA1050','Transceiver CAN bus 5V differential'],
-      ['Termination','120 ohm tich hop trong TJA1050']],
-    tip:'WARNING: Neu module 5V nhung STM32 3.3V: kiem tra CS/SCK/MOSI co can level shift khong. Xac nhan tan so thach anh khop voi CNF registers trong firmware.'},
-  stm32:{t:'STM32F411 BLACKPILL',s:'ARM Cortex-M4 @ 100 MHz',
-    d:[['Core','ARM Cortex-M4F (FPU tich hop)'],
-      ['Clock','100 MHz (PLL tu 25 MHz HSE)'],
-      ['Flash / RAM','512 KB / 128 KB'],
-      ['SPI1','PA4(CS) PA5(SCK) PA6(MISO) PA7(MOSI)'],
-      ['USART1','PA9(TX) PA10(RX) @ 115200 bps'],
-      ['EXTI','PB0 - ngat tu MCP2515 INT'],
-      ['USB','USB-C Full Speed 12 Mbps'],
-      ['VIO','3.3V (tat ca GPIO)']],
-    tip:'DEBUG: Cam ST-Link vao SWD header (SWDIO, SWDCLK, GND, 3.3V). Dung STM32CubeIDE hoac OpenOCD. Dat breakpoint trong HAL_SPI_Transmit() va kiem tra MISO/MOSI bang logic analyzer.'},
-  cp2102:{t:'CP2102 USB-UART BRIDGE',s:'Silicon Labs USB to Serial',
-    d:[['Chip','Silicon Labs CP2102'],['USB VID/PID','0x10C4 / 0xEA60'],
-      ['USB Speed','Full Speed 12 Mbps'],['UART Baud','Den 921600 bps'],
-      ['Voltage I/O','3.3V (khong can level shift voi STM32)'],
-      ['Android Lib','usb-serial-for-android'],
-      ['TX LED','Xanh nhap nhay khi transmit'],
-      ['RX LED','Cam nhap nhay khi receive']],
-    tip:'ANDROID: Can khai bao uses-feature android.hardware.usb.host trong Manifest. Dang ky BroadcastReceiver cho ACTION_USB_DEVICE_ATTACHED de tu nhan thiet bi khi cam cap.'},
-  android:{t:'ANDROID APP',s:'BKDiagnostic v1.0 - Real-time OBD Monitor',
+  car:{
+    t:'VEHICLE ECU / OBD-II',
+    s:'Automotive On-Board Diagnostics Port',
+    d:[['Standard','OBD-II / ISO 15765-4'],
+       ['Connector','SAE J1962 (16-pin)'],
+       ['Pin 6','CAN_H — dominant 3.5 V, recessive 2.5 V'],
+       ['Pin 14','CAN_L — dominant 1.5 V, recessive 2.5 V'],
+       ['Pin 16','Battery+ (9–16 V DC)'],
+       ['Pin 4/5','Chassis / Signal GND'],
+       ['Protocol','ISO 15765-4 CAN 500 kbps']],
+    tip_en:'TIP: Use an oscilloscope in differential mode (CAN_H − CAN_L). Normal: 2 V peak dominant, 0 V recessive. If differential is always 0 V: missing 120 Ω termination or no CAN traffic on the bus.',
+    tip_vi:'MẸO: Dùng dao động ký ở chế độ vi sai (CAN_H − CAN_L). Hoạt động bình thường: 2 V đỉnh dominant. Nếu luôn 0 V: thiếu điện trở kết cuối 120 Ω hoặc không có CAN traffic trên bus.'
+  },
+  mcp2515:{
+    t:'MCP2515 MODULE',
+    s:'CAN Controller + TJA1050 Transceiver',
+    d:[['Supply','5 V VCC (or 3.3 V depending on module)'],
+       ['SPI Speed','10 MHz max'],
+       ['CAN Speed','Up to 1 Mbps'],
+       ['Crystal','8 MHz → CNF1 / CNF2 / CNF3 registers'],
+       ['INT Pin','Active LOW → EXTI0 falling edge on PB0'],
+       ['TJA1050','5 V differential CAN bus transceiver'],
+       ['Termination','120 Ω integrated in TJA1050']],
+    tip_en:'WARNING: If the module runs at 5 V but the STM32 is 3.3 V, check whether CS / SCK / MOSI need a level shifter. Confirm the crystal frequency matches the CNF1/CNF2/CNF3 values in firmware.',
+    tip_vi:'CẢNH BÁO: Nếu module chạy 5 V nhưng STM32 là 3.3 V, kiểm tra xem CS / SCK / MOSI có cần level-shift không. Xác nhận tần số thạch anh khớp với giá trị CNF1/CNF2/CNF3 trong firmware.'
+  },
+  stm32:{
+    t:'STM32F103C8T6 BLUE PILL',
+    s:'ARM Cortex-M3 @ 72 MHz',
+    d:[['Core','ARM Cortex-M3 (no FPU)'],
+       ['Clock','72 MHz (HSE 8 MHz × PLL 9)'],
+       ['Flash / RAM','64 KB / 20 KB'],
+       ['SPI1','PA4(CS)  PA5(SCK)  PA6(MISO)  PA7(MOSI)'],
+       ['USART1','PA9(TX)  PA10(RX)  @  115200 bps'],
+       ['EXTI0','PB0 — INT from MCP2515 (falling edge)'],
+       ['LED','PC13 (active-low, onboard)'],
+       ['VIO','3.3 V (all GPIO)']],
+    tip_en:'DEBUG: Connect ST-Link to the SWD header (SWDIO, SWDCLK, GND, 3.3 V). Use STM32CubeIDE or OpenOCD. Set a breakpoint inside HAL_SPI_TransmitReceive() and verify MISO/MOSI with a logic analyzer.',
+    tip_vi:'GỠ LỖI: Cắm ST-Link vào SWD header (SWDIO, SWDCLK, GND, 3.3 V). Dùng STM32CubeIDE hoặc OpenOCD. Đặt breakpoint trong HAL_SPI_TransmitReceive() và kiểm tra MISO/MOSI bằng logic analyzer.'
+  },
+  cp2102:{
+    t:'CP2102 USB-UART BRIDGE',
+    s:'Silicon Labs USB to Serial',
+    d:[['Chip','Silicon Labs CP2102'],
+       ['USB VID/PID','0x10C4 / 0xEA60'],
+       ['USB Speed','Full Speed 12 Mbps'],
+       ['UART Baud','Up to 921600 bps'],
+       ['Voltage I/O','3.3 V (no level shift needed with STM32)'],
+       ['Android Lib','usb-serial-for-android'],
+       ['TX LED','Blue — blinks on transmit'],
+       ['RX LED','Orange — blinks on receive']],
+    tip_en:'ANDROID: Declare uses-feature android.hardware.usb.host in the Manifest. Register a BroadcastReceiver for ACTION_USB_DEVICE_ATTACHED to auto-detect the device when the cable is plugged in.',
+    tip_vi:'ANDROID: Khai báo uses-feature android.hardware.usb.host trong Manifest. Đăng ký BroadcastReceiver cho ACTION_USB_DEVICE_ATTACHED để tự nhận thiết bị khi cắm cáp.'
+  },
+  android:{
+    t:'ANDROID APP',
+    s:'BKDiagnostic v1.0 — Real-time OBD Monitor',
     d:[['Framework','Jetpack Compose + Material 3'],
-      ['USB Library','usb-serial-for-android 3.7.x'],
-      ['Protocol','USB CDC Virtual COM Port'],
-      ['Data Parse','CAN Frame -> OBD-II PID decode'],
-      ['Min SDK','API 24 (Android 7.0+)'],
-      ['USB Mode','OTG Host (android.hardware.usb.host)'],
-      ['Baud Rate','115200 bps']],
-    tip:'DATA FLOW: Android nhan raw UART bytes qua USB CDC. App decode OBD-II PID: 0x41 0x0C = RPM, Value = ((A*256)+B)/4. Loc Logcat theo tag BKDiagnostic de xem hex dump.'}
+       ['USB Library','usb-serial-for-android 3.7.x'],
+       ['Protocol','USB CDC Virtual COM Port'],
+       ['Data Parse','CAN Frame → OBD-II PID decode'],
+       ['Min SDK','API 24 (Android 7.0+)'],
+       ['USB Mode','OTG Host (android.hardware.usb.host)'],
+       ['Baud Rate','115200 bps']],
+    tip_en:'DATA FLOW: Android receives raw UART bytes over USB CDC. The app decodes OBD-II PIDs — e.g. 0x41 0x0C = RPM, Value = ((A×256)+B)/4. Filter Logcat by tag BKDiagnostic to see the hex dump.',
+    tip_vi:'DATA FLOW: Android nhận raw UART bytes qua USB CDC. App decode OBD-II PID — ví dụ 0x41 0x0C = RPM, Value = ((A×256)+B)/4. Lọc Logcat theo tag BKDiagnostic để xem hex dump.'
+  }
 };
+
+/* ── Wire data ───────────────────────────────────────── */
 var WIRE={
-  pwr12v:{t:'12V Power - OBD-II Pin 16',s:'Power Supply Line',
-    d:[['Voltage','9-16V DC (battery)'],['Current','Max 1A (fused OBD port)'],
-      ['Usage','Cap nguon cho module MCP2515 qua LDO 5V']],
-    tip:'Them tu 100uF electrolytic + 100nF ceramic tai VCC cua MCP2515 de hap thu voltage spike tu he thong danh lua xe.'},
-  can_h:{t:'CAN_H - OBD Pin 6 to MCP2515',s:'CAN High Signal',
-    d:[['Dominant','3.5V (bit = 0)'],['Recessive','2.5V (bit = 1)'],
-      ['Differential','CAN_H - CAN_L = 2V dominant / 0V recessive'],
-      ['Protocol','ISO 11898-2 CAN 2.0B']],
-    tip:'Dung oscilloscope differential mode. Binh thuong: 2V dinh dominant. Neu luon 0V differential: khong co CAN traffic hoac thieu termination 120 ohm.'},
-  can_l:{t:'CAN_L - OBD Pin 14 to MCP2515',s:'CAN Low Signal',
-    d:[['Dominant','1.5V'],['Recessive','2.5V'],
-      ['Note','Luon chay song song CAN_H dang twisted pair']],
-    tip:'CAN_H va CAN_L nen xoan nhau >= 20 vong/met de chong EMI tu moi truong o to.'},
-  vcc33:{t:'3.3V - STM32 to MCP2515',s:'Logic Power Supply',
-    d:[['Source','LDO onboard STM32 (500mA max)'],
-      ['Warning','Kiem tra module MCP2515 co ho tro 3.3V khong!']],
-    tip:'Nhieu module MCP2515 chi dung 5V. Kiem tra jumper 3.3V hoac LDO tren module truoc khi ket noi.'},
-  spi_cs:{t:'CS (Chip Select) - PA4',s:'SPI Control Signal',
-    d:[['Logic','Active LOW'],['Control','Software GPIO (khong dung hardware NSS)'],
-      ['Timing','Assert LOW truoc byte dau, deassert HIGH sau byte cuoi']],
-    tip:'Dung software CS de kiem soat timing chinh xac. Hardware NSS cua STM32 khong phu hop voi MCP2515 multi-byte transfers.'},
-  spi_sck:{t:'SCK - PA5',s:'SPI Clock',
-    d:[['Speed','10 MHz max'],['Mode','CPOL=0, CPHA=0 (Mode 0,0)'],
-      ['Idle','LOW khi CS HIGH']],
-    tip:'Scope SCK giua cac CS assertion. Moi byte phai co dung 8 xung clock. Glitch o SCK gay data corruption.'},
-  spi_miso:{t:'MISO - PA6',s:'SPI Data: MCP2515 to STM32',
-    d:[['Direction','MCP2515 to STM32'],['Data','CAN frames, register values'],
-      ['Idle','HIGH (pulled up inside MCP2515)']],
-    tip:'Neu MISO luon HIGH hoac LOW: MCP2515 chua duoc cap nguon dung hoac CS khong duoc assert. Kiem tra VCC va CS bang multimeter.'},
-  spi_mosi:{t:'MOSI - PA7',s:'SPI Data: STM32 to MCP2515',
-    d:[['Direction','STM32 to MCP2515'],['Commands','WRITE(0x02), READ(0x03), RESET(0xC0)'],
-      ['First Byte','Luon la command byte cua MCP2515']],
-    tip:'Byte dau tien tren MOSI luon la lenh MCP2515. Gui RESET (0xC0) khi khoi dong truoc khi cau hinh bat ky register nao.'},
-  int_pb0:{t:'INT - PB0 from MCP2515',s:'Interrupt Signal',
-    d:[['Logic','Active LOW (MCP2515 pull HIGH khi idle)'],
-      ['Trigger','Falling edge EXTI0_IRQn'],['Latency','<1us tu CAN frame nhan den ngat']],
-    tip:'Trong ISR chi set flag, khong thuc hien SPI read. Doc CANINTF register trong main loop de tranh block interrupt handler.'},
-  uart_tx:{t:'UART TX - PA9 to CP2102 RX',s:'UART Transmit',
-    d:[['Pin STM32','PA9 (USART1_TX)'],['Voltage','3.3V TTL'],
-      ['Baud','115200 bps 8N1'],['Direction','STM32 sends to CP2102']],
-    tip:'TX cua STM32 phai noi voi RX cua CP2102 (crossed). Loi pho bien: noi TX-TX gay mat hoan toan du lieu.'},
-  uart_rx:{t:'UART RX - PA10 from CP2102 TX',s:'UART Receive',
-    d:[['Pin STM32','PA10 (USART1_RX)'],['Voltage','3.3V TTL'],
-      ['Direction','CP2102 sends to STM32 (lenh tu Android)']],
-    tip:'Monitor PA10 bang logic analyzer. Khong co signal: kiem tra TX cua CP2102 bang multimeter - phai pulse khi Android gui data.'},
-  gnd:{t:'GND - Ground Reference',s:'Common Ground',
+  pwr12v:{
+    t:'12 V Power — OBD-II Pin 16',s:'Power Supply Line',
+    d:[['Voltage','9–16 V DC (battery)'],['Current','Max 1 A (fused OBD port)'],
+       ['Usage','Powers MCP2515 module via 5 V LDO']],
+    tip_en:'Add a 100 µF electrolytic + 100 nF ceramic capacitor at MCP2515 VCC to absorb voltage spikes from the vehicle ignition system.',
+    tip_vi:'Thêm tụ 100 µF điện phân + 100 nF ceramic tại VCC của MCP2515 để hấp thu voltage spike từ hệ thống đánh lửa xe.'
+  },
+  can_h:{
+    t:'CAN_H — OBD Pin 6 to MCP2515',s:'CAN High Signal',
+    d:[['Dominant','3.5 V (bit = 0)'],['Recessive','2.5 V (bit = 1)'],
+       ['Differential','CAN_H − CAN_L = 2 V dominant / 0 V recessive'],
+       ['Protocol','ISO 11898-2 CAN 2.0B']],
+    tip_en:'Use an oscilloscope in differential mode. Normal: 2 V peak during dominant. If differential is always 0 V: no CAN traffic or missing 120 Ω termination resistor.',
+    tip_vi:'Dùng dao động ký ở chế độ vi sai. Bình thường: 2 V đỉnh dominant. Nếu vi sai luôn 0 V: không có CAN traffic hoặc thiếu điện trở kết cuối 120 Ω.'
+  },
+  can_l:{
+    t:'CAN_L — OBD Pin 14 to MCP2515',s:'CAN Low Signal',
+    d:[['Dominant','1.5 V'],['Recessive','2.5 V'],
+       ['Note','Always runs parallel to CAN_H as a twisted pair']],
+    tip_en:'CAN_H and CAN_L should be twisted together at ≥ 20 turns/meter to reject EMI from the automotive environment.',
+    tip_vi:'CAN_H và CAN_L nên xoắn nhau ≥ 20 vòng/mét để chống nhiễu EMI từ môi trường ô tô.'
+  },
+  vcc33:{
+    t:'3.3 V — STM32 to MCP2515',s:'Logic Power Supply',
+    d:[['Source','Onboard LDO from STM32 (500 mA max)'],
+       ['Warning','Verify MCP2515 module supports 3.3 V input!']],
+    tip_en:'Many MCP2515 modules run on 5 V only. Check for a 3.3 V jumper or onboard LDO before connecting to the STM32.',
+    tip_vi:'Nhiều module MCP2515 chỉ dùng 5 V. Kiểm tra jumper 3.3 V hoặc LDO trên module trước khi kết nối với STM32.'
+  },
+  spi_cs:{
+    t:'CS (Chip Select) — PA4',s:'SPI Control Signal',
+    d:[['Logic','Active LOW'],['Control','Software GPIO (not hardware NSS)'],
+       ['Timing','Assert LOW before first byte, deassert HIGH after last byte']],
+    tip_en:'Use software CS for precise timing control. STM32 hardware NSS is not compatible with MCP2515 multi-byte transfers.',
+    tip_vi:'Dùng software CS để kiểm soát timing chính xác. Hardware NSS của STM32 không phù hợp với MCP2515 multi-byte transfers.'
+  },
+  spi_sck:{
+    t:'SCK — PA5',s:'SPI Clock',
+    d:[['Speed','4.5 MHz (APB2 72 MHz ÷ 16)'],['Mode','CPOL=0, CPHA=0 (SPI Mode 0)'],
+       ['Idle','LOW when CS is HIGH']],
+    tip_en:'Scope SCK between CS assertions. Each byte must have exactly 8 clock pulses. Any glitch on SCK causes data corruption.',
+    tip_vi:'Scope SCK giữa các CS assertion. Mỗi byte phải có đúng 8 xung clock. Glitch ở SCK gây ra lỗi data.'
+  },
+  spi_miso:{
+    t:'MISO — PA6',s:'SPI Data: MCP2515 → STM32',
+    d:[['Direction','MCP2515 → STM32'],['Data','CAN frames, register values'],
+       ['Idle','HIGH (pulled up inside MCP2515)']],
+    tip_en:'If MISO is stuck HIGH or LOW: MCP2515 is not powered correctly or CS is not being asserted. Check VCC and CS with a multimeter.',
+    tip_vi:'Nếu MISO luôn HIGH hoặc LOW: MCP2515 chưa được cấp nguồn đúng hoặc CS không được assert. Kiểm tra VCC và CS bằng đồng hồ đo.'
+  },
+  spi_mosi:{
+    t:'MOSI — PA7',s:'SPI Data: STM32 → MCP2515',
+    d:[['Direction','STM32 → MCP2515'],['Commands','WRITE(0x02), READ(0x03), RESET(0xC0)'],
+       ['First Byte','Always a MCP2515 instruction byte']],
+    tip_en:'The first byte on MOSI is always a MCP2515 instruction. Send RESET (0xC0) at startup before configuring any registers.',
+    tip_vi:'Byte đầu tiên trên MOSI luôn là lệnh MCP2515. Gửi RESET (0xC0) khi khởi động trước khi cấu hình bất kỳ register nào.'
+  },
+  int_pb0:{
+    t:'INT — PB0 from MCP2515',s:'Interrupt Signal',
+    d:[['Logic','Active LOW (idle HIGH via MCP2515 pull-up)'],
+       ['Trigger','EXTI0 falling edge → EXTI0_IRQn'],
+       ['Latency','< 1 µs from CAN frame received to interrupt']],
+    tip_en:'In the ISR, only set a flag — do not perform SPI reads. Read the CANINTF register in the main loop to avoid blocking the interrupt handler.',
+    tip_vi:'Trong ISR chỉ set flag, không thực hiện SPI read. Đọc CANINTF register trong main loop để tránh block interrupt handler.'
+  },
+  uart_tx:{
+    t:'UART TX — PA9 to CP2102 RX',s:'UART Transmit',
+    d:[['Pin','PA9 (USART1_TX)'],['Voltage','3.3 V TTL'],
+       ['Baud','115200 bps, 8N1'],['Direction','STM32 → CP2102']],
+    tip_en:'TX of the STM32 must connect to RX of the CP2102 (crossed wires). Common mistake: wiring TX-to-TX causes complete data loss.',
+    tip_vi:'TX của STM32 phải nối với RX của CP2102 (crossed). Lỗi phổ biến: nối TX-TX gây mất hoàn toàn dữ liệu.'
+  },
+  uart_rx:{
+    t:'UART RX — PA10 from CP2102 TX',s:'UART Receive',
+    d:[['Pin','PA10 (USART1_RX)'],['Voltage','3.3 V TTL'],
+       ['Direction','CP2102 → STM32 (commands from Android)']],
+    tip_en:'Monitor PA10 with a logic analyzer. No signal: check CP2102 TX with a multimeter — it must pulse when Android sends data.',
+    tip_vi:'Monitor PA10 bằng logic analyzer. Không có signal: kiểm tra TX của CP2102 bằng đồng hồ đo — phải pulse khi Android gửi data.'
+  },
+  gnd:{
+    t:'GND — Ground Reference',s:'Common Ground',
     d:[['OBD Pin 4','Chassis Ground'],['OBD Pin 5','Signal Ground'],
-      ['Note','Ket noi ca 2 chan de dam bao reference on dinh']],
-    tip:'Ground kem la nguyen nhan hang dau gay loi CAN communication. Dam bao duong ground ngan, tiet dien lon tu OBD-II den MCP2515.'},
-  usb_data:{t:'USB DATA - CP2102 to Android OTG',s:'USB Full Speed',
+       ['Note','Connect both pins for a stable reference']],
+    tip_en:'Poor ground is the #1 cause of CAN communication failures. Keep the ground path short with sufficient cross-section from OBD-II to MCP2515.',
+    tip_vi:'Ground kém là nguyên nhân hàng đầu gây lỗi CAN communication. Đảm bảo đường ground ngắn, tiết diện lớn từ OBD-II đến MCP2515.'
+  },
+  usb_data:{
+    t:'USB DATA — CP2102 to Android OTG',s:'USB Full Speed',
     d:[['Class','USB CDC Virtual COM Port'],['Speed','Full Speed 12 Mbps'],
-      ['VID/PID','0x10C4/0xEA60 (Silicon Labs)'],
-      ['Android','OTG Host mode, android.hardware.usb.host']],
-    tip:'Khai bao uses-feature android.hardware.usb.host trong AndroidManifest.xml. Dang ky BroadcastReceiver USB_DEVICE_ATTACHED de tu nhan thiet bi.'}
+       ['VID/PID','0x10C4 / 0xEA60 (Silicon Labs)'],
+       ['Android','OTG Host mode, android.hardware.usb.host']],
+    tip_en:'Declare uses-feature android.hardware.usb.host in AndroidManifest.xml. Register a USB_DEVICE_ATTACHED BroadcastReceiver to auto-detect the device.',
+    tip_vi:'Khai báo uses-feature android.hardware.usb.host trong AndroidManifest.xml. Đăng ký BroadcastReceiver USB_DEVICE_ATTACHED để tự nhận thiết bị.'
+  }
 };
+
 function render(o){
   var h='';
   o.d.forEach(function(r){
     h+='<div class="sr"><span class="sl">'+r[0]+'</span><span class="sv">'+r[1]+'</span></div>';
   });
-  if(o.tip) h+='<div class="tip">'+o.tip+'</div>';
+  var tip=isVi?o.tip_vi:o.tip_en;
+  if(tip) h+='<div class="tip">'+tip+'</div>';
   return h;
 }
 function positionCard(){
-  var ov=document.getElementById('overlay');
   var c=document.getElementById('card');
   var vw=window.innerWidth||document.documentElement.clientWidth||320;
   var vh=window.innerHeight||document.documentElement.clientHeight||480;
   var pad=20;
-  var w=Math.min(440,vw-pad*2);
+  var w=Math.min(460,vw-pad*2);
   var maxH=Math.floor(vh*0.84);
   c.style.width=w+'px';
   c.style.maxHeight=maxH+'px';
@@ -2089,8 +2178,7 @@ function positionCard(){
   c.style.top=Math.max(pad,Math.floor((vh-h)/2))+'px';
 }
 function showOverlay(){
-  var ov=document.getElementById('overlay');
-  ov.style.display='block';
+  document.getElementById('overlay').style.display='block';
   setTimeout(positionCard,0);
 }
 function cInfo(id){
@@ -2145,6 +2233,25 @@ function toggleLearn(){
   document.getElementById('btnLearn').classList.toggle('on',learnOn);
   document.getElementById('layerBoxes').style.opacity=learnOn?'1':'0';
 }
+
+/* ── Apply UI language on load ───────────────────────── */
+document.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('btnFlow').textContent=UI.btnFlow;
+  document.getElementById('btnLearn').textContent=UI.btnLearn;
+  document.getElementById('btnTbl').textContent=UI.btnTbl;
+  var leg=document.getElementById('leg');
+  if(leg){
+    leg.querySelector('h4').textContent=UI.legTitle;
+    var rows=leg.querySelectorAll('.lr');
+    var labels=[UI.legPwr,UI.legGnd,UI.legCanH,UI.legCanL,UI.legSpi,UI.legUart,UI.legUsb,UI.legInt];
+    rows.forEach(function(r,i){
+      var ll=r.querySelector('.ll');
+      r.textContent='';
+      if(ll) r.appendChild(ll);
+      r.appendChild(document.createTextNode(' '+labels[i]));
+    });
+  }
+});
 </script>
 </body>
 </html>

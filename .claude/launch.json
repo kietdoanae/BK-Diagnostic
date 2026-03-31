@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "BKDiagnostic Preview",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["C:/Users/KIET/AndroidStudioProjects/BKDiagnostic/serve_assets.py"],
+      "port": 9091
+    },
+    {
       "name": "Website Preview",
       "runtimeExecutable": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
       "runtimeArgs": [
