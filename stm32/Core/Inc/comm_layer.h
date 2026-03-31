@@ -20,7 +20,7 @@
 #ifndef COMM_LAYER_H
 #define COMM_LAYER_H
 
-#include "stm32f4xx_hal.h"
+#include "stm32f1xx_hal.h"
 #include <stdint.h>
 #include <stdbool.h>
 

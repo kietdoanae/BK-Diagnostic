@@ -6,7 +6,7 @@
 #ifndef MAIN_APP_H
 #define MAIN_APP_H
 
-#include "stm32f4xx_hal.h"
+#include "stm32f1xx_hal.h"
 
 void App_Init(void);
 void App_Run(void);

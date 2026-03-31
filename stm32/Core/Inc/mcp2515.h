@@ -2,7 +2,7 @@
  * @file    mcp2515.h
  * @brief   MCP2515 CAN Controller SPI Driver
  *
- * Hardware: STM32F411CEU6 (Black Pill)
+ * Hardware: STM32F103C8T6 (Blue Pill)
  *   SPI1  : PA5(SCK), PA6(MISO), PA7(MOSI), PA4(CS)
  *   INT   : PB0 (active-low interrupt from MCP2515)
  *
@@ -14,7 +14,7 @@
 #ifndef MCP2515_H
 #define MCP2515_H
 
-#include "stm32f4xx_hal.h"
+#include "stm32f1xx_hal.h"
 #include <stdint.h>
 #include <stdbool.h>
 
