@@ -17,15 +17,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.bkdiagnostic.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bkdiagnostic.ActivityLogger
 import com.example.bkdiagnostic.AuthUiState
 import com.example.bkdiagnostic.AuthViewModel
+import com.example.bkdiagnostic.ui.theme.LocalAppColors
 
 private data class DashboardFeature(
     val id: String,
@@ -36,16 +39,6 @@ private data class DashboardFeature(
     val isEnabled: Boolean = false
 )
 
-private val features = listOf(
-    DashboardFeature("diagnostics",    "Diagnostics",    Icons.Filled.Build,            Color(0xFF1565C0), Color(0xFFBBDEFB), isEnabled = true),
-    DashboardFeature("service",        "Service",        Icons.Filled.Construction,     Color(0xFF2E7D32), Color(0xFFC8E6C9)),
-    DashboardFeature("data_manager",   "Data Manager",   Icons.Filled.Storage,          Color(0xFF6A1B9A), Color(0xFFE1BEE7)),
-    DashboardFeature("settings",       "Settings",       Icons.Filled.Tune,             Color(0xFF00695C), Color(0xFFB2DFDB), isEnabled = true),
-    DashboardFeature("update",         "Update",         Icons.Filled.SystemUpdate,     Color(0xFFE65100), Color(0xFFFFE0B2)),
-    DashboardFeature("remote_desktop", "Remote Desktop", Icons.Filled.DesktopWindows,   Color(0xFF37474F), Color(0xFFCFD8DC)),
-    DashboardFeature("wiring_diagram", "Wiring Diagram", Icons.Filled.Cable,            Color(0xFFC62828), Color(0xFFFFCDD2), isEnabled = true),
-    DashboardFeature("support",        "Support",        Icons.Filled.SupportAgent,     Color(0xFF283593), Color(0xFFC5CAE9)),
-)
 
 @Composable
 fun DashboardScreen(
@@ -55,6 +48,17 @@ fun DashboardScreen(
     onSettingsClick: () -> Unit = {},
     authViewModel: AuthViewModel = viewModel()
 ) {
+    val features = listOf(
+        DashboardFeature("diagnostics",    stringResource(R.string.feature_diagnostics),    Icons.Filled.Build,          Color(0xFF1565C0), Color(0xFFBBDEFB), isEnabled = true),
+        DashboardFeature("service",        stringResource(R.string.feature_service),        Icons.Filled.Construction,   Color(0xFF2E7D32), Color(0xFFC8E6C9)),
+        DashboardFeature("data_manager",   stringResource(R.string.feature_data_manager),   Icons.Filled.Storage,        Color(0xFF6A1B9A), Color(0xFFE1BEE7)),
+        DashboardFeature("settings",       stringResource(R.string.feature_settings),       Icons.Filled.Tune,           Color(0xFF00695C), Color(0xFFB2DFDB), isEnabled = true),
+        DashboardFeature("update",         stringResource(R.string.feature_update),         Icons.Filled.SystemUpdate,   Color(0xFFE65100), Color(0xFFFFE0B2)),
+        DashboardFeature("remote_desktop", stringResource(R.string.feature_remote_desktop), Icons.Filled.DesktopWindows, Color(0xFF37474F), Color(0xFFCFD8DC)),
+        DashboardFeature("wiring_diagram", stringResource(R.string.feature_wiring_diagram), Icons.Filled.Cable,          Color(0xFFC62828), Color(0xFFFFCDD2), isEnabled = true),
+        DashboardFeature("support",        stringResource(R.string.feature_support),        Icons.Filled.SupportAgent,   Color(0xFF283593), Color(0xFFC5CAE9)),
+    )
+
     val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
     val isLoading = uiState is AuthUiState.Loading
 
@@ -90,9 +94,9 @@ fun DashboardScreen(
     }
     val initials = username.take(2).uppercase()
     val greeting = when (java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)) {
-        in 5..11  -> "Good morning"
-        in 12..17 -> "Good afternoon"
-        else      -> "Good evening"
+        in 5..11  -> stringResource(R.string.greeting_morning)
+        in 12..17 -> stringResource(R.string.greeting_afternoon)
+        else      -> stringResource(R.string.greeting_evening)
     }
 
     // Deterministic avatar accent colour based on username hash
@@ -105,10 +109,11 @@ fun DashboardScreen(
         palette[username.hashCode().and(0x7FFFFFFF) % palette.size]
     }
 
+    val appColors = LocalAppColors.current
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEEF2F7))
+            .background(appColors.screenBackground)
     ) {
         // ─── Header ──────────────────────────────────────────────────────────
         Box(
@@ -128,231 +133,120 @@ fun DashboardScreen(
             Box(Modifier.size(70.dp).align(Alignment.TopEnd).offset((-100).dp, 20.dp)
                 .clip(CircleShape).background(Color.White.copy(alpha = 0.03f)))
 
-            Column(modifier = Modifier.fillMaxWidth()) {
-
-                // ── App bar ─────────────────────────────────────────────────
-                Row(
+            // ── Compact top bar: brand | greeting+user | avatar + logout ───────
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Brand icon
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(Color.White.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // Mini brand icon
-                    Box(
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.White.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
+                    Icon(
+                        Icons.Filled.DirectionsCar, null,
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                // Brand name + tagline
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.app_name),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp,
+                        color = Color.White,
+                        letterSpacing = 0.3.sp
+                    )
+                    Text(
+                        stringResource(R.string.app_tagline),
+                        fontSize = 9.5.sp,
+                        color = Color.White.copy(alpha = 0.50f)
+                    )
+                }
+
+                // Greeting + username (compact, right-aligned)
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "$greeting,",
+                        fontSize = 10.sp,
+                        color = Color.White.copy(alpha = 0.55f)
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        Icon(
-                            Icons.Filled.DirectionsCar, null,
-                            tint = Color.White,
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "BK Diagnostic",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 17.sp,
-                            color = Color.White,
-                            letterSpacing = 0.3.sp
+                            text = username,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color.White
                         )
-                        Text(
-                            "Intelligent vehicle diagnostics · HCMUT",
-                            fontSize = 10.sp,
-                            color = Color.White.copy(alpha = 0.55f)
-                        )
-                    }
-                    // Logout button
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color.White.copy(alpha = 0.14f)
-                    ) {
-                        IconButton(
-                            onClick = { authViewModel.logout() },
-                            enabled = !isLoading,
-                            modifier = Modifier.size(40.dp)
+                        // Role badge (mini)
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(roleBgColor)
+                                .padding(horizontal = 5.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.Logout,
-                                    contentDescription = "Sign out",
-                                    tint = Color.White.copy(alpha = 0.85f),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
+                            Icon(roleIcon, null, tint = roleTextColor, modifier = Modifier.size(9.dp))
+                            Text(roleLabel, color = roleTextColor, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
 
-                // ── Profile card ─────────────────────────────────────────────
+                // Avatar (compact)
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 20.dp, top = 2.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Color.White.copy(alpha = 0.10f))
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(avatarAccent.copy(alpha = 0.8f), avatarAccent)
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // Subtle inner highlight on top edge
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(Color.White.copy(alpha = 0.25f))
+                    Text(
+                        text = initials,
+                        color = Color.White,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 13.sp,
+                        letterSpacing = 0.5.sp
                     )
+                }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 18.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                // Logout button
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.White.copy(alpha = 0.14f)
+                ) {
+                    IconButton(
+                        onClick = { authViewModel.logout() },
+                        enabled = !isLoading,
+                        modifier = Modifier.size(38.dp)
                     ) {
-                        // ── Avatar with glow ring ─────────────────────────
-                        Box(contentAlignment = Alignment.Center) {
-                            // Glow halo
-                            Box(
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.radialGradient(
-                                            listOf(
-                                                avatarAccent.copy(alpha = 0.55f),
-                                                avatarAccent.copy(alpha = 0f)
-                                            )
-                                        )
-                                    )
-                            )
-                            // White border ring
-                            Box(
-                                modifier = Modifier
-                                    .size(66.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.18f))
-                            )
-                            // Colored accent ring
-                            Box(
-                                modifier = Modifier
-                                    .size(64.dp)
-                                    .clip(CircleShape)
-                                    .background(avatarAccent.copy(alpha = 0.35f))
-                            )
-                            // Avatar face
-                            Box(
-                                modifier = Modifier
-                                    .size(58.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(
-                                                avatarAccent.copy(alpha = 0.75f),
-                                                avatarAccent
-                                            )
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = initials,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 20.sp,
-                                    letterSpacing = 1.sp
-                                )
-                            }
-                        }
-
-                        // ── User info ────────────────────────────────────
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(5.dp)
-                        ) {
-                            Text(
-                                text = greeting,
-                                color = Color.White.copy(alpha = 0.60f),
-                                fontSize = 11.sp,
-                                letterSpacing = 0.3.sp
-                            )
-                            Text(
-                                text = username,
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
                                 color = Color.White,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 21.sp,
-                                letterSpacing = 0.2.sp
+                                strokeWidth = 2.dp
                             )
-                            // Role + status row
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                // Role badge
-                                Row(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(roleBgColor)
-                                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        roleIcon, null,
-                                        tint = roleTextColor,
-                                        modifier = Modifier.size(11.dp)
-                                    )
-                                    Text(
-                                        roleLabel,
-                                        color = roleTextColor,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                // Online indicator
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFF4ADE80))
-                                )
-                                Text(
-                                    "Online",
-                                    color = Color.White.copy(alpha = 0.50f),
-                                    fontSize = 10.sp
-                                )
-                            }
-                        }
-
-                        // ── Vertical divider + session info ──────────────
-                        Box(
-                            modifier = Modifier
-                                .width(1.dp)
-                                .height(52.dp)
-                                .background(Color.White.copy(alpha = 0.18f))
-                        )
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
+                        } else {
                             Icon(
-                                Icons.Filled.CheckCircle, null,
-                                tint = Color.White.copy(alpha = 0.70f),
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Text(
-                                "Active",
-                                color = Color.White.copy(alpha = 0.55f),
-                                fontSize = 10.sp,
-                                letterSpacing = 0.5.sp
+                                imageVector = Icons.AutoMirrored.Filled.Logout,
+                                contentDescription = stringResource(R.string.dashboard_btn_sign_out),
+                                tint = Color.White.copy(alpha = 0.85f),
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -402,6 +296,7 @@ private fun FeatureCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
+    val appColors = LocalAppColors.current
     Box(modifier = modifier) {
         Card(
             modifier = Modifier
@@ -409,7 +304,7 @@ private fun FeatureCard(
                 .alpha(if (feature.isEnabled) 1f else 0.40f)
                 .clickable(enabled = feature.isEnabled) { onClick() },
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = appColors.cardSurface),
             elevation = CardDefaults.cardElevation(defaultElevation = if (feature.isEnabled) 4.dp else 1.dp)
         ) {
             Column(
@@ -444,7 +339,7 @@ private fun FeatureCard(
                     text = feature.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = Color(0xFF1A1A2E),
+                    color = appColors.primaryText,
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp
                 )
@@ -464,7 +359,7 @@ private fun FeatureCard(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Lock,
-                    contentDescription = "Chưa khả dụng",
+                    contentDescription = stringResource(R.string.feature_not_available),
                     tint = Color.White,
                     modifier = Modifier.size(14.dp)
                 )
