@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Website Supabase credentials — use website/config.example.js as template
+website/config.js

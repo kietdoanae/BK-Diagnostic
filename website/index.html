@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -453,8 +454,6 @@
 
 <script>
 ;(async () => {
-  const SUPABASE_URL = 'https://ylspcqbwupnqskqemmiv.supabase.co'
-  const SUPABASE_KEY = 'sb_publishable_CiNkaDLXwDkO16g5QYjSmQ_Qh_ZEOWt'
   const { createClient } = supabase
   const sb = createClient(SUPABASE_URL, SUPABASE_KEY)
 
