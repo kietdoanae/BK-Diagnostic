@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reset Password — BK Diagnostic</title>
+  <link rel="icon" type="image/png" href="https://i.ibb.co/Z0Xc41Z/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+    }
+  </script>
+  <style>
+    .input-field { transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+    .input-field:focus { border-color: #1565C0; box-shadow: 0 0 0 3px rgba(21,101,192,0.15); outline: none; }
+    .btn-primary { background: linear-gradient(135deg, #1565C0, #1E88E5); transition: opacity 0.15s ease; }
+    .btn-primary:hover { opacity: 0.92; }
+  </style>
+</head>
+<body class="font-sans bg-gray-50 min-h-screen flex items-center justify-center antialiased px-4">
+
+<div class="w-full max-w-md">
+  <!-- Logo -->
+  <a href="index.html" class="flex items-center justify-center gap-2 mb-8">
+    <img src="https://i.ibb.co/Z0Xc41Z/logo.png" class="w-9 h-9 rounded-xl object-contain" alt="BK Diagnostic" />
+    <span class="font-bold text-blue-800 text-lg">BK Diagnostic</span>
+  </a>
+
+  <!-- Card -->
+  <div class="bg-white rounded-3xl shadow-xl p-8">
+
+    <!-- Icon -->
+    <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+      <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+
+    <h1 class="text-xl font-extrabold text-gray-900 text-center mb-1">Reset Password</h1>
+    <p class="text-gray-500 text-sm text-center mb-6 leading-relaxed">
+      Enter a new password for your account.
+    </p>
+
+    <!-- Loading state -->
+    <div id="state-loading" class="text-center py-4 text-gray-400 text-sm">
+      Verifying reset link…
+    </div>
+
+    <!-- Error state (invalid/expired link) -->
+    <div id="state-error" class="hidden text-center">
+      <div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-5">
+        <p class="text-red-700 text-sm font-medium">This link is invalid or has expired.</p>
+        <p class="text-red-600 text-xs mt-1">Please request a new password reset email.</p>
+      </div>
+      <a href="forgot.html"
+        class="btn-primary inline-block text-white font-semibold py-3 px-6 rounded-xl text-sm">
+        Request New Link
+      </a>
+    </div>
+
+    <!-- Form state -->
+    <div id="state-form" class="hidden">
+      <div id="msg-box" class="hidden rounded-lg px-4 py-3 text-sm mb-5 font-medium"></div>
+
+      <form id="reset-form" novalidate>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="password">
+            New Password
+          </label>
+          <div class="relative">
+            <input id="password" type="password" autocomplete="new-password"
+              placeholder="At least 6 characters"
+              class="input-field w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 bg-gray-50 placeholder-gray-400 pr-11"
+              required />
+            <button type="button" id="toggle-pw"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-5">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="confirm">
+            Confirm New Password
+          </label>
+          <input id="confirm" type="password" autocomplete="new-password"
+            placeholder="Re-enter your password"
+            class="input-field w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 bg-gray-50 placeholder-gray-400"
+            required />
+        </div>
+
+        <button id="submit-btn" type="submit"
+          class="btn-primary w-full text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-60 disabled:cursor-not-allowed">
+          Reset Password
+        </button>
+      </form>
+    </div>
+
+    <!-- Success state -->
+    <div id="state-success" class="hidden text-center">
+      <div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-green-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h3 class="font-bold text-gray-900 mb-2">Password updated!</h3>
+      <p class="text-gray-500 text-sm mb-6">You can now sign in with your new password.</p>
+      <a href="login.html"
+        class="btn-primary inline-block text-white font-semibold py-3 px-8 rounded-xl text-sm">
+        Sign In
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://ylspcqbwupnqskqemmiv.supabase.co'
+  const SUPABASE_KEY = 'sb_publishable_CiNkaDLXwDkO16g5QYjSmQ_Qh_ZEOWt'
+
+  const { createClient } = supabase
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+  function show(id) {
+    ['state-loading','state-error','state-form','state-success'].forEach(s => {
+      document.getElementById(s).classList.toggle('hidden', s !== id)
+    })
+  }
+
+  function showMsg(text, type) {
+    const box = document.getElementById('msg-box')
+    box.textContent = text
+    box.className = `rounded-lg px-4 py-3 text-sm mb-5 font-medium ${
+      type === 'error'
+        ? 'bg-red-50 text-red-700 border border-red-200'
+        : 'bg-green-50 text-green-700 border border-green-200'
+    }`
+    box.classList.remove('hidden')
+  }
+
+  // Toggle password visibility
+  document.getElementById('toggle-pw').addEventListener('click', () => {
+    const pw = document.getElementById('password')
+    pw.type = pw.type === 'password' ? 'text' : 'password'
+  })
+
+  async function init() {
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        show('state-form')
+      } else if (event === 'SIGNED_IN' && session) {
+        const hash = window.location.hash
+        if (hash.includes('type=recovery') || hash.includes('access_token')) {
+          show('state-form')
+        } else {
+          window.location.href = 'dashboard.html'
+        }
+      }
+    })
+
+    // Timeout: if no event after 4s → invalid/expired link
+    setTimeout(() => {
+      const loading = document.getElementById('state-loading')
+      if (!loading.classList.contains('hidden')) {
+        show('state-error')
+      }
+    }, 4000)
+  }
+
+  // Form submit
+  document.getElementById('reset-form').addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    const password = document.getElementById('password').value
+    const confirm  = document.getElementById('confirm').value
+    const btn      = document.getElementById('submit-btn')
+
+    if (password.length < 6) {
+      showMsg('Password must be at least 6 characters.', 'error'); return
+    }
+    if (password !== confirm) {
+      showMsg('Passwords do not match.', 'error'); return
+    }
+
+    btn.disabled = true
+    btn.textContent = 'Updating…'
+
+    const { error } = await sb.auth.updateUser({ password })
+
+    if (error) {
+      btn.disabled = false
+      btn.textContent = 'Reset Password'
+      showMsg(error.message, 'error')
+    } else {
+      show('state-success')
+    }
+  })
+
+  init()
+</script>
+
+</body>
+</html>
