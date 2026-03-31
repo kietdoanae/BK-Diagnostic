@@ -57,18 +57,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.bkdiagnostic.R
 import com.example.bkdiagnostic.communication.UsbSerialManager
 import com.example.bkdiagnostic.ui.components.AppTopBar
 import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
 import com.example.bkdiagnostic.protocol.obd2.OBD2PidDef
 import com.example.bkdiagnostic.protocol.obd2.OBD2Pids
 import com.example.bkdiagnostic.protocol.obd2.SensorReading
+import com.example.bkdiagnostic.ui.theme.LocalAppColors
 
 // ════════════════════════════════════════════════════════════════════════════
 //  Màn hình Dữ liệu Thời gian Thực
@@ -77,11 +80,6 @@ import com.example.bkdiagnostic.protocol.obd2.SensorReading
 //  - Danh sách cuộn toàn bộ thông số
 // ════════════════════════════════════════════════════════════════════════════
 
-private val BgMain   = Color(0xFF0D1B2A)
-private val BgCard   = Color(0xFF152233)
-private val BgCard2  = Color(0xFF1A2B3E)
-private val TextMain = Color(0xFFECEFF1)
-private val TextSub  = Color(0xFF90A4AE)
 private val GreenOk  = Color(0xFF4CAF50)
 private val YellowWarn = Color(0xFFFFB300)
 private val RedCrit  = Color(0xFFEF5350)
@@ -92,6 +90,7 @@ fun LiveDataScreen(
     viewModel: DiagnosticViewModel,
     onBack: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val liveData by viewModel.liveData.collectAsStateWithLifecycle()
     val isRunning by viewModel.isLiveDataRunning.collectAsStateWithLifecycle()
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
@@ -107,7 +106,7 @@ fun LiveDataScreen(
     Column(
         Modifier
             .fillMaxSize()
-            .background(BgMain)
+            .background(appColors.screenBackground)
     ) {
         // ── Top Bar ────────────────────────────────────────────────────────
         LiveDataTopBar(
@@ -175,18 +174,18 @@ fun LiveDataScreen(
                 ) {
                     HorizontalDivider(
                         Modifier.weight(1f),
-                        color = Color.White.copy(alpha = 0.1f)
+                        color = appColors.dividerColor
                     )
                     Text(
-                        "  ALL PARAMETERS  ",
-                        color = TextSub,
+                        "  ${stringResource(R.string.live_data_all_parameters)}  ",
+                        color = appColors.secondaryText,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         letterSpacing = 1.sp
                     )
                     HorizontalDivider(
                         Modifier.weight(1f),
-                        color = Color.White.copy(alpha = 0.1f)
+                        color = appColors.dividerColor
                     )
                 }
             }
@@ -219,13 +218,13 @@ private fun LiveDataTopBar(
         else                                                       -> RedCrit
     }
     val statusLabel = when (connectionState) {
-        is UsbSerialManager.ConnectionState.Connected              -> "Connected"
-        is UsbSerialManager.ConnectionState.Searching              -> "Searching…"
-        is UsbSerialManager.ConnectionState.AwaitingPermission     -> "Awaiting permission"
-        else                                                       -> "Disconnected"
+        is UsbSerialManager.ConnectionState.Connected              -> stringResource(R.string.live_data_status_connected)
+        is UsbSerialManager.ConnectionState.Searching              -> stringResource(R.string.live_data_status_searching)
+        is UsbSerialManager.ConnectionState.AwaitingPermission     -> stringResource(R.string.live_data_status_awaiting)
+        else                                                       -> stringResource(R.string.live_data_status_disconnected)
     }
     AppTopBar(
-        title = "Live Data",
+        title = stringResource(R.string.live_data_title),
         subtitle = vehicleName,
         onBack = onBack,
         trailingContent = {
@@ -267,6 +266,7 @@ private fun LiveDataControlBar(
     isConnected: Boolean,
     onToggle: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val scanDot = if (isRunning) {
         val inf = rememberInfiniteTransition(label = "scan")
         val alpha by inf.animateFloat(
@@ -276,12 +276,17 @@ private fun LiveDataControlBar(
             ), label = "dot_alpha"
         )
         GreenOk.copy(alpha = alpha)
-    } else TextSub
+    } else appColors.secondaryText
+
+    val strRunning = stringResource(R.string.live_data_running)
+    val strStopped = stringResource(R.string.live_data_stopped)
+    val strStop    = stringResource(R.string.live_data_btn_stop)
+    val strStart   = stringResource(R.string.live_data_btn_start)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(BgCard)
+            .background(appColors.cardSurface)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -294,15 +299,15 @@ private fun LiveDataControlBar(
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                if (isRunning) "Reading data..." else "Stopped",
-                color = if (isRunning) GreenOk else TextSub,
+                if (isRunning) strRunning else strStopped,
+                color = if (isRunning) GreenOk else appColors.secondaryText,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold
             )
             if (isRunning && updateRate > 0f) {
                 Text(
                     "%.1f updates/sec".format(updateRate),
-                    color = TextSub,
+                    color = appColors.secondaryText,
                     fontSize = 11.sp
                 )
             }
@@ -325,7 +330,7 @@ private fun LiveDataControlBar(
             )
             Spacer(Modifier.width(4.dp))
             Text(
-                if (isRunning) "Stop" else "Start",
+                if (isRunning) strStop else strStart,
                 color = Color.White,
                 fontSize = 13.sp
             )
@@ -349,6 +354,7 @@ private fun ArcGauge(
             .toFloat().coerceIn(0f, 1f)
     } else 0f
 
+    val appColors = LocalAppColors.current
     val animFraction by animateFloatAsState(
         targetValue = fraction,
         animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
@@ -359,7 +365,7 @@ private fun ArcGauge(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(BgCard),
+            .background(appColors.cardSurface),
         contentAlignment = Alignment.Center
     ) {
         // Canvas vẽ cung tròn
@@ -441,7 +447,7 @@ private fun ArcGauge(
             // Giá trị lớn
             Text(
                 text = if (value != null) formatSensorValue(value, pidDef) else "--",
-                color = TextMain,
+                color = appColors.primaryText,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 1
@@ -457,7 +463,7 @@ private fun ArcGauge(
             // Tên PID
             Text(
                 text = pidDef.name,
-                color = TextSub,
+                color = appColors.secondaryText,
                 fontSize = 10.sp,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -481,19 +487,20 @@ private fun SecondaryMetricCard(
     val fraction = if (value != null) {
         ((value - pid.minValue) / (pid.maxValue - pid.minValue)).toFloat().coerceIn(0f, 1f)
     } else 0f
+    val appColors = LocalAppColors.current
     val animFraction by animateFloatAsState(
         targetValue = fraction,
         animationSpec = tween(300),
         label = "card_${pid.pid}"
     )
-    val color = readingColor(value, pid)
+    val color = readingColor(value, pid, appColors.secondaryText)
 
     Box(
         modifier = Modifier
             .width(100.dp)
             .height(90.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(BgCard2)
+            .background(appColors.cardSurface)
             .padding(10.dp)
     ) {
         Column(
@@ -507,7 +514,7 @@ private fun SecondaryMetricCard(
                     tint = color, modifier = Modifier.size(14.dp)
                 )
                 Spacer(Modifier.width(4.dp))
-                Text(pid.unit, color = TextSub, fontSize = 10.sp)
+                Text(pid.unit, color = appColors.secondaryText, fontSize = 10.sp)
             }
             // Value
             Text(
@@ -522,7 +529,7 @@ private fun SecondaryMetricCard(
             Column {
                 Text(
                     pid.name,
-                    color = TextSub,
+                    color = appColors.secondaryText,
                     fontSize = 9.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -533,7 +540,7 @@ private fun SecondaryMetricCard(
                         .fillMaxWidth()
                         .height(3.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(Color.White.copy(alpha = 0.1f))
+                        .background(appColors.dividerColor)
                 ) {
                     Box(
                         Modifier
@@ -558,18 +565,19 @@ private fun ParameterRow(pid: OBD2PidDef, reading: SensorReading?) {
     val fraction = if (value != null) {
         ((value - pid.minValue) / (pid.maxValue - pid.minValue)).toFloat().coerceIn(0f, 1f)
     } else 0f
+    val appColors = LocalAppColors.current
     val animFraction by animateFloatAsState(
         targetValue = fraction,
         animationSpec = tween(300),
         label = "row_${pid.pid}"
     )
-    val color = readingColor(value, pid)
+    val color = readingColor(value, pid, appColors.secondaryText)
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(BgCard2)
+            .background(appColors.cardSurface)
             .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         Row(
@@ -589,7 +597,7 @@ private fun ParameterRow(pid: OBD2PidDef, reading: SensorReading?) {
             Spacer(Modifier.width(12.dp))
             // Name
             Text(
-                pid.name, color = TextMain, fontSize = 13.sp,
+                pid.name, color = appColors.primaryText, fontSize = 13.sp,
                 modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             // Value + unit
@@ -600,7 +608,7 @@ private fun ParameterRow(pid: OBD2PidDef, reading: SensorReading?) {
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Text(pid.unit, color = TextSub, fontSize = 10.sp)
+                Text(pid.unit, color = appColors.secondaryText, fontSize = 10.sp)
             }
         }
         // Progress bar
@@ -610,7 +618,7 @@ private fun ParameterRow(pid: OBD2PidDef, reading: SensorReading?) {
                 .fillMaxWidth()
                 .height(4.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(Color.White.copy(alpha = 0.07f))
+                .background(appColors.dividerColor)
         ) {
             Box(
                 Modifier
@@ -669,8 +677,8 @@ private fun gaugeColor(fraction: Float, pid: OBD2PidDef): Color = when (pid.pid)
 }
 
 /** Màu giá trị dùng cho cards và rows */
-private fun readingColor(value: Double?, pid: OBD2PidDef): Color {
-    if (value == null) return TextSub
+private fun readingColor(value: Double?, pid: OBD2PidDef, fallback: Color = BlueIdle): Color {
+    if (value == null) return fallback
     val fraction = ((value - pid.minValue) / (pid.maxValue - pid.minValue)).toFloat().coerceIn(0f, 1f)
     return gaugeColor(fraction, pid)
 }
