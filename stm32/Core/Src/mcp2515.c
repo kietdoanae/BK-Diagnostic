@@ -85,7 +85,8 @@ MCP2515_Status_t MCP2515_Init(void)
     reg_write(MCP2515_REG_CNF3, MCP2515_CNF3_500KBPS);
 
     /* 3. RXB0: accept all messages (mask = 0, filter = 0) */
-    reg_write(MCP2515_REG_RXB0CTRL, 0x60);  /* RXM=11: receive any message */
+    reg_write(MCP2515_REG_RXB0CTRL, 0x64);  /* RXM[1:0]=11 + BUKT=1 enables rollover to RXB1 */
+    reg_write(MCP2515_REG_RXB1CTRL, 0x60);  /* RXM[1:0]=11 accept all messages in RXB1 */
     reg_write(MCP2515_REG_RXM0SIDH, 0x00);
     reg_write(MCP2515_REG_RXM0SIDH + 1, 0x00);  /* RXM0SIDL */
     reg_write(MCP2515_REG_RXF0SIDH, 0x00);
