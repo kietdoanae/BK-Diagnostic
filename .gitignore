@@ -17,9 +17,8 @@ local.properties
 # Website Supabase credentials — use website/config.example.js as template
 website/config.js
 
-# STM32CubeIDE generated files
+# STM32CubeIDE generated files (Drivers/ copied from firmware pack at build time)
 stm32/Drivers/
-stm32/startup_stm32f103xb.s
 stm32/*.elf
 stm32/*.bin
 stm32/*.map

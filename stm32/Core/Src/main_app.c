@@ -52,10 +52,15 @@ void App_Init(void)
     /* 1. CAN controller - default 500 kbps (OBD2 standard) */
     MCP2515_Status_t can_ok = MCP2515_Init();
     if (can_ok != MCP2515_OK) {
-        /* Blink PC13 rapidly → CAN init failed */
+        /* 2× short blink then 1 s pause → MCP2515/SPI init failed */
         while (1) {
-            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-            HAL_Delay(100);
+            for (int e = 0; e < 2; e++) {
+                HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+                HAL_Delay(200);
+                HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+                HAL_Delay(200);
+            }
+            HAL_Delay(1000);
         }
     }
 
@@ -68,12 +73,12 @@ void App_Init(void)
     /* Send initial STATUS to Android so it knows STM32 is ready */
     Comm_SendStatus(STATUS_CAN_OK);
 
-    /* Blink LED 3× → ready */
+    /* Blink LED 3× slow → ready */
     for (int i = 0; i < 3; i++) {
         HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-        HAL_Delay(150);
+        HAL_Delay(400);
         HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-        HAL_Delay(150);
+        HAL_Delay(400);
     }
 
     s_initialized = true;
