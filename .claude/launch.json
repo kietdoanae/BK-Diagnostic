@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "BKDiagnostic Preview",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["C:/Users/KIET/AndroidStudioProjects/BKDiagnostic/serve_assets.py"],
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "C:/Users/KIET/AndroidStudioProjects/BKDiagnostic/website", "-p", "9091", "--no-clipboard"],
       "port": 9091
     },
     {
