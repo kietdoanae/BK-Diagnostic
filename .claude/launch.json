@@ -39,6 +39,12 @@
       "runtimeExecutable": "./gradlew",
       "runtimeArgs": ["clean", "assembleDebug"],
       "port": 0
+    },
+    {
+      "name": "BK Diagnostic React Dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5173", "--host"],
+      "port": 5173
     }
   ]
 }
