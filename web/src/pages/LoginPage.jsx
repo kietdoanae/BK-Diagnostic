@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Form, Input, Button, Alert, Typography } from 'antd'
 import { EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { login, getProfile, logout as authLogout } from '../services/auth'
 import { useAuth } from '../hooks/useAuth'
 
@@ -17,11 +17,12 @@ const BLOCKED = {
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { session } = useAuth()
+  const { session, loading } = useAuth()
   const navigate = useNavigate()
   const [form] = Form.useForm()
 
-  useEffect(() => { if (session) navigate('/dashboard', { replace: true }) }, [session])
+  if (loading) return null
+  if (session) return <Navigate to="/dashboard" replace />
 
   async function handleSubmit({ identifier, password }) {
     setError('')
@@ -53,6 +54,7 @@ export default function LoginPage() {
       }
     }
 
+    setLoading(false)
     navigate('/dashboard', { replace: true })
   }
 

@@ -42,16 +42,14 @@ export default function AppLayout({ children }) {
     { key: 'logout', icon: <LogoutOutlined />, label: 'Sign Out', danger: true },
   ]
 
-  function handleUserMenu({ key }) {
-    if (key === 'logout') { logout(); navigate('/') }
+  async function handleUserMenu({ key }) {
+    if (key === 'logout') { await logout(); navigate('/') }
   }
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider
-        collapsible
         collapsed={collapsed}
-        onCollapse={setCollapsed}
         trigger={null}
         style={{ background: '#003291' }}
         width={200}
