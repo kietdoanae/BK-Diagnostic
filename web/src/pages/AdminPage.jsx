@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Tabs, Table, Tag, Button, Input, Select, Space, Typography, Row, Col, Card, Modal, Badge, Alert } from 'antd'
 import { SearchOutlined, ReloadOutlined, ExportOutlined } from '@ant-design/icons'
 import AppLayout from '../components/AppLayout'
-import DashboardPage from './DashboardPage'
 import { useUsers } from '../hooks/useUsers'
 import { useLogs } from '../hooks/useLogs'
 
@@ -220,7 +219,6 @@ export default function AdminPage() {
   const items = [
     { key: 'users', label: 'Users', children: <UsersTab /> },
     { key: 'logs', label: 'Activity Logs', children: <LogsTab /> },
-    { key: 'profile', label: 'My Profile', children: <DashboardPage embedded /> },
     { key: 'wiring', label: 'Wiring Diagram', children: (
       <Card style={{ borderRadius: 16 }}>
         <iframe
