@@ -9,11 +9,8 @@
     },
     {
       "name": "Website Preview",
-      "runtimeExecutable": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
-      "runtimeArgs": [
-        "-NoProfile", "-ExecutionPolicy", "Bypass",
-        "-File", "C:/Users/KIET/AndroidStudioProjects/BKDiagnostic/serve_preview.ps1"
-      ],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "web", "run", "dev", "--", "--port", "9090", "--host"],
       "port": 9090
     },
     {
