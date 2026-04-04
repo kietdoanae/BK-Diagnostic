@@ -1,27 +1,32 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { getSession, getProfile, onAuthStateChange, logout as authLogout } from '../services/auth'
+import { getProfile, onAuthStateChange, logout as authLogout } from '../services/auth'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined) // undefined = loading
   const [profile, setProfile] = useState(null)
+  const [profileError, setProfileError] = useState(null)
 
   async function loadProfile(userId) {
-    const { data } = await getProfile(userId)
-    setProfile(data ?? null)
+    setProfileError(null)
+    const { data, error } = await getProfile(userId)
+    if (error) {
+      setProfileError(error.message)
+      setProfile(null)
+    } else {
+      setProfile(data ?? null)
+    }
   }
 
   useEffect(() => {
-    getSession().then(s => {
-      setSession(s)
-      if (s?.user) loadProfile(s.user.id)
-    })
-
     const { data: { subscription } } = onAuthStateChange((event, s) => {
       setSession(s)
       if (s?.user) loadProfile(s.user.id)
-      else setProfile(null)
+      else {
+        setProfile(null)
+        setProfileError(null)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -31,13 +36,25 @@ export function AuthProvider({ children }) {
     await authLogout()
     setSession(null)
     setProfile(null)
+    setProfileError(null)
   }
 
-  const value = { session, profile, role: profile?.role ?? 'user', loading: session === undefined, logout }
+  const value = {
+    session,
+    profile,
+    role: profile?.role ?? 'user',
+    loading: session === undefined,
+    profileError,
+    logout,
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuthContext() {
-  return useContext(AuthContext)
+  const ctx = useContext(AuthContext)
+  if (ctx === null) {
+    throw new Error('useAuth must be used inside <AuthProvider>')
+  }
+  return ctx
 }
