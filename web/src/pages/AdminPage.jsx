@@ -224,7 +224,7 @@ export default function AdminPage() {
     { key: 'wiring', label: 'Wiring Diagram', children: (
       <Card style={{ borderRadius: 16 }}>
         <iframe
-          src="http://localhost:9091/wiring_diagram.html"
+          src="/wiring_diagram.html"
           style={{ width: '100%', height: 600, border: 'none', borderRadius: 8 }}
           title="Wiring Diagram"
         />
