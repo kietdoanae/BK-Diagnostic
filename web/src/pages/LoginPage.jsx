@@ -15,7 +15,7 @@ const BLOCKED = {
 }
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const { session, loading } = useAuth()
   const navigate = useNavigate()
@@ -26,12 +26,12 @@ export default function LoginPage() {
 
   async function handleSubmit({ identifier, password }) {
     setError('')
-    setLoading(true)
+    setSubmitting(true)
 
     const { data, error: err } = await login(identifier, password)
 
     if (err) {
-      setLoading(false)
+      setSubmitting(false)
       const msg = err.message === 'No account found with this username.' ? err.message
         : err.message.includes('Invalid login credentials') ? 'Incorrect email/username or password.'
         : err.message.includes('Email not confirmed') ? 'Email not confirmed. Please check your inbox.'
@@ -48,13 +48,13 @@ export default function LoginPage() {
       const status = (prof?.status ?? 'active').toLowerCase()
       if (status !== 'active') {
         await authLogout()
-        setLoading(false)
+        setSubmitting(false)
         setError(BLOCKED[status] ?? 'Your account is not active.')
         return
       }
     }
 
-    setLoading(false)
+    setSubmitting(false)
     navigate('/dashboard', { replace: true })
   }
 
@@ -109,7 +109,7 @@ export default function LoginPage() {
               <Input.Password placeholder="••••••••" autoComplete="current-password"
                 iconRender={v => v ? <EyeOutlined /> : <EyeInvisibleOutlined />} />
             </Form.Item>
-            <Button type="primary" htmlType="submit" block loading={loading} style={{ height: 44, fontWeight: 600, background: 'linear-gradient(135deg, #1565C0, #1E88E5)', border: 'none' }}>
+            <Button type="primary" htmlType="submit" block loading={submitting} style={{ height: 44, fontWeight: 600, background: 'linear-gradient(135deg, #1565C0, #1E88E5)', border: 'none' }}>
               Sign In
             </Button>
           </Form>
