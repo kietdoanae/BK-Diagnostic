@@ -1,18 +1,15 @@
 import { supabase } from './supabase'
 
 export async function getUsers() {
-  return supabase
-    .from('profiles')
-    .select('id, username, full_name, email, role, status, created_at, last_sign_in_at')
-    .order('created_at', { ascending: false })
+  return supabase.rpc('admin_get_users')
 }
 
 export async function updateUserStatus(userId, status) {
-  return supabase.from('profiles').update({ status }).eq('id', userId)
+  return supabase.rpc('admin_update_user', { target_id: userId, new_status: status })
 }
 
 export async function updateUserRole(userId, role) {
-  return supabase.from('profiles').update({ role }).eq('id', userId)
+  return supabase.rpc('admin_update_user', { target_id: userId, new_role: role })
 }
 
 export async function getLogs({ limit = 50, offset = 0, action = null, platform = null } = {}) {
