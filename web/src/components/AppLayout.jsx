@@ -51,21 +51,35 @@ export default function AppLayout({ children }) {
       <Sider
         collapsed={collapsed}
         trigger={null}
-        style={{ background: '#003291' }}
-        width={200}
+        style={{ background: 'linear-gradient(180deg,#001f6b 0%,#003291 40%,#0a4db5 100%)', boxShadow: '2px 0 12px rgba(0,0,50,0.25)', display: 'flex', flexDirection: 'column' }}
+        width={220}
       >
-        <div style={{ padding: collapsed ? '16px 8px' : '16px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: 8 }}>
-          <img src="https://i.ibb.co/Z0Xc41Z/logo.png" alt="logo" style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0 }} />
-          {!collapsed && <Text strong style={{ color: '#fff', fontSize: 14, whiteSpace: 'nowrap' }}>BK Diagnostic</Text>}
+        {/* Logo */}
+        <div style={{ padding: collapsed ? '20px 0' : '20px 16px', display: 'flex', alignItems: 'center', gap: 10, justifyContent: collapsed ? 'center' : 'flex-start', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <img src="https://i.ibb.co/Z0Xc41Z/logo.png" alt="logo" style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
+          {!collapsed && <Text strong style={{ color: '#fff', fontSize: 15, whiteSpace: 'nowrap', letterSpacing: 0.3 }}>BK Diagnostic</Text>}
         </div>
+
+        {/* Menu */}
         <Menu
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
-          style={{ background: '#003291', borderRight: 'none' }}
+          style={{ background: 'transparent', borderRight: 'none', flex: 1, marginTop: 8 }}
         />
+
+        {/* User info at bottom */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: collapsed ? '12px 0' : '12px 16px', display: 'flex', alignItems: 'center', gap: 10, justifyContent: collapsed ? 'center' : 'flex-start' }}>
+          <Avatar size={32} style={{ background: bg, fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{initial}</Avatar>
+          {!collapsed && (
+            <div style={{ minWidth: 0 }}>
+              <Text strong style={{ color: '#fff', fontSize: 13, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{username}</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11 }}>{role}</Text>
+            </div>
+          )}
+        </div>
       </Sider>
 
       <Layout>

@@ -44,7 +44,8 @@ export default function DashboardPage({ embedded = false }) {
   const content = (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
       <Card style={{ borderRadius: 24, marginBottom: 24, overflow: 'hidden', border: '1px solid #e8edf5' }} styles={{ body: { padding: 0 } }}>
-        <div style={{ height: 128, background: 'linear-gradient(135deg,#003291 0%,#1565C0 45%,#1E88E5 75%,#0ea5e9 100%)', position: 'relative' }}>
+        <div style={{ height: 140, background: 'linear-gradient(135deg,#003291 0%,#1565C0 50%,#1E88E5 80%,#bfdbfe 100%)', position: 'relative' }}>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 60, background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.85))' }} />
           <div style={{ position: 'absolute', top: 16, right: 20 }}>
             <Tag color={ROLE_COLOR[role] ?? 'default'} style={{ fontWeight: 700, borderRadius: 20 }}>{role?.charAt(0).toUpperCase() + role?.slice(1)}</Tag>
           </div>
