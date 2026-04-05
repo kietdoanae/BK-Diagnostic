@@ -21,6 +21,11 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const { data: { subscription } } = onAuthStateChange((event, s) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        // Don't treat recovery as a normal login — just hold the session
+        setSession(s)
+        return
+      }
       setSession(s)
       if (s?.user) loadProfile(s.user.id)
       else {

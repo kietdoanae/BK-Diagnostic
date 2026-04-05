@@ -47,11 +47,22 @@ export default function AppLayout({ children }) {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', background: '#f5f7fa' }}>
       <Sider
         collapsed={collapsed}
         trigger={null}
-        style={{ background: 'linear-gradient(180deg,#001f6b 0%,#003291 40%,#0a4db5 100%)', boxShadow: '2px 0 12px rgba(0,0,50,0.25)', display: 'flex', flexDirection: 'column' }}
+        style={{
+          background: 'linear-gradient(180deg,#001f6b 0%,#003291 40%,#0a4db5 100%)',
+          boxShadow: '4px 0 20px rgba(0,0,50,0.2)',
+          borderRadius: '0 18px 18px 0',
+          overflow: 'hidden',
+          margin: 0,
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
         width={220}
       >
         {/* Logo */}
