@@ -16,7 +16,9 @@ export default function ForgotPasswordPage() {
 
   async function handleSubmit({ email }) {
     setError(null)
-    const redirectTo = window.location.origin + '/reset-password'
+    // Always redirect to www to avoid naked domain (old server) consuming the token
+    const host = window.location.hostname.replace(/^www\./, '')
+    const redirectTo = `${window.location.protocol}//www.${host}/reset-password`
     const { error: err } = await forgotPassword(email, redirectTo)
     if (err) {
       setError(err.message)

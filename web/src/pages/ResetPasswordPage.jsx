@@ -1,22 +1,57 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Alert, Typography } from 'antd'
-import { resetPassword } from '../services/auth'
+import { Form, Input, Button, Alert, Typography, Spin } from 'antd'
+import { supabase } from '../services/supabase'
+import { resetPassword, logout } from '../services/auth'
 
 const { Title, Text } = Typography
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
-  const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(false)
+  // status: 'loading' | 'ready' | 'error' | 'success'
+  const [status, setStatus] = useState('loading')
+  const [errorMsg, setErrorMsg] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    // Check hash for error params (e.g. otp_expired)
+    const hash = window.location.hash.slice(1)
+    if (hash.includes('error=')) {
+      const params = new URLSearchParams(hash)
+      const desc = params.get('error_description') ?? 'Link không hợp lệ hoặc đã hết hạn.'
+      setErrorMsg(decodeURIComponent(desc.replace(/\+/g, ' ')))
+      setStatus('error')
+      return
+    }
+
+    // Listen for PASSWORD_RECOVERY event from Supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setStatus('ready')
+      }
+    })
+
+    // Fallback: if session already exists with recovery token in hash
+    if (hash.includes('type=recovery')) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) setStatus('ready')
+      })
+    }
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   async function handleSubmit({ password }) {
-    setError(null)
-    const { error: err } = await resetPassword(password)
-    if (err) {
-      setError(err.message)
+    setSubmitting(true)
+    setErrorMsg(null)
+    const { error } = await resetPassword(password)
+    setSubmitting(false)
+    if (error) {
+      setErrorMsg(error.message)
     } else {
-      setSuccess(true)
+      setStatus('success')
+      await logout()
+      setTimeout(() => navigate('/login'), 2500)
     }
   }
 
@@ -29,48 +64,54 @@ export default function ResetPasswordPage() {
           </Link>
         </div>
 
-        {success ? (
+        {status === 'loading' && (
+          <div style={{ textAlign: 'center', padding: '32px 0' }}>
+            <Spin size="large" />
+            <Text type="secondary" style={{ display: 'block', marginTop: 16 }}>Đang xác thực liên kết...</Text>
+          </div>
+        )}
+
+        {status === 'error' && (
           <>
             <Alert
-              type="success"
-              message="Password updated!"
-              description="Your password has been changed successfully."
+              type="error"
+              message="Liên kết không hợp lệ"
+              description={errorMsg}
               showIcon
               style={{ marginBottom: 24 }}
             />
             <Button
-              type="primary"
               block
-              style={{ height: 44, background: 'linear-gradient(135deg, #1565C0, #1E88E5)', border: 'none' }}
-              onClick={() => navigate('/dashboard')}
+              style={{ height: 44 }}
+              onClick={() => navigate('/forgot-password')}
             >
-              Go to Dashboard
+              Gửi lại email đặt lại mật khẩu
             </Button>
           </>
-        ) : (
+        )}
+
+        {status === 'ready' && (
           <>
-            <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>Set New Password</Title>
+            <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>Đặt mật khẩu mới</Title>
             <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginBottom: 32 }}>
-              Enter your new password below.
+              Nhập mật khẩu mới của bạn bên dưới.
             </Text>
 
-            {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
+            {errorMsg && <Alert type="error" message={errorMsg} showIcon style={{ marginBottom: 16 }} />}
             <Form layout="vertical" size="large" onFinish={handleSubmit}>
-              <Form.Item name="password" label="Password" rules={[{ required: true, min: 8, message: 'Password must be at least 8 characters' }]}>
+              <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, min: 8, message: 'Mật khẩu phải có ít nhất 8 ký tự' }]}>
                 <Input.Password placeholder="••••••••" />
               </Form.Item>
               <Form.Item
                 name="confirmPassword"
-                label="Confirm Password"
+                label="Xác nhận mật khẩu"
                 dependencies={['password']}
                 rules={[
-                  { required: true, message: 'Please confirm your password' },
+                  { required: true, message: 'Vui lòng xác nhận mật khẩu' },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
-                      if (!value || getFieldValue('password') === value) {
-                        return Promise.resolve()
-                      }
-                      return Promise.reject(new Error('Passwords do not match'))
+                      if (!value || getFieldValue('password') === value) return Promise.resolve()
+                      return Promise.reject(new Error('Mật khẩu không khớp'))
                     },
                   }),
                 ]}
@@ -82,12 +123,25 @@ export default function ResetPasswordPage() {
                   type="primary"
                   htmlType="submit"
                   block
+                  loading={submitting}
                   style={{ height: 44, background: 'linear-gradient(135deg, #1565C0, #1E88E5)', border: 'none' }}
                 >
-                  Update Password
+                  Cập nhật mật khẩu
                 </Button>
               </Form.Item>
             </Form>
+          </>
+        )}
+
+        {status === 'success' && (
+          <>
+            <Alert
+              type="success"
+              message="Mật khẩu đã được cập nhật!"
+              description="Đang chuyển hướng về trang đăng nhập..."
+              showIcon
+              style={{ marginBottom: 24 }}
+            />
           </>
         )}
       </div>
