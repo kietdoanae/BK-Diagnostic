@@ -697,125 +697,110 @@ svg#dia{display:block;width:1580px;height:510px}
   <!-- End-cap phải -->
   <rect x="140" y="54" width="7" height="16" rx="1.5" fill="url(#crystalCap)" stroke="#555" stroke-width=".8"/>
 
-  <!-- ── MCP2515 main chip (PDIP-18) ── -->
-  <!-- Silkscreen outline -->
-  <rect x="88" y="76" width="98" height="98" rx="1.5" fill="none"
+  <!-- ── MCP2515 main chip (SOP-18 / PDIP-18, chân TRÁI + PHẢI, không có top/bottom) ── -->
+  <!-- Silkscreen outline (taller than wide — DIP-18 shape) -->
+  <rect x="95" y="76" width="80" height="100" rx="2" fill="none"
     stroke="rgba(255,255,255,.32)" stroke-width=".7"/>
   <!-- Pin 1 triangle on silkscreen -->
-  <polygon points="88,76 98,76 88,86" fill="rgba(255,255,255,.18)"/>
-  <!-- Chip dark pad -->
-  <rect x="89" y="77" width="96" height="96" rx="2" fill="#0d2a0d" stroke="#1b5e20" stroke-width=".5"/>
-  <!-- Chip body -->
-  <rect x="91" y="79" width="92" height="92" rx="3" fill="url(#gChip)" stroke="#444" stroke-width="1.2"/>
+  <polygon points="95,76 105,76 95,86" fill="rgba(255,255,255,.18)"/>
+  <!-- Chip dark pad area -->
+  <rect x="96" y="77" width="78" height="98" rx="2" fill="#0d2a0d" stroke="#1b5e20" stroke-width=".5"/>
+  <!-- Chip body (black epoxy) -->
+  <rect x="98" y="79" width="74" height="94" rx="3" fill="url(#gChip)" stroke="#444" stroke-width="1.2"/>
   <!-- Top edge highlight -->
-  <rect x="91" y="79" width="92" height="9" rx="3" fill="rgba(255,255,255,.055)"/>
-  <!-- PDIP notch (indentation at top center) -->
-  <path d="M 128,79 A 9,9 0 0,1 146,79" fill="#0d1a0d" stroke="#3a3a3a" stroke-width=".9"/>
-  <!-- Pin 1 dot (bottom-left of notch) -->
-  <circle cx="94" cy="82" r="2.5" fill="#9e9e9e"/>
-  <!-- Chip surface micro-lines -->
-  <g fill="none" stroke="rgba(255,255,255,.055)" stroke-width=".6">
-    <line x1="95" y1="110" x2="179" y2="110"/>
-    <line x1="95" y1="140" x2="179" y2="140"/>
-    <line x1="122" y1="82" x2="122" y2="168"/>
-    <line x1="152" y1="82" x2="152" y2="168"/>
+  <rect x="98" y="79" width="74" height="8" rx="3" fill="rgba(255,255,255,.06)"/>
+  <!-- DIP notch (U-shape at top center) -->
+  <path d="M 124,79 A 11,11 0 0,1 146,79" fill="#0d1a0d" stroke="#3a3a3a" stroke-width=".9"/>
+  <!-- Pin 1 dot -->
+  <circle cx="101" cy="83" r="2.5" fill="#9e9e9e"/>
+  <!-- Chip surface texture lines -->
+  <g fill="none" stroke="rgba(255,255,255,.05)" stroke-width=".6">
+    <line x1="102" y1="110" x2="168" y2="110"/>
+    <line x1="102" y1="140" x2="168" y2="140"/>
+    <line x1="125" y1="82" x2="125" y2="170"/>
+    <line x1="148" y1="82" x2="148" y2="170"/>
   </g>
-  <!-- Diagonal laser marks (holographic-style chip surface) -->
-  <g fill="none" stroke="rgba(255,255,255,.025)" stroke-width=".8">
-    <line x1="93" y1="82" x2="179" y2="168"/>
-    <line x1="108" y1="79" x2="183" y2="153"/>
+  <g fill="none" stroke="rgba(255,255,255,.02)" stroke-width=".8">
+    <line x1="100" y1="81" x2="170" y2="170"/>
+    <line x1="115" y1="79" x2="172" y2="155"/>
   </g>
-  <!-- Pin legs: top 9 -->
+
+  <!-- LEFT 9 pins (DIP-18: pins 1–9, pitch ~10px, start y=87) -->
   <g fill="#8a8a8a" stroke="#555" stroke-width=".3">
-    <rect x="97"  y="74" width="5" height="6" rx=".5"/>
-    <rect x="106" y="74" width="5" height="6" rx=".5"/>
-    <rect x="115" y="74" width="5" height="6" rx=".5"/>
-    <rect x="124" y="74" width="5" height="6" rx=".5"/>
-    <rect x="133" y="74" width="5" height="6" rx=".5"/>
-    <rect x="142" y="74" width="5" height="6" rx=".5"/>
-    <rect x="151" y="74" width="5" height="6" rx=".5"/>
-    <rect x="160" y="74" width="5" height="6" rx=".5"/>
-    <rect x="169" y="74" width="5" height="6" rx=".5"/>
-    <!-- Bottom 9 -->
-    <rect x="97"  y="170" width="5" height="6" rx=".5"/>
-    <rect x="106" y="170" width="5" height="6" rx=".5"/>
-    <rect x="115" y="170" width="5" height="6" rx=".5"/>
-    <rect x="124" y="170" width="5" height="6" rx=".5"/>
-    <rect x="133" y="170" width="5" height="6" rx=".5"/>
-    <rect x="142" y="170" width="5" height="6" rx=".5"/>
-    <rect x="151" y="170" width="5" height="6" rx=".5"/>
-    <rect x="160" y="170" width="5" height="6" rx=".5"/>
-    <rect x="169" y="170" width="5" height="6" rx=".5"/>
-    <!-- Left 9 -->
-    <rect x="84" y="87"  width="8" height="5" rx=".5"/>
-    <rect x="84" y="96"  width="8" height="5" rx=".5"/>
-    <rect x="84" y="105" width="8" height="5" rx=".5"/>
-    <rect x="84" y="114" width="8" height="5" rx=".5"/>
-    <rect x="84" y="123" width="8" height="5" rx=".5"/>
-    <rect x="84" y="132" width="8" height="5" rx=".5"/>
-    <rect x="84" y="141" width="8" height="5" rx=".5"/>
-    <rect x="84" y="150" width="8" height="5" rx=".5"/>
-    <rect x="84" y="159" width="8" height="5" rx=".5"/>
-    <!-- Right 9 -->
-    <rect x="183" y="87"  width="8" height="5" rx=".5"/>
-    <rect x="183" y="96"  width="8" height="5" rx=".5"/>
-    <rect x="183" y="105" width="8" height="5" rx=".5"/>
-    <rect x="183" y="114" width="8" height="5" rx=".5"/>
-    <rect x="183" y="123" width="8" height="5" rx=".5"/>
-    <rect x="183" y="132" width="8" height="5" rx=".5"/>
-    <rect x="183" y="141" width="8" height="5" rx=".5"/>
-    <rect x="183" y="150" width="8" height="5" rx=".5"/>
-    <rect x="183" y="159" width="8" height="5" rx=".5"/>
+    <rect x="87" y="86"  width="9" height="5" rx=".5"/>
+    <rect x="87" y="96"  width="9" height="5" rx=".5"/>
+    <rect x="87" y="106" width="9" height="5" rx=".5"/>
+    <rect x="87" y="116" width="9" height="5" rx=".5"/>
+    <rect x="87" y="126" width="9" height="5" rx=".5"/>
+    <rect x="87" y="136" width="9" height="5" rx=".5"/>
+    <rect x="87" y="146" width="9" height="5" rx=".5"/>
+    <rect x="87" y="156" width="9" height="5" rx=".5"/>
+    <rect x="87" y="166" width="9" height="5" rx=".5"/>
   </g>
-  <!-- Solder fillet glow on legs -->
-  <g fill="rgba(180,140,60,.18)">
-    <rect x="84" y="87"  width="8" height="5" rx=".5"/>
-    <rect x="84" y="96"  width="8" height="5" rx=".5"/>
-    <rect x="84" y="105" width="8" height="5" rx=".5"/>
-    <rect x="84" y="114" width="8" height="5" rx=".5"/>
-    <rect x="84" y="123" width="8" height="5" rx=".5"/>
-    <rect x="84" y="132" width="8" height="5" rx=".5"/>
-    <rect x="84" y="141" width="8" height="5" rx=".5"/>
-    <rect x="84" y="150" width="8" height="5" rx=".5"/>
-    <rect x="84" y="159" width="8" height="5" rx=".5"/>
-    <rect x="183" y="87"  width="8" height="5" rx=".5"/>
-    <rect x="183" y="96"  width="8" height="5" rx=".5"/>
-    <rect x="183" y="105" width="8" height="5" rx=".5"/>
-    <rect x="183" y="114" width="8" height="5" rx=".5"/>
-    <rect x="183" y="123" width="8" height="5" rx=".5"/>
-    <rect x="183" y="132" width="8" height="5" rx=".5"/>
-    <rect x="183" y="141" width="8" height="5" rx=".5"/>
-    <rect x="183" y="150" width="8" height="5" rx=".5"/>
-    <rect x="183" y="159" width="8" height="5" rx=".5"/>
+  <!-- RIGHT 9 pins (pins 18–10 top to bottom) -->
+  <g fill="#8a8a8a" stroke="#555" stroke-width=".3">
+    <rect x="174" y="86"  width="9" height="5" rx=".5"/>
+    <rect x="174" y="96"  width="9" height="5" rx=".5"/>
+    <rect x="174" y="106" width="9" height="5" rx=".5"/>
+    <rect x="174" y="116" width="9" height="5" rx=".5"/>
+    <rect x="174" y="126" width="9" height="5" rx=".5"/>
+    <rect x="174" y="136" width="9" height="5" rx=".5"/>
+    <rect x="174" y="146" width="9" height="5" rx=".5"/>
+    <rect x="174" y="156" width="9" height="5" rx=".5"/>
+    <rect x="174" y="166" width="9" height="5" rx=".5"/>
   </g>
-  <!-- Chip labels -->
-  <text x="137" y="118" text-anchor="middle" fill="rgba(255,255,255,.62)" font-size="8" font-weight="bold">MCP2515</text>
-  <text x="137" y="129" text-anchor="middle" fill="rgba(255,255,255,.32)" font-size="5">CAN CONTROLLER</text>
-  <text x="137" y="139" text-anchor="middle" fill="rgba(255,255,255,.22)" font-size="4.5">SPI 10MHz  2.0B</text>
-  <text x="137" y="149" text-anchor="middle" fill="rgba(255,255,255,.16)" font-size="4">Microchip Technology</text>
-  <!-- Pin labels left side (MCP2515 PDIP-18 pinout) -->
-  <g fill="rgba(160,220,160,.48)" font-size="3.2" text-anchor="end">
-    <text x="83" y="91">TXCAN</text>
-    <text x="83" y="100">RXCAN</text>
-    <text x="83" y="109">OSC2</text>
-    <text x="83" y="118">OSC1</text>
-    <text x="83" y="127">VDD</text>
-    <text x="83" y="136">VSS</text>
-    <text x="83" y="145">nCS</text>
-    <text x="83" y="154">SO</text>
-    <text x="83" y="163">SI</text>
+  <!-- Solder fillet glow -->
+  <g fill="rgba(180,140,60,.2)">
+    <rect x="87" y="86"  width="9" height="5" rx=".5"/>
+    <rect x="87" y="96"  width="9" height="5" rx=".5"/>
+    <rect x="87" y="106" width="9" height="5" rx=".5"/>
+    <rect x="87" y="116" width="9" height="5" rx=".5"/>
+    <rect x="87" y="126" width="9" height="5" rx=".5"/>
+    <rect x="87" y="136" width="9" height="5" rx=".5"/>
+    <rect x="87" y="146" width="9" height="5" rx=".5"/>
+    <rect x="87" y="156" width="9" height="5" rx=".5"/>
+    <rect x="87" y="166" width="9" height="5" rx=".5"/>
+    <rect x="174" y="86"  width="9" height="5" rx=".5"/>
+    <rect x="174" y="96"  width="9" height="5" rx=".5"/>
+    <rect x="174" y="106" width="9" height="5" rx=".5"/>
+    <rect x="174" y="116" width="9" height="5" rx=".5"/>
+    <rect x="174" y="126" width="9" height="5" rx=".5"/>
+    <rect x="174" y="136" width="9" height="5" rx=".5"/>
+    <rect x="174" y="146" width="9" height="5" rx=".5"/>
+    <rect x="174" y="156" width="9" height="5" rx=".5"/>
+    <rect x="174" y="166" width="9" height="5" rx=".5"/>
   </g>
-  <!-- Pin labels right side -->
-  <g fill="rgba(160,220,160,.48)" font-size="3.2">
-    <text x="192" y="91">nINT</text>
-    <text x="192" y="100">RX1BF</text>
-    <text x="192" y="109">RX0BF</text>
-    <text x="192" y="118">TX2RTS</text>
-    <text x="192" y="127">TX1RTS</text>
-    <text x="192" y="136">TX0RTS</text>
-    <text x="192" y="145">CLK</text>
-    <text x="192" y="154">MISO</text>
-    <text x="192" y="163">SCK</text>
+
+  <!-- Chip laser-marked text -->
+  <text x="135" y="116" text-anchor="middle" fill="rgba(255,255,255,.65)" font-size="8.5" font-weight="bold">MCP2515</text>
+  <text x="135" y="128" text-anchor="middle" fill="rgba(255,255,255,.35)" font-size="5">CAN CONTROLLER</text>
+  <text x="135" y="138" text-anchor="middle" fill="rgba(255,255,255,.22)" font-size="4.5">SPI 10MHz · CAN 2.0B</text>
+  <text x="135" y="148" text-anchor="middle" fill="rgba(255,255,255,.16)" font-size="4">Microchip Technology</text>
+  <text x="135" y="157" text-anchor="middle" fill="rgba(255,255,255,.12)" font-size="3.8">DIP-18 / SOP-18</text>
+
+  <!-- Pin labels LEFT (pins 1–9: TXCAN VSS VDD OSC2 OSC1 TX2RTS TX1RTS TX0RTS nCS) -->
+  <g fill="rgba(160,220,160,.52)" font-size="3.2" text-anchor="end">
+    <text x="86" y="90">1·TXCAN</text>
+    <text x="86" y="100">2·VSS</text>
+    <text x="86" y="110">3·VDD</text>
+    <text x="86" y="120">4·OSC2</text>
+    <text x="86" y="130">5·OSC1</text>
+    <text x="86" y="140">6·TX2RTS</text>
+    <text x="86" y="150">7·TX1RTS</text>
+    <text x="86" y="160">8·TX0RTS</text>
+    <text x="86" y="170">9·nCS</text>
+  </g>
+  <!-- Pin labels RIGHT (pins 18→10 top-bottom: RXCAN CLK RX0BF RX1BF nINT SCK SI SO nINT) -->
+  <g fill="rgba(160,220,160,.52)" font-size="3.2">
+    <text x="184" y="90">18·RXCAN</text>
+    <text x="184" y="100">17·CLK</text>
+    <text x="184" y="110">16·RX0BF</text>
+    <text x="184" y="120">15·RX1BF</text>
+    <text x="184" y="130">14·nINT</text>
+    <text x="184" y="140">13·SCK</text>
+    <text x="184" y="150">12·SI</text>
+    <text x="184" y="160">11·SO</text>
+    <text x="184" y="170">10·nCS</text>
   </g>
 
   <!-- ── SMD Passives Row ── -->
