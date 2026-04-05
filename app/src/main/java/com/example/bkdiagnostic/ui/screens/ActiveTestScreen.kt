@@ -59,13 +59,15 @@ fun ActiveTestScreen(
     val webViewRef = remember { mutableStateOf<WebView?>(null) }
 
     fun syncIndicator(key: String, isOn: Boolean) {
+        if (!key.matches(Regex("^[A-Za-z0-9_-]+$"))) return
         val js = "window.cluster.setIndicator('$key', $isOn)"
         val wv = webViewRef.value ?: return
         wv.post { wv.evaluateJavascript(js, null) }
     }
 
     fun toggle(cmd: ActiveTestCommand) {
-        if (!isConnected) {
+        val connected = viewModel.connectionState.value is UsbSerialManager.ConnectionState.Connected
+        if (!connected) {
             scope.launch { snackbarHost.showSnackbar(strErrorNotConnected) }
             return
         }
@@ -144,6 +146,7 @@ fun ActiveTestScreen(
                         )
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
+                                if (url != "file:///android_asset/cluster.html") return
                                 view?.postDelayed({
                                     view.evaluateJavascript("window.cluster.powerOn()", null)
                                 }, 300)
