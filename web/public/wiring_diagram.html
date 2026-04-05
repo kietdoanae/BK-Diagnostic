@@ -236,9 +236,9 @@ svg#dia{display:block;width:1580px;height:510px}
 <path id="w_gnd1" class="wire" stroke="#6b7280" stroke-width="2"
   d="M 717,262 C 758,262 780,262 832,262" onclick="wInfo('gnd')"/>
 
-<!-- USB: CP2102 to Android -->
+<!-- USB: CP2102 to Android (from connector tip at 832+178=1010) -->
 <path id="w_usb"  class="wire" stroke="#A78BFA" stroke-width="4"
-  d="M 990,240 C 1042,240 1065,240 1110,240" onclick="wInfo('usb_data')"/>
+  d="M 1010,240 C 1042,240 1065,240 1110,240" onclick="wInfo('usb_data')"/>
 
 <!-- DATA FLOW ANIMATED PACKETS -->
 <g id="flowGroup" display="none">
@@ -1573,23 +1573,23 @@ svg#dia{display:block;width:1580px;height:510px}
   <!-- Ground copper strip (top) -->
   <rect x="16" y="17" width="126" height="2.5" rx="1" fill="rgba(184,115,51,.18)"/>
 
-  <!-- ── Mini-USB Type-B connector ── -->
-  <!-- Shell (stainless steel) -->
-  <rect x="56" y="-12" width="46" height="18" rx="2.5"
+  <!-- ── Mini-USB Type-B connector (RIGHT side, facing Android) ── -->
+  <!-- Shell (stainless steel) — protrudes right from PCB edge -->
+  <rect x="158" y="82" width="20" height="36" rx="2.5"
     fill="#5a5a5a" stroke="#888" stroke-width="1"/>
-  <!-- Inner cavity (trapezoidal USB-B shape approximated) -->
-  <rect x="60" y="-9" width="38" height="12" rx="1.5" fill="#1e1e1e"/>
-  <!-- 5 gold contacts -->
-  <rect x="63" y="-7" width="4" height="8" rx=".5" fill="#c8a040"/>
-  <rect x="69" y="-7" width="4" height="8" rx=".5" fill="#c8a040"/>
-  <rect x="75" y="-7" width="4" height="8" rx=".5" fill="#c8a040"/>
-  <rect x="81" y="-7" width="4" height="8" rx=".5" fill="#c8a040"/>
-  <rect x="87" y="-7" width="4" height="8" rx=".5" fill="#c8a040"/>
-  <!-- Shell mounting pads (copper) -->
-  <rect x="51" y="0" width="9" height="6" rx="1" fill="#b87333" stroke="#7a5020" stroke-width=".5"/>
-  <rect x="98" y="0" width="9" height="6" rx="1" fill="#b87333" stroke="#7a5020" stroke-width=".5"/>
+  <!-- Inner cavity (USB-B socket shape) -->
+  <rect x="161" y="86" width="14" height="28" rx="1.5" fill="#1e1e1e"/>
+  <!-- 5 gold contacts (horizontal bands) -->
+  <rect x="163" y="88"  width="9" height="3.5" rx=".5" fill="#c8a040"/>
+  <rect x="163" y="93"  width="9" height="3.5" rx=".5" fill="#c8a040"/>
+  <rect x="163" y="98"  width="9" height="3.5" rx=".5" fill="#c8a040"/>
+  <rect x="163" y="103" width="9" height="3.5" rx=".5" fill="#c8a040"/>
+  <rect x="163" y="108" width="9" height="3.5" rx=".5" fill="#c8a040"/>
+  <!-- Shell mounting pads (copper) at top/bottom of connector -->
+  <rect x="151" y="77" width="7" height="7" rx="1" fill="#b87333" stroke="#7a5020" stroke-width=".5"/>
+  <rect x="151" y="116" width="7" height="7" rx="1" fill="#b87333" stroke="#7a5020" stroke-width=".5"/>
   <!-- USB silkscreen label -->
-  <text x="79" y="16" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="5">Mini-USB</text>
+  <text x="140" y="78" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="5">Mini-USB</text>
 
   <!-- ── Board title silkscreen ── -->
   <text x="79" y="28" text-anchor="middle" fill="rgba(255,255,255,.7)"
@@ -1690,12 +1690,12 @@ svg#dia{display:block;width:1580px;height:510px}
   <text x="18" y="122" fill="rgba(255,255,255,.22)" font-size="3.5">U2</text>
 
   <!-- ── Decoupling Caps 0402 MLCC ── -->
-  <!-- C1 near USB (top left) -->
-  <rect x="37" y="22" width="10" height="5" rx=".8"
+  <!-- C1 near USB right connector -->
+  <rect x="140" y="65" width="10" height="5" rx=".8"
     fill="url(#ceramicBody)" stroke="#7a5020" stroke-width=".5"/>
-  <rect x="36" y="23" width="3" height="3" rx=".3" fill="#c09040"/>
-  <rect x="47" y="23" width="3" height="3" rx=".3" fill="#c09040"/>
-  <text x="41" y="32" text-anchor="middle" fill="rgba(255,255,255,.22)" font-size="3.5">C1</text>
+  <rect x="139" y="66" width="3" height="3" rx=".3" fill="#c09040"/>
+  <rect x="150" y="66" width="3" height="3" rx=".3" fill="#c09040"/>
+  <text x="145" y="75" text-anchor="middle" fill="rgba(255,255,255,.22)" font-size="3.5">C1</text>
 
   <!-- C2 near chip right -->
   <rect x="117" y="57" width="10" height="5" rx=".8"
@@ -1737,14 +1737,16 @@ svg#dia{display:block;width:1580px;height:510px}
   <text x="123" y="181" text-anchor="middle" fill="rgba(255,150,50,.65)" font-size="4">RXD</text>
 
   <!-- ── Copper Vias ── -->
-  <circle cx="47" cy="22" r="2.8" fill="#b87333" stroke="#5a3a10" stroke-width=".5"/>
-  <circle cx="47" cy="22" r="1.2" fill="#0a0012"/>
-  <circle cx="58" cy="22" r="2.8" fill="#b87333" stroke="#5a3a10" stroke-width=".5"/>
-  <circle cx="58" cy="22" r="1.2" fill="#0a0012"/>
-  <circle cx="100" cy="22" r="2.8" fill="#b87333" stroke="#5a3a10" stroke-width=".5"/>
-  <circle cx="100" cy="22" r="1.2" fill="#0a0012"/>
-  <circle cx="111" cy="22" r="2.8" fill="#b87333" stroke="#5a3a10" stroke-width=".5"/>
-  <circle cx="111" cy="22" r="1.2" fill="#0a0012"/>
+  <!-- Vias near right USB connector -->
+  <circle cx="148" cy="74" r="2.8" fill="#b87333" stroke="#5a3a10" stroke-width=".5"/>
+  <circle cx="148" cy="74" r="1.2" fill="#0a0012"/>
+  <circle cx="154" cy="74" r="2.8" fill="#b87333" stroke="#5a3a10" stroke-width=".5"/>
+  <circle cx="154" cy="74" r="1.2" fill="#0a0012"/>
+  <circle cx="148" cy="120" r="2.8" fill="#b87333" stroke="#5a3a10" stroke-width=".5"/>
+  <circle cx="148" cy="120" r="1.2" fill="#0a0012"/>
+  <circle cx="154" cy="120" r="2.8" fill="#b87333" stroke="#5a3a10" stroke-width=".5"/>
+  <circle cx="154" cy="120" r="1.2" fill="#0a0012"/>
+  <!-- Vias bottom area -->
   <circle cx="28" cy="161" r="2.8" fill="#b87333" stroke="#5a3a10" stroke-width=".5"/>
   <circle cx="28" cy="161" r="1.2" fill="#0a0012"/>
   <circle cx="79" cy="175" r="2.8" fill="#b87333" stroke="#5a3a10" stroke-width=".5"/>
@@ -1752,25 +1754,23 @@ svg#dia{display:block;width:1580px;height:510px}
 
   <!-- ── Copper traces (faint amber) ── -->
   <g fill="none" stroke="rgba(184,115,51,.22)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <!-- USB D+/D- to chip top -->
-    <path d="M 69,-4 L 69,20 L 61,50"/>
-    <path d="M 75,-4 L 75,20 L 68,50"/>
-    <!-- VBUS to chip + LDO -->
-    <path d="M 63,-4 L 63,20 L 54,50"/>
-    <path d="M 63,20 L 28,20 L 28,124"/>
-    <!-- GND trace -->
-    <path d="M 87,-4 L 87,20 L 96,50"/>
+    <!-- USB D+/D- from chip right pins to connector -->
+    <path d="M 113,64 L 148,64 L 148,82"/>
+    <path d="M 113,71 L 151,71 L 151,82"/>
+    <!-- VBUS from chip right to connector + LDO -->
+    <path d="M 113,57 L 154,57 L 154,77"/>
+    <path d="M 79,56 L 79,35 L 28,35 L 28,124"/>
+    <!-- GND from chip right to connector bottom -->
+    <path d="M 113,85 L 148,85 L 148,123"/>
     <!-- Chip TXD/RXD to left header -->
     <path d="M 46,64 L 18,64 L 18,60"/>
     <path d="M 46,71 L 16,71 L 16,78"/>
     <path d="M 46,78 L 14,78 L 14,100"/>
     <path d="M 46,85 L 16,85 L 16,122"/>
-    <!-- Chip to right USB pad -->
-    <path d="M 113,78 L 138,78 L 138,100"/>
     <!-- Chip to LDO -->
     <path d="M 68,115 L 68,125 L 42,125 L 42,128"/>
     <!-- LEDs to vias -->
-    <path d="M 118,130 L 111,130 L 111,22"/>
+    <path d="M 118,130 L 148,130 L 148,124"/>
     <path d="M 118,150 L 113,150 L 113,108"/>
   </g>
 
@@ -1802,9 +1802,8 @@ svg#dia{display:block;width:1580px;height:510px}
   <text x="10" y="137.5" fill="rgba(255,255,255,.28)" font-size="4">5V</text>
   <text x="10" y="156.5" fill="rgba(255,255,255,.28)" font-size="4">DTR</text>
 
-  <!-- ── Through-hole pad RIGHT (USB OUT) ── -->
-  <rect x="150" y="95" width="13" height="10" rx="1" fill="#b87333" stroke="#7a5020" stroke-width=".7"/>
-  <circle cx="156.5" cy="100" r="3.5" fill="#0a0012"/>
+  <!-- ── USB OUT signal pad (at connector location) ── -->
+  <!-- (connector shell mounting pads serve as physical anchor) -->
 
   <!-- ── PCB bottom silkscreen ── -->
   <text x="79" y="188" text-anchor="middle" fill="rgba(255,255,255,.5)"
@@ -1827,9 +1826,9 @@ svg#dia{display:block;width:1580px;height:510px}
   <!-- GND cy=122 -->
   <circle cx="0" cy="122" r="4.5" fill="#6b7280" filter="url(#sglow)"/>
   <text x="14" y="126" fill="#6b7280" font-size="5.5">GND</text>
-  <!-- USB OUT right cy=100 -->
-  <circle cx="158" cy="100" r="5.5" fill="#A78BFA" filter="url(#glow)"/>
-  <text x="144" y="104" text-anchor="end" fill="#A78BFA" font-size="5.5">USB OUT</text>
+  <!-- USB OUT — at connector tip (right side, toward Android) -->
+  <circle cx="178" cy="100" r="5.5" fill="#A78BFA" filter="url(#glow)"/>
+  <text x="186" y="104" text-anchor="start" fill="#A78BFA" font-size="5.5">USB OUT</text>
 
 </g>
 
