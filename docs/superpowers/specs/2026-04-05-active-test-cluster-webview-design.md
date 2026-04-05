@@ -193,14 +193,33 @@ Mỗi icon: hình tròn nhỏ, mờ khi tắt (opacity 0.15), sáng khi bật.
 | `oil_pressure` | oil drop | `#EF4444` | 1 |
 | `high_beam` | 💡H | `#3B82F6` | 1 |
 | `airbag` | airbag | `#FBBF24` | 2 |
-| `door_lock` | door | `#EF4444` | 2 |
+| `door_lock` / `door_unlock` | door | Đỏ `#EF4444` (locked) / Vàng `#FBBF24` (unlocked) — toggle mỗi lần nhấn | 2 |
 | `abs` | ABS | `#FBBF24` | 2 |
 | `low_beam` | 💡L | `#22C55E` | 2 |
 | `brake_light` | BR | `#EF4444` | 2 |
 | `reverse_light` | R (reverse) | `#FFFFFF` | 2 |
-| `horn` | 📢 | `#FBBF24` pulse | không hiển thị trong cluster |
-| `front_wiper` | wiper | `#60A5FA` pulse | không hiển thị trong cluster |
-| `rear_wiper` | wiper-r | `#60A5FA` pulse | không hiển thị trong cluster |
+| `horn` | 📢 | `#FBBF24` pulse | Quick Actions bar dưới MFD |
+| `front_wiper` | wiper-f | `#60A5FA` pulse | Quick Actions bar dưới MFD |
+| `rear_wiper` | wiper-r | `#60A5FA` pulse | Quick Actions bar dưới MFD |
+
+**Quick Actions bar** — 3 nút nằm ngay dưới MFD, chỉ dùng cho lệnh pulse (tự tắt).
+
+Thiết kế **Glassmorphism overlay**: nền `rgba(255,255,255,0.04)`, viền `rgba(255,255,255,0.10)`,
+`backdrop-filter: blur(8px)`, bo góc 12px — tạo cảm giác lớp chẩn đoán đè lên táp lô nguyên bản.
+
+| Nút | Key | Màu active | Thời gian sáng |
+|---|---|---|---|
+| 🔊 Còi | `horn` | `#FBBF24` | 2000ms |
+| 🌧 Gạt trước | `front_wiper` | `#60A5FA` | 3000ms |
+| 🌧 Gạt sau | `rear_wiper` | `#60A5FA` | 3000ms |
+
+**Active State effect khi nhấn:**
+- Nút sáng rực ngay lập tức (background chuyển sang màu active, opacity 0.9, `box-shadow` glow)
+- Sau `pulseDurationMs` ms: fade về trạng thái mờ ban đầu (transition 400ms)
+- Mục đích: người dùng biết lệnh đã gửi đi MCP2515 và đang thực hiện.
+
+**Debounce 500ms:** Sau khi nhấn, nút bị khóa 500ms để tránh spam gửi frame CAN liên tục
+làm tràn hàng đợi STM32. Implement bằng cờ `isDebouncing` trong JS.
 
 **Clickable icons** (nhấn để gửi lệnh):
 `hazard`, `low_beam`, `high_beam`, `brake_light`, `reverse_light`, `door_lock`, `left_turn`, `right_turn`
@@ -230,21 +249,32 @@ Nằm dưới kim đồng hồ, chữ in hoa, không chân (sans-serif), rất m
 ### 8.1 Android → JS (gọi từ WebView.evaluateJavascript)
 
 ```javascript
-window.cluster.setSpeed(value)       // 0–200, quay kim tốc độ
-window.cluster.setRPM(value)         // 0–6000, quay kim vòng tua
+window.cluster.setSpeed(value)           // 0–200, quay kim tốc độ
+window.cluster.setRPM(value)             // 0–6000, quay kim vòng tua
 window.cluster.setIndicator(key, state)  // key: string, state: boolean
-window.cluster.setFuel(level)        // 0–8, số segment sáng
-window.cluster.setTemp(level)        // 0–8, số segment sáng
-window.cluster.setGear(gear)         // 'P'|'R'|'N'|'D'|'S'
-window.cluster.powerOn()             // trigger startup sweep animation
+window.cluster.setFuel(level)            // 0–8, số segment sáng
+window.cluster.setTemp(level)            // 0–8, số segment sáng
+window.cluster.setGear(gear)             // 'P'|'R'|'N'|'D'|'S'
+window.cluster.powerOn()                 // trigger startup sweep animation
+window.cluster.setDoorState(isLocked)    // true=đỏ(locked), false=vàng(unlocked)
+                                         // Back-sync: Android gọi khi CAN bus báo
+                                         // trạng thái cửa thay đổi từ phía xe
 ```
+
+**Back-sync Door Lock:** Khi Android nhận frame CAN bus báo trạng thái cửa thay đổi
+(người dùng khóa/mở cửa trực tiếp trên xe, không qua app), Android gọi:
+```kotlin
+webView.evaluateJavascript("window.cluster.setDoorState(${isLocked})", null)
+```
+JS cập nhật màu icon door: `#EF4444` (locked) hoặc `#FBBF24` (unlocked).
 
 ### 8.2 JS → Android (gọi JavascriptInterface)
 
 ```javascript
 Android.sendExternalCommand(key, state)
 // key: 'left_turn'|'right_turn'|'hazard'|'low_beam'|'high_beam'|
-//      'brake_light'|'reverse_light'|'door_lock'|'door_unlock'
+//      'brake_light'|'reverse_light'|'door_lock'|'door_unlock'|
+//      'horn'|'front_wiper'|'rear_wiper'
 // state: boolean (true = ON, false = OFF)
 ```
 
@@ -320,3 +350,7 @@ webView.addJavascriptInterface(
 - [ ] `Android.sendExternalCommand` được gọi khi nhấn icon clickable
 - [ ] SVG responsive, không méo trên màn hình 6" và 10" tablet
 - [ ] Watermark "RANGER" hiển thị mờ dưới kim
+- [ ] Quick Actions: Horn sáng rực 2s rồi tự mờ, Wiper sáng 3s rồi tự mờ
+- [ ] Debounce 500ms hoạt động: nhấn nhanh liên tục chỉ gửi 1 lệnh
+- [ ] `window.cluster.setDoorState()` cập nhật màu icon door không cần nhấn lại
+- [ ] Quick Actions có style glassmorphism, không làm vỡ layout cluster
