@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Ford Ranger Cluster</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg:        #06060A;
+    --gauge-bg:  #0E0E18;
+    --track:     #1A1A2E;
+    --cyan:      rgba(180,240,255,0.80);
+    --blue:      #2563EB;
+    --red:       #EF4444;
+    --amber:     #F59E0B;
+    --green:     #22C55E;
+    --mfd-bg:    #0D1117;
+    --mfd-border:#1F2937;
+    --text-dim:  #6B7280;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  /* SVG chiếm toàn bộ vùng còn lại dưới AppTopBar */
+  #cluster-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Quick Actions bar — glassmorphism overlay */
+  #quick-actions {
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+    padding: 8px 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 12px;
+  }
+
+  .qa-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s, opacity 0.4s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .qa-btn .qa-icon { font-size: 18px; line-height: 1; }
+  .qa-btn .qa-label {
+    font-family: sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+  }
+
+  /* Active pulse state */
+  .qa-btn.active-amber {
+    background: rgba(251,191,36,0.18);
+    box-shadow: 0 0 10px rgba(251,191,36,0.45);
+    border-color: rgba(251,191,36,0.4);
+  }
+  .qa-btn.active-blue {
+    background: rgba(96,165,250,0.18);
+    box-shadow: 0 0 10px rgba(96,165,250,0.45);
+    border-color: rgba(96,165,250,0.4);
+  }
+
+  /* Disabled (debounce) */
+  .qa-btn.debouncing { pointer-events: none; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- Main SVG cluster -->
+<svg id="cluster-svg" viewBox="0 0 800 460"
+     preserveAspectRatio="xMidYMid meet"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background -->
+  <defs>
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="60%">
+      <stop offset="0%"   stop-color="#14141E"/>
+      <stop offset="100%" stop-color="#06060A"/>
+    </radialGradient>
+    <!-- Gauge face gradient -->
+    <radialGradient id="face-l" cx="185" cy="265" r="130" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#16162A"/>
+      <stop offset="80%"  stop-color="#0E0E18"/>
+      <stop offset="100%" stop-color="#0A0A12"/>
+    </radialGradient>
+    <radialGradient id="face-r" cx="615" cy="265" r="130" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#16162A"/>
+      <stop offset="80%"  stop-color="#0E0E18"/>
+      <stop offset="100%" stop-color="#0A0A12"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="460" fill="url(#bg-grad)"/>
+
+  <!-- RANGER watermark — dưới kim đồng hồ -->
+  <text x="400" y="305"
+        font-family="sans-serif" font-weight="bold" font-size="68"
+        letter-spacing="18" fill="rgba(255,255,255,0.05)"
+        text-anchor="middle" dominant-baseline="middle">RANGER</text>
+
+  <!-- Gauge layers sẽ được JS vẽ vào đây -->
+  <g id="tach-layer"></g>
+  <g id="speed-layer"></g>
+  <g id="sub-gauge-layer"></g>
+  <g id="warning-layer"></g>
+  <g id="turn-layer"></g>
+  <g id="mfd-layer"></g>
+
+</svg>
+
+<!-- Quick Actions bar -->
+<div id="quick-actions">
+  <button class="qa-btn" id="qa-horn"   data-key="horn"         data-dur="2000" data-color="amber">
+    <span class="qa-icon">📢</span>
+    <span class="qa-label">Còi</span>
+  </button>
+  <button class="qa-btn" id="qa-wiper-f" data-key="front_wiper" data-dur="3000" data-color="blue">
+    <span class="qa-icon">🌧</span>
+    <span class="qa-label">Gạt trước</span>
+  </button>
+  <button class="qa-btn" id="qa-wiper-r" data-key="rear_wiper"  data-dur="3000" data-color="blue">
+    <span class="qa-icon">🌧</span>
+    <span class="qa-label">Gạt sau</span>
+  </button>
+</div>
+
+<script>
+// ── Constants ────────────────────────────────────────────────────────────────
+const TACH  = { cx: 185, cy: 265, r: 130, max: 6000, redlineAt: 4750,  start: 150, sweep: 240, labels: ['0','1','2','3','4','5','6'],  unit: '×1000 r/min' };
+const SPEED = { cx: 615, cy: 265, r: 130, max: 200,  dangerAt: 180,    start: 150, sweep: 240, labels: ['0','40','80','120','160','200'], unit: 'km/h' };
+
+// ── Math helpers ─────────────────────────────────────────────────────────────
+const RAD = Math.PI / 180;
+function ptOnCircle(cx, cy, r, angleDeg) {
+  return { x: cx + r * Math.cos(angleDeg * RAD), y: cy + r * Math.sin(angleDeg * RAD) };
+}
+function arcPath(cx, cy, r, startDeg, endDeg) {
+  const s = ptOnCircle(cx, cy, r, startDeg);
+  const e = ptOnCircle(cx, cy, r, endDeg);
+  const large = (endDeg - startDeg) > 180 ? 1 : 0;
+  return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
+}
+
+// ── Task 3: Draw gauge ring (face, track, ticks, labels, unit) ───────────────
+function drawGaugeRing(layerId, cfg, faceGradId) {
+  const g = document.getElementById(layerId);
+  const { cx, cy, r, max, redlineAt, dangerAt, start, sweep, labels, unit } = cfg;
+  const ns = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs) {
+    const e = document.createElementNS(ns, tag);
+    Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    return e;
+  }
+
+  // Chrome outer ring
+  g.appendChild(el('circle', { cx, cy, r: r + 8, fill: 'none', stroke: '#3D3D50', 'stroke-width': 5 }));
+  // Gauge face
+  g.appendChild(el('circle', { cx, cy, r, fill: `url(#${faceGradId})` }));
+  // Track arc (full sweep, dark)
+  g.appendChild(el('path', { d: arcPath(cx, cy, r - 7, start, start + sweep), fill: 'none', stroke: '#1A1A2E', 'stroke-width': 14, 'stroke-linecap': 'round' }));
+
+  // Normal zone arc (blue) up to redline/danger
+  const normalEnd = redlineAt != null
+    ? start + (redlineAt / max) * sweep
+    : start + (dangerAt / max) * sweep;
+  g.appendChild(el('path', { d: arcPath(cx, cy, r - 7, start, normalEnd), fill: 'none', stroke: '#2563EB', 'stroke-width': 14, 'stroke-linecap': 'round', opacity: '0.55' }));
+
+  // Redline / danger arc (red)
+  g.appendChild(el('path', { d: arcPath(cx, cy, r - 7, normalEnd, start + sweep), fill: 'none', stroke: '#EF4444', 'stroke-width': 14, 'stroke-linecap': 'round', opacity: '0.35' }));
+
+  // Tick marks
+  const intervals = labels.length - 1;
+  const minorCount = 4;
+  const totalSteps = intervals * (minorCount + 1);
+  for (let i = 0; i <= totalSteps; i++) {
+    const frac   = i / totalSteps;
+    const ang    = start + frac * sweep;
+    const isMajor = (i % (minorCount + 1) === 0);
+    const innerR = isMajor ? r * 0.78 : r * 0.85;
+    const outerR = r * 0.93;
+    const s = ptOnCircle(cx, cy, innerR, ang);
+    const e = ptOnCircle(cx, cy, outerR, ang);
+    g.appendChild(el('line', { x1: s.x, y1: s.y, x2: e.x, y2: e.y, stroke: `rgba(180,240,255,${isMajor ? 0.80 : 0.35})`, 'stroke-width': isMajor ? 2.5 : 1.2, 'stroke-linecap': 'round' }));
+  }
+
+  // Labels
+  const labelR = r + 17;
+  labels.forEach((lbl, i) => {
+    if (!lbl) return;
+    const frac = i / (labels.length - 1);
+    const ang  = start + frac * sweep;
+    const pt   = ptOnCircle(cx, cy, labelR, ang);
+    const t = el('text', { x: pt.x, y: pt.y, fill: 'rgba(180,240,255,0.80)', 'font-family': 'sans-serif', 'font-size': '13', 'font-weight': 'bold', 'text-anchor': 'middle', 'dominant-baseline': 'middle' });
+    t.textContent = lbl;
+    g.appendChild(t);
+  });
+
+  // Unit label below center
+  const unitEl = el('text', { x: cx, y: cy + r * 0.58, fill: '#6B7280', 'font-family': 'sans-serif', 'font-size': '10', 'text-anchor': 'middle', 'dominant-baseline': 'middle', 'letter-spacing': '0.5' });
+  unitEl.textContent = unit;
+  g.appendChild(unitEl);
+}
+
+// ── Task 4: Needle system ─────────────────────────────────────────────────────
+function drawNeedle(layerId, cfg, needleId) {
+  const g  = document.getElementById(layerId);
+  const ns = 'http://www.w3.org/2000/svg';
+  const { cx, cy, r, start } = cfg;
+  const nLen = r * 0.72;
+
+  const grp = document.createElementNS(ns, 'g');
+  grp.setAttribute('id', needleId);
+  grp.setAttribute('transform', `rotate(0, ${cx}, ${cy})`);
+
+  const tip      = ptOnCircle(cx, cy, nLen, start);
+  const tipInner = ptOnCircle(cx, cy, nLen * 0.65, start);
+
+  // Shadow
+  const shadow = document.createElementNS(ns, 'line');
+  shadow.setAttribute('x1', cx + 2); shadow.setAttribute('y1', cy + 2);
+  shadow.setAttribute('x2', tip.x + 2); shadow.setAttribute('y2', tip.y + 2);
+  shadow.setAttribute('stroke', 'rgba(0,0,0,0.5)');
+  shadow.setAttribute('stroke-width', '5');
+  shadow.setAttribute('stroke-linecap', 'round');
+  grp.appendChild(shadow);
+
+  // Body (white)
+  const body = document.createElementNS(ns, 'line');
+  body.setAttribute('x1', cx); body.setAttribute('y1', cy);
+  body.setAttribute('x2', tip.x); body.setAttribute('y2', tip.y);
+  body.setAttribute('stroke', '#E5E7EB'); body.setAttribute('stroke-width', '3.5'); body.setAttribute('stroke-linecap', 'round');
+  grp.appendChild(body);
+
+  // Red tip accent (last 35%)
+  const tip2 = document.createElementNS(ns, 'line');
+  tip2.setAttribute('x1', tipInner.x); tip2.setAttribute('y1', tipInner.y);
+  tip2.setAttribute('x2', tip.x); tip2.setAttribute('y2', tip.y);
+  tip2.setAttribute('stroke', '#FF4444'); tip2.setAttribute('stroke-width', '3.5'); tip2.setAttribute('stroke-linecap', 'round');
+  grp.appendChild(tip2);
+
+  // Center hub
+  const hub = document.createElementNS(ns, 'circle');
+  hub.setAttribute('cx', cx); hub.setAttribute('cy', cy); hub.setAttribute('r', r * 0.07);
+  hub.setAttribute('fill', '#0C0C18'); hub.setAttribute('stroke', '#374151'); hub.setAttribute('stroke-width', '2');
+  grp.appendChild(hub);
+
+  const hubDot = document.createElementNS(ns, 'circle');
+  hubDot.setAttribute('cx', cx); hubDot.setAttribute('cy', cy); hubDot.setAttribute('r', r * 0.028);
+  hubDot.setAttribute('fill', '#D1D5DB');
+  grp.appendChild(hubDot);
+
+  g.appendChild(grp);
+}
+
+// ── Task 5: Segmented sub-gauge (8 segments) ─────────────────────────────────
+function drawSegmentedGauge(layerId, cfg, subCfg) {
+  const { cx, cy } = cfg;
+  const { r, startDeg, sweep, activeColor, labelL, labelR, groupId } = subCfg;
+  const ns  = 'http://www.w3.org/2000/svg';
+  const g   = document.getElementById(layerId);
+  const grp = document.createElementNS(ns, 'g');
+  grp.setAttribute('id', groupId);
+
+  const segCount = 8;
+  const gapDeg   = 3;
+  const segDeg   = (sweep / segCount) - gapDeg;
+  const rInner   = r - 10;
+  const segments = [];
+
+  for (let i = 0; i < segCount; i++) {
+    const s  = startDeg + i * (sweep / segCount);
+    const e  = s + segDeg;
+    const s1 = ptOnCircle(cx, cy, r, s);
+    const e1 = ptOnCircle(cx, cy, r, e);
+    const s2 = ptOnCircle(cx, cy, rInner, e);
+    const e2 = ptOnCircle(cx, cy, rInner, s);
+    const d  = `M ${s1.x} ${s1.y} A ${r} ${r} 0 0 1 ${e1.x} ${e1.y} L ${s2.x} ${s2.y} A ${rInner} ${rInner} 0 0 0 ${e2.x} ${e2.y} Z`;
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', '#1A1A2E');
+    grp.appendChild(path);
+    segments.push(path);
+  }
+
+  // Labels
+  const lPt = ptOnCircle(cx, cy, r + 14, startDeg);
+  const rPt = ptOnCircle(cx, cy, r + 14, startDeg + sweep);
+  [lPt, rPt].forEach((pt, idx) => {
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', pt.x); t.setAttribute('y', pt.y);
+    t.setAttribute('fill', '#6B7280'); t.setAttribute('font-family', 'sans-serif');
+    t.setAttribute('font-size', '11'); t.setAttribute('font-weight', 'bold');
+    t.setAttribute('text-anchor', 'middle'); t.setAttribute('dominant-baseline', 'middle');
+    t.textContent = idx === 0 ? labelL : labelR;
+    grp.appendChild(t);
+  });
+  g.appendChild(grp);
+
+  return function updateSegments(level) {
+    segments.forEach((seg, i) => {
+      const lit = i < level;
+      let color = '#1A1A2E';
+      if (lit) {
+        color = (activeColor === 'temp' && i >= 6) ? '#EF4444' : (activeColor === 'temp' ? '#22C55E' : '#F59E0B');
+      }
+      seg.setAttribute('fill', color);
+      seg.setAttribute('opacity', lit ? '0.90' : '0.35');
+    });
+  };
+}
+
+// ── Task 6: Warning lights + turn signals ─────────────────────────────────────
+const LIGHTS = [
+  { id: 'hazard',        label: '⚠',   color: '#FBBF24', clickable: true,  row: 0, col: 0 },
+  { id: 'check_engine',  label: 'CE',  color: '#FBBF24', clickable: false, row: 0, col: 1 },
+  { id: 'battery',       label: '🔋',  color: '#EF4444', clickable: false, row: 0, col: 2 },
+  { id: 'oil_pressure',  label: '🛢',  color: '#EF4444', clickable: false, row: 0, col: 3 },
+  { id: 'high_beam',     label: 'H',   color: '#3B82F6', clickable: true,  row: 0, col: 4 },
+  { id: 'airbag',        label: '🛡',  color: '#FBBF24', clickable: false, row: 1, col: 0 },
+  { id: 'door_lock',     label: '🚪',  color: '#EF4444', clickable: true,  row: 1, col: 1 },
+  { id: 'abs',           label: 'ABS', color: '#FBBF24', clickable: false, row: 1, col: 2 },
+  { id: 'low_beam',      label: 'L',   color: '#22C55E', clickable: true,  row: 1, col: 3 },
+  { id: 'brake_light',   label: 'BR',  color: '#EF4444', clickable: true,  row: 1, col: 4 },
+  { id: 'reverse_light', label: 'REV', color: '#FFFFFF', clickable: true,  row: 1, col: 5 },
+];
+
+function buildWarningPanel() {
+  const ns  = 'http://www.w3.org/2000/svg';
+  const g   = document.getElementById('warning-layer');
+  const DOT = 22;
+  const GAP = 52;
+  const rowY   = [50, 82];
+  const rowLen = [5, 6];
+
+  LIGHTS.forEach(light => {
+    const totalW = (rowLen[light.row] - 1) * GAP;
+    const startX = 400 - totalW / 2;
+    const cx = startX + light.col * GAP;
+    const cy = rowY[light.row];
+
+    const grp = document.createElementNS(ns, 'g');
+    grp.setAttribute('id', `light-${light.id}`);
+    grp.setAttribute('opacity', '0.15');
+    if (light.clickable) grp.style.cursor = 'pointer';
+
+    const circle = document.createElementNS(ns, 'circle');
+    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy);
+    circle.setAttribute('r', DOT * 0.9);
+    circle.setAttribute('fill', light.color); circle.setAttribute('fill-opacity', '0.15');
+    circle.setAttribute('stroke', light.color); circle.setAttribute('stroke-opacity', '0.6'); circle.setAttribute('stroke-width', '1.5');
+    grp.appendChild(circle);
+
+    const txt = document.createElementNS(ns, 'text');
+    txt.setAttribute('x', cx); txt.setAttribute('y', cy);
+    txt.setAttribute('fill', light.color); txt.setAttribute('font-family', 'sans-serif');
+    txt.setAttribute('font-size', light.label.length > 2 ? '8' : '11');
+    txt.setAttribute('font-weight', 'bold'); txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('dominant-baseline', 'middle');
+    txt.textContent = light.label;
+    grp.appendChild(txt);
+    g.appendChild(grp);
+
+    if (light.clickable) grp.addEventListener('click', () => handleLightClick(light.id));
+  });
+}
+
+function buildTurnSignals() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const g  = document.getElementById('turn-layer');
+
+  function makeArrow(id, x, y, direction) {
+    const grp = document.createElementNS(ns, 'g');
+    grp.setAttribute('id', id);
+    grp.setAttribute('opacity', '0.12');
+    grp.style.cursor = 'pointer';
+
+    for (let i = 0; i < 3; i++) {
+      const txt = document.createElementNS(ns, 'text');
+      txt.setAttribute('x', direction === 'left' ? x - i * 14 : x + i * 14);
+      txt.setAttribute('y', y);
+      txt.setAttribute('fill', '#22C55E'); txt.setAttribute('font-size', '20');
+      txt.setAttribute('font-weight', 'bold'); txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('dominant-baseline', 'middle');
+      txt.textContent = direction === 'left' ? '◀' : '▶';
+      grp.appendChild(txt);
+    }
+    g.appendChild(grp);
+    const key = direction === 'left' ? 'left_turn' : 'right_turn';
+    grp.addEventListener('click', () => handleLightClick(key));
+  }
+
+  makeArrow('turn-left',  65,  25, 'left');
+  makeArrow('turn-right', 735, 25, 'right');
+}
+
+// ── Task 7: MFD Center Display ─────────────────────────────────────────────────
+let mfdActiveTab  = 'tripA';
+let mfdActiveGear = 'D';
+
+const TRIP_DATA = {
+  tripA:    [['Trip','127.3 km'],['Avg','18.2 L/100km'],['Time','6h 58m'],['Range','412 km']],
+  tripB:    [['Trip','43.1 km'], ['Avg','17.6 L/100km'],['Time','2h 12m'],['Range','412 km']],
+  settings: [['Bright','80%'],  ['Units','km/h'],       ['Lang','VI']],
+};
+
+function buildMFD() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const g  = document.getElementById('mfd-layer');
+  const MX = 318, MY = 100, MW = 164, MH = 255;
+
+  function svgEl(tag, attrs) {
+    const e = document.createElementNS(ns, tag);
+    Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    return e;
+  }
+
+  // MFD background
+  g.appendChild(svgEl('rect', { x: MX, y: MY, width: MW, height: MH, rx: '8', fill: '#0D1117', stroke: '#1F2937', 'stroke-width': '1' }));
+
+  // Header: temp (left) + clock (right)
+  const tempEl = svgEl('text', { id: 'mfd-temp', x: MX + 10, y: MY + 16, fill: '#9CA3AF', 'font-family': 'monospace', 'font-size': '11', 'dominant-baseline': 'middle' });
+  tempEl.textContent = '23°C';
+  g.appendChild(tempEl);
+
+  const clockEl = svgEl('text', { id: 'mfd-clock', x: MX + MW - 10, y: MY + 16, fill: '#9CA3AF', 'font-family': 'monospace', 'font-size': '11', 'text-anchor': 'end', 'dominant-baseline': 'middle' });
+  clockEl.textContent = '00:00';
+  g.appendChild(clockEl);
+
+  g.appendChild(svgEl('line', { x1: MX + 6, y1: MY + 26, x2: MX + MW - 6, y2: MY + 26, stroke: '#1F2937', 'stroke-width': '1' }));
+
+  // Gear indicator: P R N D S
+  const GEARS = ['P','R','N','D','S'];
+  const gearY = MY + 47;
+  const gearSpacing = MW / (GEARS.length + 1);
+  GEARS.forEach((gear, i) => {
+    const gx = MX + gearSpacing * (i + 1);
+    const box = svgEl('rect', { id: `gear-box-${gear}`, x: gx - 10, y: gearY - 13, width: '20', height: '20', rx: '4', fill: gear === mfdActiveGear ? '#2563EB' : 'none', opacity: '0.8' });
+    g.appendChild(box);
+    const txt = svgEl('text', { id: `gear-txt-${gear}`, x: gx, y: gearY, fill: gear === mfdActiveGear ? '#FFFFFF' : '#4B5563', 'font-family': 'monospace', 'font-size': gear === mfdActiveGear ? '14' : '11', 'font-weight': gear === mfdActiveGear ? 'bold' : 'normal', 'text-anchor': 'middle', 'dominant-baseline': 'middle' });
+    txt.textContent = gear;
+    g.appendChild(txt);
+  });
+
+  g.appendChild(svgEl('line', { x1: MX + 6, y1: MY + 60, x2: MX + MW - 6, y2: MY + 60, stroke: '#1F2937', 'stroke-width': '1' }));
+
+  // Tabs: Trip A | Trip B | Settings
+  const TABS = [{ key: 'tripA', label: 'Trip A' }, { key: 'tripB', label: 'Trip B' }, { key: 'settings', label: '⚙' }];
+  const tabY = MY + 78;
+  const tabW = MW / TABS.length;
+  TABS.forEach((tab, i) => {
+    const tx = MX + i * tabW;
+    const tabBg = svgEl('rect', { id: `tab-bg-${tab.key}`, x: tx + 2, y: tabY - 10, width: tabW - 4, height: '22', rx: '4', fill: tab.key === mfdActiveTab ? '#1F2937' : 'none', cursor: 'pointer' });
+    g.appendChild(tabBg);
+    const tabTxt = svgEl('text', { id: `tab-txt-${tab.key}`, x: tx + tabW / 2, y: tabY, fill: tab.key === mfdActiveTab ? '#E5E7EB' : '#6B7280', 'font-family': 'sans-serif', 'font-size': '10', 'text-anchor': 'middle', 'dominant-baseline': 'middle', cursor: 'pointer' });
+    tabTxt.textContent = tab.label;
+    g.appendChild(tabTxt);
+    [tabBg, tabTxt].forEach(el => el.addEventListener('click', () => switchTab(tab.key)));
+  });
+
+  const contentG = svgEl('g', { id: 'mfd-content' });
+  g.appendChild(contentG);
+
+  // ODO
+  g.appendChild(svgEl('line', { x1: MX + 6, y1: MY + MH - 25, x2: MX + MW - 6, y2: MY + MH - 25, stroke: '#1F2937', 'stroke-width': '1' }));
+  const odoEl = svgEl('text', { x: MX + MW / 2, y: MY + MH - 13, fill: '#6B7280', 'font-family': 'monospace', 'font-size': '10', 'text-anchor': 'middle', 'dominant-baseline': 'middle' });
+  odoEl.textContent = 'ODO  95,432 km';
+  g.appendChild(odoEl);
+
+  renderTabContent(mfdActiveTab);
+  updateClock();
+  if (!window._clockTimer) window._clockTimer = setInterval(updateClock, 1000);
+}
+
+function renderTabContent(tabKey) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const MX = 318, MY = 100, MW = 164;
+  const contentG = document.getElementById('mfd-content');
+  while (contentG.firstChild) contentG.removeChild(contentG.firstChild);
+  (TRIP_DATA[tabKey] || []).forEach((row, i) => {
+    const y = MY + 105 + i * 28;
+    const keyEl = document.createElementNS(ns, 'text');
+    keyEl.setAttribute('x', MX + 10); keyEl.setAttribute('y', y);
+    keyEl.setAttribute('fill', '#6B7280'); keyEl.setAttribute('font-family', 'sans-serif');
+    keyEl.setAttribute('font-size', '10'); keyEl.setAttribute('dominant-baseline', 'middle');
+    keyEl.textContent = row[0];
+    contentG.appendChild(keyEl);
+    const valEl = document.createElementNS(ns, 'text');
+    valEl.setAttribute('x', MX + MW - 10); valEl.setAttribute('y', y);
+    valEl.setAttribute('fill', '#E5E7EB'); valEl.setAttribute('font-family', 'monospace');
+    valEl.setAttribute('font-size', '11'); valEl.setAttribute('font-weight', 'bold');
+    valEl.setAttribute('text-anchor', 'end'); valEl.setAttribute('dominant-baseline', 'middle');
+    valEl.textContent = row[1];
+    contentG.appendChild(valEl);
+  });
+}
+
+function switchTab(tabKey) {
+  ['tripA','tripB','settings'].forEach(t => {
+    const bg  = document.getElementById(`tab-bg-${t}`);
+    const txt = document.getElementById(`tab-txt-${t}`);
+    if (!bg || !txt) return;
+    bg.setAttribute('fill',  t === tabKey ? '#1F2937' : 'none');
+    txt.setAttribute('fill', t === tabKey ? '#E5E7EB' : '#6B7280');
+  });
+  mfdActiveTab = tabKey;
+  renderTabContent(tabKey);
+}
+
+function updateClock() {
+  const now = new Date();
+  const el  = document.getElementById('mfd-clock');
+  if (el) el.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+// ── Task 8: State + blink + window.cluster API + Quick Actions ────────────────
+const activeIndicators = new Set();
+let doorLockState = false;
+let blinkTimer    = null;
+let blinkPhase    = true;
+
+function startBlink(keys) {
+  if (blinkTimer) clearInterval(blinkTimer);
+  blinkPhase = true;
+  blinkTimer = setInterval(() => {
+    blinkPhase = !blinkPhase;
+    const alpha = blinkPhase ? '1.0' : '0.10';
+    keys.forEach(k => {
+      const el = document.getElementById(
+        k === 'left_turn'  ? 'turn-left'  :
+        k === 'right_turn' ? 'turn-right' :
+        `light-${k}`
+      );
+      if (el) el.setAttribute('opacity', alpha);
+    });
+  }, 500);
+}
+
+function recalcBlink() {
+  const blinkKeys = [];
+  if (activeIndicators.has('hazard')) {
+    blinkKeys.push('left_turn', 'right_turn', 'hazard');
+  } else {
+    if (activeIndicators.has('left_turn'))  blinkKeys.push('left_turn');
+    if (activeIndicators.has('right_turn')) blinkKeys.push('right_turn');
+  }
+  if (blinkKeys.length > 0) {
+    startBlink(blinkKeys);
+  } else {
+    if (blinkTimer) { clearInterval(blinkTimer); blinkTimer = null; }
+  }
+}
+
+function updateDoorIcon(isLocked) {
+  const el = document.getElementById('light-door_lock');
+  if (!el) return;
+  const color  = isLocked ? '#EF4444' : '#FBBF24';
+  const circle = el.querySelector('circle');
+  const txt    = el.querySelector('text');
+  if (circle) { circle.setAttribute('fill', color); circle.setAttribute('stroke', color); }
+  if (txt)    txt.setAttribute('fill', color);
+  el.setAttribute('opacity', '1.0');
+}
+
+function handleLightClick(key) {
+  if (key === 'door_lock') {
+    doorLockState = !doorLockState;
+    const sendKey = doorLockState ? 'door_lock' : 'door_unlock';
+    if (typeof Android !== 'undefined') Android.sendExternalCommand(sendKey, true);
+    updateDoorIcon(doorLockState);
+    return;
+  }
+  const newState = !activeIndicators.has(key);
+  if (typeof Android !== 'undefined') Android.sendExternalCommand(key, newState);
+  window.cluster.setIndicator(key, newState);
+}
+
+const updateFuel = drawSegmentedGauge('sub-gauge-layer', TACH,  { r: 65, startDeg: 195, sweep: 150, activeColor: 'fuel', labelL: 'E', labelR: 'F', groupId: 'fuel-segs' });
+const updateTemp = drawSegmentedGauge('sub-gauge-layer', SPEED, { r: 65, startDeg: 195, sweep: 150, activeColor: 'temp', labelL: 'C', labelR: 'H', groupId: 'temp-segs' });
+updateFuel(2);
+updateTemp(4);
+
+window.cluster = {
+  setSpeed(kmh) {
+    const angle = (Math.min(Math.max(kmh, 0), SPEED.max) / SPEED.max) * SPEED.sweep;
+    const el = document.getElementById('speed-needle');
+    if (el) el.setAttribute('transform', `rotate(${angle}, ${SPEED.cx}, ${SPEED.cy})`);
+  },
+  setRPM(rpm) {
+    const angle = (Math.min(Math.max(rpm, 0), TACH.max) / TACH.max) * TACH.sweep;
+    const el = document.getElementById('tach-needle');
+    if (el) el.setAttribute('transform', `rotate(${angle}, ${TACH.cx}, ${TACH.cy})`);
+  },
+  setIndicator(key, state) {
+    if (state) activeIndicators.add(key); else activeIndicators.delete(key);
+    const blinkKeys = ['left_turn', 'right_turn', 'hazard'];
+    if (blinkKeys.includes(key)) {
+      recalcBlink();
+      if (!state) {
+        const elId = key === 'left_turn' ? 'turn-left' : key === 'right_turn' ? 'turn-right' : `light-${key}`;
+        const el = document.getElementById(elId);
+        if (el) el.setAttribute('opacity', '0.12');
+      }
+      return;
+    }
+    if (key === 'door_lock') { updateDoorIcon(state); return; }
+    const el = document.getElementById(`light-${key}`);
+    if (!el) return;
+    el.setAttribute('opacity', state ? '1.0' : '0.15');
+  },
+  setFuel(level)  { updateFuel(Math.round(Math.min(Math.max(level, 0), 8))); },
+  setTemp(level)  { updateTemp(Math.round(Math.min(Math.max(level, 0), 8))); },
+  setGear(gear) {
+    ['P','R','N','D','S'].forEach(g => {
+      const box = document.getElementById(`gear-box-${g}`);
+      const txt = document.getElementById(`gear-txt-${g}`);
+      const active = g === gear;
+      if (box) box.setAttribute('fill', active ? '#2563EB' : 'none');
+      if (txt) { txt.setAttribute('fill', active ? '#FFFFFF' : '#4B5563'); txt.setAttribute('font-size', active ? '14' : '11'); txt.setAttribute('font-weight', active ? 'bold' : 'normal'); }
+    });
+    mfdActiveGear = gear;
+  },
+  setDoorState(isLocked) { doorLockState = isLocked; updateDoorIcon(isLocked); },
+  powerOn() {
+    if (window._sweepRunning) return;
+    window._sweepRunning = true;
+    const totalMs = 1500, sweepUpMs = 750, holdMs = 100, sweepDownMs = 650;
+    let startTime = null;
+    function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+    function frame(ts) {
+      if (!startTime) startTime = ts;
+      const elapsed = ts - startTime;
+      let frac;
+      if      (elapsed <= sweepUpMs)              frac = ease(elapsed / sweepUpMs);
+      else if (elapsed <= sweepUpMs + holdMs)     frac = 1.0;
+      else if (elapsed <= totalMs)                frac = 1.0 - ease((elapsed - sweepUpMs - holdMs) / sweepDownMs);
+      else { window.cluster.setSpeed(0); window.cluster.setRPM(0); window._sweepRunning = false; return; }
+      window.cluster.setSpeed(frac * SPEED.max);
+      window.cluster.setRPM(frac * TACH.max);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+};
+
+// Quick Actions debounce + pulse
+document.querySelectorAll('.qa-btn').forEach(btn => {
+  let debouncing = false;
+  btn.addEventListener('click', () => {
+    if (debouncing) return;
+    const key      = btn.dataset.key;
+    const durMs    = parseInt(btn.dataset.dur, 10);
+    const colorCls = `active-${btn.dataset.color}`;
+    btn.classList.add(colorCls);
+    debouncing = true;
+    btn.classList.add('debouncing');
+    setTimeout(() => { debouncing = false; btn.classList.remove('debouncing'); }, 500);
+    if (typeof Android !== 'undefined') Android.sendExternalCommand(key, true);
+    setTimeout(() => btn.classList.remove(colorCls), durMs);
+  });
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+drawGaugeRing('tach-layer',  TACH,  'face-l');
+drawGaugeRing('speed-layer', SPEED, 'face-r');
+drawNeedle('tach-layer',  TACH,  'tach-needle');
+drawNeedle('speed-layer', SPEED, 'speed-needle');
+buildWarningPanel();
+buildTurnSignals();
+buildMFD();
+
+// Auto powerOn fallback when not running in Android WebView
+setTimeout(() => { if (typeof Android === 'undefined') window.cluster.powerOn(); }, 500);
+</script>
+
+</body>
+</html>
