@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -61,29 +60,30 @@ fun ActiveTestScreen(
 
     fun syncIndicator(key: String, isOn: Boolean) {
         val js = "window.cluster.setIndicator('$key', $isOn)"
-        webViewRef.value?.post {
-            webViewRef.value?.evaluateJavascript(js, null)
-        }
+        val wv = webViewRef.value ?: return
+        wv.post { wv.evaluateJavascript(js, null) }
     }
 
     fun toggle(cmd: ActiveTestCommand) {
         if (!isConnected) {
             scope.launch { snackbarHost.showSnackbar(strErrorNotConnected) }
+            return
         }
         val isOn = activeStates[cmd.id] == true
         if (isOn) {
-            if (isConnected) viewModel.sendActiveTestCommand(cmd.requestCanId, cmd.dataOff)
+            viewModel.sendActiveTestCommand(cmd.requestCanId, cmd.dataOff)
             activeStates[cmd.id] = false
             if (cmd.indicatorKey.isNotEmpty()) syncIndicator(cmd.indicatorKey, false)
         } else {
             ActivityLogger.activeTest(viewModel.brandId, viewModel.modelId, cmd.name)
-            if (isConnected) viewModel.sendActiveTestCommand(cmd.requestCanId, cmd.dataOn)
+            viewModel.sendActiveTestCommand(cmd.requestCanId, cmd.dataOn)
             activeStates[cmd.id] = true
             if (cmd.indicatorKey.isNotEmpty()) syncIndicator(cmd.indicatorKey, true)
             if (!cmd.isToggle) {
                 scope.launch {
                     delay(cmd.pulseDurationMs)
-                    if (isConnected) viewModel.sendActiveTestCommand(cmd.requestCanId, cmd.dataOff)
+                    val stillConnected = viewModel.connectionState.value is UsbSerialManager.ConnectionState.Connected
+                    if (stillConnected) viewModel.sendActiveTestCommand(cmd.requestCanId, cmd.dataOff)
                     activeStates[cmd.id] = false
                     if (cmd.indicatorKey.isNotEmpty()) syncIndicator(cmd.indicatorKey, false)
                 }
@@ -92,6 +92,7 @@ fun ActiveTestScreen(
     }
 
     fun handleClusterCommand(key: String, isOn: Boolean) {
+        if (!key.matches(Regex("^[A-Za-z0-9_-]+$"))) return
         val cmd = commands.find { it.id == key }
             ?: commands.find { it.indicatorKey == key }
         if (cmd != null) {
