@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { logActivity } from '../services/api'
 
 const { Sider, Header, Content } = Layout
 const { Text } = Typography
@@ -43,7 +44,7 @@ export default function AppLayout({ children }) {
   ]
 
   async function handleUserMenu({ key }) {
-    if (key === 'logout') { await logout(); navigate('/') }
+    if (key === 'logout') { await logActivity('LOGOUT'); await logout(); navigate('/') }
   }
 
   return (

@@ -3,6 +3,7 @@ import { Form, Input, Button, Alert, Typography } from 'antd'
 import { EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons'
 import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { login, getProfile, logout as authLogout } from '../services/auth'
+import { logActivity } from '../services/api'
 import { useAuth } from '../hooks/useAuth'
 
 const { Text, Title } = Typography
@@ -38,6 +39,7 @@ export default function LoginPage() {
         : err.message.includes('rate limit') ? 'Too many requests. Please try again later.'
         : err.message
       setError(msg)
+      logActivity('LOGIN_FAILED', { identifier })
       return
     }
 
@@ -50,10 +52,12 @@ export default function LoginPage() {
         await authLogout()
         setSubmitting(false)
         setError(BLOCKED[status] ?? 'Your account is not active.')
+        logActivity('LOGIN_FAILED', { reason: status })
         return
       }
     }
 
+    logActivity('LOGIN')
     setSubmitting(false)
     navigate('/dashboard', { replace: true })
   }

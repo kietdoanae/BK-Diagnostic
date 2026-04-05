@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Form, Input, Button, Alert, Typography } from 'antd'
 import { Link, Navigate } from 'react-router-dom'
 import { register } from '../services/auth'
+import { logActivity } from '../services/api'
 import { useAuth } from '../hooks/useAuth'
 
 const { Text, Title } = Typography
@@ -33,6 +34,7 @@ export default function RegisterPage() {
       return
     }
 
+    logActivity('REGISTER', { username })
     setFormLoading(false)
     setSuccess(true)
   }

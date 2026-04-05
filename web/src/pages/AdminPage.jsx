@@ -64,10 +64,18 @@ function UsersTab() {
       )
     },
     { title: 'Joined', dataIndex: 'created_at', key: 'created_at', sorter: true,
-      render: v => v ? new Date(v).toLocaleDateString() : '—'
+      render: v => {
+        if (!v) return '—'
+        const d = new Date(v.endsWith('Z') || v.includes('+') ? v : v + 'Z')
+        return d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+      }
     },
     { title: 'Last Active', dataIndex: 'last_sign_in_at', key: 'last_sign_in_at', sorter: true,
-      render: v => v ? new Date(v).toLocaleString() : 'Never'
+      render: v => {
+        if (!v) return 'Never'
+        const d = new Date(v.endsWith('Z') || v.includes('+') ? v : v + 'Z')
+        return d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false })
+      }
     },
     { title: 'Actions', key: 'actions', align: 'right',
       render: (_, r) => (
@@ -163,8 +171,14 @@ function LogsTab() {
   ] : []
 
   const columns = [
-    { title: 'Time', dataIndex: 'created_at', key: 'time', width: 160,
-      render: v => v ? new Date(v).toLocaleString() : '—'
+    { title: 'Time', dataIndex: 'created_at', key: 'time', width: 180,
+      render: v => {
+        if (!v) return '—'
+        const d = new Date(v.endsWith('Z') || v.includes('+') ? v : v + 'Z')
+        return d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false,
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      }
     },
     { title: 'User', dataIndex: 'username', key: 'user', render: v => <Text code>{v}</Text> },
     { title: 'Action', dataIndex: 'action', key: 'action',
