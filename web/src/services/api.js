@@ -1,5 +1,13 @@
 import { supabase } from './supabase'
 
+export async function logActivity(action, details = {}) {
+  return supabase.rpc('log_activity', {
+    p_action: action,
+    p_platform: 'web',
+    p_details: details,
+  })
+}
+
 export async function getUsers() {
   return supabase.rpc('admin_get_users')
 }
