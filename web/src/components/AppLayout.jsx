@@ -6,6 +6,7 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  ApartmentOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -34,6 +35,7 @@ export default function AppLayout({ children }) {
 
   const menuItems = [
     { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
+    { key: '/wiring', icon: <ApartmentOutlined />, label: 'Wiring Diagram' },
     ...(role === 'admin' || role === 'moderator'
       ? [{ key: '/admin', icon: <CrownOutlined />, label: 'Admin Panel' }]
       : []),
