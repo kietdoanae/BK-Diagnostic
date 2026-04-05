@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getLogs, getLogStats } from '../services/api'
 import { supabase } from '../services/supabase'
 
@@ -10,26 +10,39 @@ export function useLogs() {
   const [filterAction, setFilterAction] = useState('')
   const [filterUser, setFilterUser] = useState('')
   const [isLive, setIsLive] = useState(false)
+  const hasData = useRef(false)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  // showSpinner=true on first load / filter change; false for background refresh
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true)
     const [logsRes, statsRes] = await Promise.all([
       getLogs({ limit: 100, action: filterAction || null, platform: filterPlatform || null }),
       getLogStats(),
     ])
-    setLoading(false)
-    if (logsRes.data) setLogs(logsRes.data)
+    if (showSpinner) setLoading(false)
+    if (logsRes.error) console.error('[useLogs] getLogs:', logsRes.error.message)
+    if (statsRes.error) console.error('[useLogs] getLogStats:', statsRes.error.message)
+    if (logsRes.data) { setLogs(logsRes.data); hasData.current = true }
     if (statsRes.data) setStats(statsRes.data)
   }, [filterAction, filterPlatform])
 
-  useEffect(() => { load() }, [load])
+  // Initial load & re-load when filters change
+  useEffect(() => { load(true) }, [load])
 
+  // Realtime: fires when Supabase Replication is enabled for activity_logs table
   useEffect(() => {
     const channel = supabase
       .channel('activity_logs_changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_logs' }, () => { load() })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_logs' },
+        () => load(false))
       .subscribe(status => setIsLive(status === 'SUBSCRIBED'))
     return () => { supabase.removeChannel(channel) }
+  }, [load])
+
+  // Polling fallback: refresh every 10s silently in case Realtime misses events
+  useEffect(() => {
+    const id = setInterval(() => load(false), 10000)
+    return () => clearInterval(id)
   }, [load])
 
   const filteredLogs = filterUser
@@ -41,6 +54,6 @@ export function useLogs() {
     filterPlatform, setFilterPlatform,
     filterAction, setFilterAction,
     filterUser, setFilterUser,
-    reload: load,
+    reload: () => load(true),
   }
 }
