@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Ford Ranger Cluster</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg:        #06060A;
+    --gauge-bg:  #0E0E18;
+    --track:     #1A1A2E;
+    --cyan:      rgba(180,240,255,0.80);
+    --blue:      #2563EB;
+    --red:       #EF4444;
+    --amber:     #F59E0B;
+    --green:     #22C55E;
+    --mfd-bg:    #0D1117;
+    --mfd-border:#1F2937;
+    --text-dim:  #6B7280;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  /* SVG chiếm toàn bộ vùng còn lại dưới AppTopBar */
+  #cluster-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Quick Actions bar — glassmorphism overlay */
+  #quick-actions {
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+    padding: 8px 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 12px;
+  }
+
+  .qa-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s, opacity 0.4s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .qa-btn .qa-icon { font-size: 18px; line-height: 1; }
+  .qa-btn .qa-label {
+    font-family: sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+  }
+
+  /* Active pulse state */
+  .qa-btn.active-amber {
+    background: rgba(251,191,36,0.18);
+    box-shadow: 0 0 10px rgba(251,191,36,0.45);
+    border-color: rgba(251,191,36,0.4);
+  }
+  .qa-btn.active-blue {
+    background: rgba(96,165,250,0.18);
+    box-shadow: 0 0 10px rgba(96,165,250,0.45);
+    border-color: rgba(96,165,250,0.4);
+  }
+
+  /* Disabled (debounce) */
+  .qa-btn.debouncing { pointer-events: none; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- Main SVG cluster -->
+<svg id="cluster-svg" viewBox="0 0 800 460"
+     preserveAspectRatio="xMidYMid meet"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background -->
+  <defs>
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="60%">
+      <stop offset="0%"   stop-color="#14141E"/>
+      <stop offset="100%" stop-color="#06060A"/>
+    </radialGradient>
+    <!-- Gauge face gradient -->
+    <radialGradient id="face-l" cx="185" cy="265" r="130" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#16162A"/>
+      <stop offset="80%"  stop-color="#0E0E18"/>
+      <stop offset="100%" stop-color="#0A0A12"/>
+    </radialGradient>
+    <radialGradient id="face-r" cx="615" cy="265" r="130" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#16162A"/>
+      <stop offset="80%"  stop-color="#0E0E18"/>
+      <stop offset="100%" stop-color="#0A0A12"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="460" fill="url(#bg-grad)"/>
+
+  <!-- RANGER watermark — dưới kim đồng hồ -->
+  <text x="400" y="305"
+        font-family="sans-serif" font-weight="bold" font-size="68"
+        letter-spacing="18" fill="rgba(255,255,255,0.05)"
+        text-anchor="middle" dominant-baseline="middle">RANGER</text>
+
+  <!-- Gauge layers sẽ được JS vẽ vào đây -->
+  <g id="tach-layer"></g>
+  <g id="speed-layer"></g>
+  <g id="sub-gauge-layer"></g>
+  <g id="warning-layer"></g>
+  <g id="turn-layer"></g>
+  <g id="mfd-layer"></g>
+
+</svg>
+
+<!-- Quick Actions bar -->
+<div id="quick-actions">
+  <button class="qa-btn" id="qa-horn"   data-key="horn"         data-dur="2000" data-color="amber">
+    <span class="qa-icon">📢</span>
+    <span class="qa-label">Còi</span>
+  </button>
+  <button class="qa-btn" id="qa-wiper-f" data-key="front_wiper" data-dur="3000" data-color="blue">
+    <span class="qa-icon">🌧</span>
+    <span class="qa-label">Gạt trước</span>
+  </button>
+  <button class="qa-btn" id="qa-wiper-r" data-key="rear_wiper"  data-dur="3000" data-color="blue">
+    <span class="qa-icon">🌧</span>
+    <span class="qa-label">Gạt sau</span>
+  </button>
+</div>
+
+<script>
+// ── Constants ────────────────────────────────────────────────────────────────
+const TACH  = { cx: 185, cy: 265, r: 130, max: 6000, redlineAt: 4750,  start: 150, sweep: 240, labels: ['0','1','2','3','4','5','6'],  unit: '×1000 r/min' };
+const SPEED = { cx: 615, cy: 265, r: 130, max: 200,  dangerAt: 180,    start: 150, sweep: 240, labels: ['0','40','80','120','160','200'], unit: 'km/h' };
+
+// Placeholder — JS functions sẽ được thêm ở các Task tiếp theo
+</script>
+
+</body>
+</html>
