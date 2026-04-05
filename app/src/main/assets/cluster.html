@@ -493,7 +493,7 @@ function buildMFD() {
 
   renderTabContent(mfdActiveTab);
   updateClock();
-  setInterval(updateClock, 1000);
+  if (!window._clockTimer) window._clockTimer = setInterval(updateClock, 1000);
 }
 
 function renderTabContent(tabKey) {
@@ -599,6 +599,11 @@ function handleLightClick(key) {
   window.cluster.setIndicator(key, newState);
 }
 
+const updateFuel = drawSegmentedGauge('sub-gauge-layer', TACH,  { r: 65, startDeg: 195, sweep: 150, activeColor: 'fuel', labelL: 'E', labelR: 'F', groupId: 'fuel-segs' });
+const updateTemp = drawSegmentedGauge('sub-gauge-layer', SPEED, { r: 65, startDeg: 195, sweep: 150, activeColor: 'temp', labelL: 'C', labelR: 'H', groupId: 'temp-segs' });
+updateFuel(2);
+updateTemp(4);
+
 window.cluster = {
   setSpeed(kmh) {
     const angle = (Math.min(Math.max(kmh, 0), SPEED.max) / SPEED.max) * SPEED.sweep;
@@ -641,6 +646,8 @@ window.cluster = {
   },
   setDoorState(isLocked) { doorLockState = isLocked; updateDoorIcon(isLocked); },
   powerOn() {
+    if (window._sweepRunning) return;
+    window._sweepRunning = true;
     const totalMs = 1500, sweepUpMs = 750, holdMs = 100, sweepDownMs = 650;
     let startTime = null;
     function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
@@ -651,7 +658,7 @@ window.cluster = {
       if      (elapsed <= sweepUpMs)              frac = ease(elapsed / sweepUpMs);
       else if (elapsed <= sweepUpMs + holdMs)     frac = 1.0;
       else if (elapsed <= totalMs)                frac = 1.0 - ease((elapsed - sweepUpMs - holdMs) / sweepDownMs);
-      else { window.cluster.setSpeed(0); window.cluster.setRPM(0); return; }
+      else { window.cluster.setSpeed(0); window.cluster.setRPM(0); window._sweepRunning = false; return; }
       window.cluster.setSpeed(frac * SPEED.max);
       window.cluster.setRPM(frac * TACH.max);
       requestAnimationFrame(frame);
@@ -682,10 +689,6 @@ drawGaugeRing('tach-layer',  TACH,  'face-l');
 drawGaugeRing('speed-layer', SPEED, 'face-r');
 drawNeedle('tach-layer',  TACH,  'tach-needle');
 drawNeedle('speed-layer', SPEED, 'speed-needle');
-const updateFuel = drawSegmentedGauge('sub-gauge-layer', TACH,  { r: 65, startDeg: 195, sweep: 150, activeColor: 'fuel', labelL: 'E', labelR: 'F', groupId: 'fuel-segs' });
-const updateTemp = drawSegmentedGauge('sub-gauge-layer', SPEED, { r: 65, startDeg: 195, sweep: 150, activeColor: 'temp', labelL: 'C', labelR: 'H', groupId: 'temp-segs' });
-updateFuel(2);
-updateTemp(4);
 buildWarningPanel();
 buildTurnSignals();
 buildMFD();
