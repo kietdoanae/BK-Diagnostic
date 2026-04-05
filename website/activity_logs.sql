@@ -60,7 +60,36 @@ BEGIN
 END;
 $$;
 
--- ── 4. RPC: get_activity_logs ─────────────────────────────────────────────────
+-- ── 4. RPC: log_activity ─────────────────────────────────────────────────────
+--  Hàm ghi log — Web app gọi hàm này để insert vào activity_logs
+CREATE OR REPLACE FUNCTION public.log_activity(
+    p_action    TEXT,
+    p_platform  TEXT    DEFAULT 'web',
+    p_details   JSONB   DEFAULT '{}'
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_username TEXT;
+BEGIN
+    -- Lấy username từ profiles
+    SELECT COALESCE(pr.username, split_part(u.email, '@', 1))
+    INTO v_username
+    FROM public.profiles pr
+    JOIN auth.users u ON u.id = pr.id
+    WHERE pr.id = auth.uid();
+
+    INSERT INTO public.activity_logs (user_id, username, action, platform, details)
+    VALUES (auth.uid(), COALESCE(v_username, 'unknown'), p_action, p_platform, p_details);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.log_activity(TEXT, TEXT, JSONB) TO authenticated;
+
+-- ── 5. RPC: get_activity_logs ─────────────────────────────────────────────────
 --  Dùng LANGUAGE sql thay vì plpgsql để tránh lỗi "column reference is ambiguous"
 --  (trong plpgsql, tên cột RETURNS TABLE tạo biến local xung đột với cột bảng)
 CREATE OR REPLACE FUNCTION public.get_activity_logs(
@@ -146,11 +175,11 @@ BEGIN
     WHERE action = 'LOGIN_FAILED' AND created_at::date = v_today;
 
     RETURN json_build_object(
-        'total_today', v_total_today,
-        'logins_today', v_logins,
-        'app_events', v_app_events,
-        'web_events', v_web_events,
-        'errors_today', v_errors
+        'today',         v_total_today,
+        'logins_today',  v_logins,
+        'app_events',    v_app_events,
+        'web_events',    v_web_events,
+        'failed_logins', v_errors
     );
 END;
 $$;
