@@ -9,6 +9,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import AdminPage from './pages/AdminPage'
+import WiringPage from './pages/WiringPage'
 
 const theme = {
   token: {
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/wiring" element={<ProtectedRoute><WiringPage /></ProtectedRoute>} />
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
