@@ -53,6 +53,8 @@ class CanSenderViewModel(
     private val seqCounter = AtomicInteger(0)
     @Volatile private var pendingSeq = -1
     @Volatile private var pendingSentAt = 0L
+    @Volatile private var lastAckedSeq = -1
+    @Volatile private var lastAckedAt = 0L
     private var repeatJob: Job? = null
 
     // ── Frame response collector ───────────────────────────────────────────────
@@ -65,6 +67,8 @@ class CanSenderViewModel(
                         val s = pendingSeq
                         if (s >= 0) {
                             updateEntry(s) { it.copy(status = SendStatus.ACK, roundTripMs = now - pendingSentAt) }
+                            lastAckedSeq = s
+                            lastAckedAt = now
                             pendingSeq = -1
                         }
                     }
@@ -83,15 +87,17 @@ class CanSenderViewModel(
                         }
                     }
                     FrameProtocol.TYPE_CAN_RX -> {
-                        val s = pendingSeq
-                        if (s >= 0) {
-                            val frame = FrameProtocol.parseCanPayload(pf.payload) ?: return@collect
-                            val resp = CanResponseEntry(
-                                canId = frame.id,
-                                dataBytes = frame.effectiveData(),
-                                receivedAfterMs = now - pendingSentAt
-                            )
-                            appendResponse(s, resp)
+                        val frame = FrameProtocol.parseCanPayload(pf.payload) ?: return@collect
+                        val resp = CanResponseEntry(
+                            canId = frame.id,
+                            dataBytes = frame.effectiveData(),
+                            receivedAfterMs = now - pendingSentAt
+                        )
+                        val pending = pendingSeq
+                        val ackedRecently = lastAckedSeq >= 0 && (now - lastAckedAt) < 2000L
+                        when {
+                            pending >= 0 -> appendResponse(pending, resp)
+                            ackedRecently -> appendResponse(lastAckedSeq, resp)
                         }
                     }
                 }
@@ -172,24 +178,24 @@ class CanSenderViewModel(
             if (it.seq == s) it.copy(responses = it.responses + resp) else it
         }
     }
+}
 
-    // ── Factory ────────────────────────────────────────────────────────────────
+// ── Factory ────────────────────────────────────────────────────────────────────
 
-    class Factory(private val application: Application) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            val usb = (application as BKDiagnosticApp).usbSerialManager
-            @Suppress("UNCHECKED_CAST")
-            return CanSenderViewModel(usb) as T
-        }
+class CanSenderViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        val usb = (application as BKDiagnosticApp).usbSerialManager
+        @Suppress("UNCHECKED_CAST")
+        return CanSenderViewModel(usb) as T
     }
 }
 
 // ── Module-level pure functions ───────────────────────────────────────────────
 
-private fun parseCanId(input: String): Int? =
+internal fun parseCanId(input: String): Int? =
     input.trim().toIntOrNull(16)?.takeIf { it in 0..0x7FF }
 
-private fun parseBytes(input: String): ByteArray {
+internal fun parseBytes(input: String): ByteArray {
     if (input.isBlank()) return ByteArray(0)
     return input.trim()
         .split("\\s+".toRegex())
@@ -198,16 +204,14 @@ private fun parseBytes(input: String): ByteArray {
         .toByteArray()
 }
 
-private fun validateInputs(canId: String, data: String): String? {
+internal fun validateInputs(canId: String, data: String): String? {
     val id = canId.trim()
-    if (id.isBlank() || id.toIntOrNull(16) == null)
-        return "CAN ID không hợp lệ (ví dụ: 7DF)"
-    if (id.toInt(16) > 0x7FF)
-        return "CAN ID vượt quá 11-bit (max 7FF)"
+    val idInt = id.toIntOrNull(16) ?: return "CAN ID không hợp lệ (ví dụ: 7DF)"
+    if (idInt > 0x7FF) return "CAN ID vượt quá 11-bit (max 7FF)"
     if (data.isNotBlank()) {
         val tokens = data.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }
         tokens.forEachIndexed { i, t ->
-            if (!t.matches("[0-9A-Fa-f]{1,2}".toRegex()))
+            if (!t.matches(Regex("[0-9A-Fa-f]{2}")))
                 return "Byte không hợp lệ tại vị trí ${i + 1}"
         }
         if (tokens.size > 8) return "Tối đa 8 bytes (DLC ≤ 8)"
