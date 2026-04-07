@@ -59,6 +59,9 @@ class UsbSerialManager private constructor(private val context: Context) {
     private val _canFrames = MutableSharedFlow<CanFrame>(extraBufferCapacity = 128)
     val canFrames: SharedFlow<CanFrame> = _canFrames.asSharedFlow()
 
+    private val _rawFrames = MutableSharedFlow<ParsedFrame>(extraBufferCapacity = 64)
+    val rawFrames: SharedFlow<ParsedFrame> = _rawFrames.asSharedFlow()
+
     // ── Nội bộ ──────────────────────────────────────────────────────────────
 
     // ── Preferred settings (updated by SettingsViewModel) ───────────────────
@@ -225,15 +228,16 @@ class UsbSerialManager private constructor(private val context: Context) {
     }
 
     private suspend fun handleParsedFrame(pf: ParsedFrame) {
+        _rawFrames.emit(pf)          // emit all frames for external observers (e.g. CanSenderViewModel)
         when (pf.type) {
             FrameProtocol.TYPE_CAN_RX -> {
                 val frame = FrameProtocol.parseCanPayload(pf.payload) ?: return
                 _canFrames.emit(frame)
             }
             FrameProtocol.TYPE_ERROR -> {
-                // Có thể log lỗi từ STM32 nếu cần
+                // Handled by rawFrames subscribers (e.g. CanSenderViewModel)
             }
-            // ACK và STATUS: có thể xử lý sau nếu cần
+            // ACK and STATUS: handled by rawFrames subscribers
         }
     }
 
