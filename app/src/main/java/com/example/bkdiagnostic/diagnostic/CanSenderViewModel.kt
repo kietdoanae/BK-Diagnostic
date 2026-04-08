@@ -17,9 +17,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 class CanSenderViewModel(
     private val usb: UsbSerialManager
@@ -51,10 +53,10 @@ class CanSenderViewModel(
 
     // ── Internal tracking ──────────────────────────────────────────────────────
     private val seqCounter = AtomicInteger(0)
-    @Volatile private var pendingSeq = -1
-    @Volatile private var pendingSentAt = 0L
-    @Volatile private var lastAckedSeq = -1
-    @Volatile private var lastAckedAt = 0L
+    // Fix 1: atomic pending state — seq + sentAt updated together
+    private val pendingState = AtomicReference<Pair<Int, Long>?>(null)
+    // Fix 1: atomic last-acked state — ackedSeq + ackedAt updated together
+    private val lastAckedState = AtomicReference<Pair<Int, Long>?>(null)
     private var repeatJob: Job? = null
 
     // ── Frame response collector ───────────────────────────────────────────────
@@ -64,40 +66,40 @@ class CanSenderViewModel(
                 val now = System.currentTimeMillis()
                 when (pf.type) {
                     FrameProtocol.TYPE_ACK -> {
-                        val s = pendingSeq
-                        if (s >= 0) {
-                            updateEntry(s) { it.copy(status = SendStatus.ACK, roundTripMs = now - pendingSentAt) }
-                            lastAckedSeq = s
-                            lastAckedAt = now
-                            pendingSeq = -1
-                        }
+                        val state = pendingState.get() ?: return@collect
+                        val (seq, sentAt) = state
+                        updateEntry(seq) { it.copy(status = SendStatus.ACK, roundTripMs = now - sentAt) }
+                        lastAckedState.set(Pair(seq, now))
+                        pendingState.set(null)
                     }
                     FrameProtocol.TYPE_ERROR -> {
-                        val s = pendingSeq
-                        if (s >= 0) {
-                            val errCode = pf.payload.firstOrNull()?.toInt()?.and(0xFF) ?: 0
-                            val msg = when (errCode) {
-                                1 -> "CAN_SEND_FAIL"
-                                3 -> "TX_TIMEOUT"
-                                4 -> "BAD_FRAME"
-                                else -> "ERROR(0x${errCode.toString(16).uppercase()})"
-                            }
-                            updateEntry(s) { it.copy(status = SendStatus.ERROR, roundTripMs = now - pendingSentAt, errorMsg = msg) }
-                            pendingSeq = -1
+                        val state = pendingState.get() ?: return@collect
+                        val (seq, sentAt) = state
+                        val errCode = pf.payload.firstOrNull()?.toInt()?.and(0xFF) ?: 0
+                        val msg = when (errCode) {
+                            1 -> "CAN_SEND_FAIL"
+                            3 -> "TX_TIMEOUT"
+                            4 -> "BAD_FRAME"
+                            else -> "ERROR(0x${errCode.toString(16).uppercase()})"
                         }
+                        updateEntry(seq) { it.copy(status = SendStatus.ERROR, roundTripMs = now - sentAt, errorMsg = msg) }
+                        pendingState.set(null)
                     }
                     FrameProtocol.TYPE_CAN_RX -> {
                         val frame = FrameProtocol.parseCanPayload(pf.payload) ?: return@collect
                         val resp = CanResponseEntry(
                             canId = frame.id,
                             dataBytes = frame.effectiveData(),
-                            receivedAfterMs = now - pendingSentAt
+                            receivedAfterMs = now - (pendingState.get()?.second ?: now)
                         )
-                        val pending = pendingSeq
-                        val ackedRecently = lastAckedSeq >= 0 && (now - lastAckedAt) < 2000L
-                        when {
-                            pending >= 0 -> appendResponse(pending, resp)
-                            ackedRecently -> appendResponse(lastAckedSeq, resp)
+                        val pending = pendingState.get()
+                        lastAckedState.get()?.let { (ackedSeq, ackedAt) ->
+                            when {
+                                pending != null -> appendResponse(pending.first, resp)
+                                (now - ackedAt) < 2000L -> appendResponse(ackedSeq, resp)
+                            }
+                        } ?: run {
+                            if (pending != null) appendResponse(pending.first, resp)
                         }
                     }
                 }
@@ -123,17 +125,20 @@ class CanSenderViewModel(
             status = SendStatus.PENDING
         )
         addEntry(entry)
-        pendingSeq = s
-        pendingSentAt = now
+        pendingState.set(Pair(s, now))
 
+        // Fix 3: try/finally so pendingState is always cleared on throw or cancellation
         viewModelScope.launch {
-            val padded = ByteArray(8)
-            bytes.copyInto(padded, 0, 0, minOf(bytes.size, 8))
-            usb.sendFrame(CanFrame(canId, bytes.size, padded))
-            delay(2000)
-            if (pendingSeq == s) {
-                updateEntry(s) { it.copy(status = SendStatus.TIMEOUT) }
-                pendingSeq = -1
+            try {
+                val padded = bytes.copyOf(8)
+                usb.sendFrame(CanFrame(canId, bytes.size, padded))
+                delay(2000)
+            } finally {
+                val state = pendingState.get()
+                if (state?.first == s) {
+                    updateEntry(s) { it.copy(status = SendStatus.TIMEOUT) }
+                    pendingState.compareAndSet(state, null)
+                }
             }
         }
     }
@@ -164,18 +169,22 @@ class CanSenderViewModel(
 
     // ── Private helpers ────────────────────────────────────────────────────────
 
+    // Fix 2: use update() for atomic read-modify-write on the log
     private fun addEntry(entry: CanSendEntry) {
-        val current = _sendLog.value
-        _sendLog.value = if (current.size >= 100) current.drop(1) + entry else current + entry
+        _sendLog.update { current ->
+            if (current.size >= 100) current.drop(1) + entry else current + entry
+        }
     }
 
-    private fun updateEntry(s: Int, transform: (CanSendEntry) -> CanSendEntry) {
-        _sendLog.value = _sendLog.value.map { if (it.seq == s) transform(it) else it }
+    private fun updateEntry(seq: Int, transform: (CanSendEntry) -> CanSendEntry) {
+        _sendLog.update { current ->
+            current.map { if (it.seq == seq) transform(it) else it }
+        }
     }
 
-    private fun appendResponse(s: Int, resp: CanResponseEntry) {
-        _sendLog.value = _sendLog.value.map {
-            if (it.seq == s) it.copy(responses = it.responses + resp) else it
+    private fun appendResponse(seq: Int, response: CanResponseEntry) {
+        _sendLog.update { current ->
+            current.map { if (it.seq == seq) it.copy(responses = it.responses + response) else it }
         }
     }
 }
