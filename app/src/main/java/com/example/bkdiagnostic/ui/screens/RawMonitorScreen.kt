@@ -808,17 +808,26 @@ private fun exportToCsv(context: Context, frames: List<RawFrameEntry>): String? 
     val ts = System.currentTimeMillis()
     val filename = "can_frames_$ts.csv"
 
+    // Định dạng timestamp thành chuỗi đọc được — dùng Locale.US tránh lỗi AM/PM một số locale
+    val sdfExport = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+
     val sb = StringBuilder()
-    sb.appendLine("SEQ,TIMESTAMP_MS,ADDRESS,CAN_FRAME_HEX,DELAY_MS,DECODED")
+    // UTF-8 BOM — bắt buộc để Excel trên Windows nhận đúng encoding UTF-8
+    sb.append('\uFEFF')
+    sb.appendLine("SEQ,TIME,TIMESTAMP_MS,ADDRESS,CAN_FRAME_HEX,DELAY_MS,DECODED")
     frames.forEachIndexed { i, e ->
         val delay = if (i > 0) e.timestampMs - frames[i - 1].timestampMs else 0L
-        val id  = "0x${e.canId.toString(16).uppercase().padStart(3, '0')}"
-        val hex = e.rawBytes.joinToString(" ") {
+        val id    = "0x${e.canId.toString(16).uppercase().padStart(3, '0')}"
+        val hex   = e.rawBytes.joinToString(" ") {
             it.toUByte().toInt().toString(16).uppercase().padStart(2, '0')
         }
-        sb.appendLine("${e.seq},${e.timestampMs},$id,\"$hex\",$delay,\"${e.decoded}\"")
+        val timeStr = sdfExport.format(Date(e.timestampMs))
+        // Bọc TIME và DECODED trong dấu nháy kép; escape dấu nháy kép bên trong
+        val decodedEscaped = e.decoded.replace("\"", "\"\"")
+        sb.appendLine("${e.seq},\"$timeStr\",${e.timestampMs},$id,\"$hex\",$delay,\"$decodedEscaped\"")
     }
-    val csv = sb.toString()
+    // Xuất UTF-8 — BOM ở đầu đã giúp Excel nhận đúng
+    val csvBytes = sb.toString().toByteArray(Charsets.UTF_8)
 
     return try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -830,7 +839,7 @@ private fun exportToCsv(context: Context, frames: List<RawFrameEntry>): String? 
             val uri = context.contentResolver.insert(
                 MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv
             ) ?: return null
-            context.contentResolver.openOutputStream(uri)?.use { it.write(csv.toByteArray()) }
+            context.contentResolver.openOutputStream(uri)?.use { it.write(csvBytes) }
             cv.clear()
             cv.put(MediaStore.Downloads.IS_PENDING, 0)
             context.contentResolver.update(uri, cv, null, null)
@@ -838,7 +847,7 @@ private fun exportToCsv(context: Context, frames: List<RawFrameEntry>): String? 
             @Suppress("DEPRECATION")
             val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             dir.mkdirs()
-            java.io.File(dir, filename).writeText(csv)
+            java.io.File(dir, filename).writeBytes(csvBytes)
         }
         filename
     } catch (e: Exception) {
