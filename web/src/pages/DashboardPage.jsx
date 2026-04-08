@@ -181,7 +181,7 @@ export default function DashboardPage({ embedded = false }) {
               { icon: <CalendarOutlined style={{ color: '#059669' }} />, label: 'Member Since', value: joined, bg: '#f0fdf4' },
               { icon: <SafetyOutlined style={{ color: '#7c3aed' }} />, label: 'Status', value: status.charAt(0).toUpperCase() + status.slice(1), bg: '#f5f3ff' },
             ].map(({ icon, label, value, bg: ibg }) => (
-              <Col span={8} key={label}>
+              <Col xs={24} sm={8} key={label}>
                 <div style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 16, padding: '16px', display: 'flex', gap: 12 }}>
                   <div style={{ width: 32, height: 32, background: ibg, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
                   <div>

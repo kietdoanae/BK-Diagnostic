@@ -1,10 +1,12 @@
-import { Button, Typography, Row, Col, Card, Avatar, Space, Tag } from 'antd'
+import { Button, Typography, Row, Col, Card, Avatar, Space, Tag, Grid } from 'antd'
 import {
   ClockCircleOutlined, WarningOutlined, LaptopOutlined,
   LineChartOutlined, ToolOutlined, ApiOutlined,
 } from '@ant-design/icons'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+
+const { useBreakpoint } = Grid
 
 const { Text, Title, Paragraph } = Typography
 
@@ -16,32 +18,38 @@ function avatarColor(u = '') {
 
 function Navbar({ session, profile, onSignOut }) {
   const navigate = useNavigate()
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
   const username = profile?.username ?? session?.user?.email?.split('@')[0] ?? 'User'
   const initial = username[0]?.toUpperCase() ?? 'U'
   const bg = avatarColor(username)
 
   return (
-    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #f0f0f0', height: 64, display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #f0f0f0', height: 64, display: 'flex', alignItems: 'center', padding: '0 16px', justifyContent: 'space-between', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <img src="https://i.ibb.co/Z0Xc41Z/logo.png" style={{ width: 36, height: 36, borderRadius: 8 }} alt="logo" />
-        <Text strong style={{ color: '#003291', fontSize: 17 }}>BK Diagnostic</Text>
+        <Text strong style={{ color: '#003291', fontSize: isMobile ? 15 : 17, whiteSpace: 'nowrap' }}>BK Diagnostic</Text>
       </div>
-      <Space size={24} style={{ display: 'flex' }}>
-        <a href="#features" style={{ color: '#4b5563', fontSize: 14, fontWeight: 500 }}>Features</a>
-        <a href="#hardware" style={{ color: '#4b5563', fontSize: 14, fontWeight: 500 }}>Hardware</a>
-        <a href="#technology" style={{ color: '#4b5563', fontSize: 14, fontWeight: 500 }}>Technology</a>
-        <a href="#team" style={{ color: '#4b5563', fontSize: 14, fontWeight: 500 }}>Team</a>
-      </Space>
-      <Space>
+
+      {!isMobile && (
+        <Space size={24}>
+          <a href="#features" style={{ color: '#4b5563', fontSize: 14, fontWeight: 500 }}>Features</a>
+          <a href="#hardware" style={{ color: '#4b5563', fontSize: 14, fontWeight: 500 }}>Hardware</a>
+          <a href="#technology" style={{ color: '#4b5563', fontSize: 14, fontWeight: 500 }}>Technology</a>
+          <a href="#team" style={{ color: '#4b5563', fontSize: 14, fontWeight: 500 }}>Team</a>
+        </Space>
+      )}
+
+      <Space size={8} style={{ flexShrink: 0 }}>
         {session ? (
           <>
-            <Avatar style={{ background: bg, fontWeight: 700, cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>{initial}</Avatar>
-            <Text strong style={{ color: '#374151' }}>{username}</Text>
-            <Button type="primary" onClick={() => navigate('/dashboard')}>Dashboard</Button>
-            <Button danger onClick={onSignOut}>Sign Out</Button>
+            <Avatar size={32} style={{ background: bg, fontWeight: 700, cursor: 'pointer', fontSize: 13 }} onClick={() => navigate('/dashboard')}>{initial}</Avatar>
+            {!isMobile && <Text strong style={{ color: '#374151' }}>{username}</Text>}
+            <Button type="primary" size={isMobile ? 'small' : 'middle'} onClick={() => navigate('/dashboard')}>Dashboard</Button>
+            {!isMobile && <Button danger onClick={onSignOut}>Sign Out</Button>}
           </>
         ) : (
-          <Button type="primary" onClick={() => navigate('/login')}>Sign In</Button>
+          <Button type="primary" size={isMobile ? 'small' : 'middle'} onClick={() => navigate('/login')}>Sign In</Button>
         )}
       </Space>
     </nav>
