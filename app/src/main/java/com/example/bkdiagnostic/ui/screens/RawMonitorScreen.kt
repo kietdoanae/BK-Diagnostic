@@ -304,7 +304,7 @@ fun CanSendTab(vm: CanSenderViewModel) {
                 // CAN ID field
                 OutlinedTextField(
                     value = canIdInput,
-                    onValueChange = { vm.canIdInput.value = it },
+                    onValueChange = { vm.onCanIdChanged(it) },
                     label = { Text("CAN ID (hex)") },
                     trailingIcon = { Text("/ 7FF", fontSize = 12.sp, color = ColorGray) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -315,7 +315,7 @@ fun CanSendTab(vm: CanSenderViewModel) {
                 // Data bytes field
                 OutlinedTextField(
                     value = dataBytesInput,
-                    onValueChange = { vm.dataBytesInput.value = it },
+                    onValueChange = { vm.onDataBytesChanged(it) },
                     label = { Text("Data (hex, cách nhau bởi dấu cách)") },
                     placeholder = { Text("02 01 0C", color = ColorGray) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -400,7 +400,7 @@ fun CanSendTab(vm: CanSenderViewModel) {
                 if (!isRepeating) {
                     OutlinedTextField(
                         value = intervalMs,
-                        onValueChange = { vm.intervalMs.value = it },
+                        onValueChange = { vm.onIntervalChanged(it) },
                         label = { Text("Interval (ms)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
@@ -511,7 +511,7 @@ fun CanSendEntryRow(entry: CanSendEntry) {
 
         // Response sub-rows
         entry.responses.forEach { resp ->
-            val respIdHex = resp.canId.toString(16).uppercase()
+            val respIdHex = resp.canId.toString(16).uppercase().padStart(3, '0')
             val respDataStr = resp.dataBytes.joinToString(" ") { "%02X".format(it) }
             Surface(
                 modifier = Modifier

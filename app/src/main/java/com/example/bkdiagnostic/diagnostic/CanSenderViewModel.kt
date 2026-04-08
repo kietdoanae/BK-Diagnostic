@@ -28,18 +28,28 @@ class CanSenderViewModel(
 ) : ViewModel() {
 
     // ── Input state ────────────────────────────────────────────────────────────
-    val canIdInput = MutableStateFlow("")
-    val dataBytesInput = MutableStateFlow("")
-    val intervalMs = MutableStateFlow("500")
+    private val _canIdInput = MutableStateFlow("")
+    val canIdInput: StateFlow<String> = _canIdInput.asStateFlow()
+
+    private val _dataBytesInput = MutableStateFlow("")
+    val dataBytesInput: StateFlow<String> = _dataBytesInput.asStateFlow()
+
+    private val _intervalMs = MutableStateFlow("500")
+    val intervalMs: StateFlow<String> = _intervalMs.asStateFlow()
+
     val isRepeating = MutableStateFlow(false)
 
+    fun onCanIdChanged(value: String) { _canIdInput.value = value }
+    fun onDataBytesChanged(value: String) { _dataBytesInput.value = value }
+    fun onIntervalChanged(value: String) { _intervalMs.value = value }
+
     // ── Derived state ──────────────────────────────────────────────────────────
-    val dlcPreview: StateFlow<Int> = dataBytesInput
+    val dlcPreview: StateFlow<Int> = _dataBytesInput
         .map { parseBytes(it).size }
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     val inputError: StateFlow<String?> = combine(
-        canIdInput, dataBytesInput
+        _canIdInput, _dataBytesInput
     ) { id, data -> validateInputs(id, data) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -110,9 +120,9 @@ class CanSenderViewModel(
     // ── Public API ─────────────────────────────────────────────────────────────
 
     fun sendOnce() {
-        if (validateInputs(canIdInput.value, dataBytesInput.value) != null) return
-        val canId = parseCanId(canIdInput.value) ?: return
-        val bytes = parseBytes(dataBytesInput.value)
+        if (validateInputs(_canIdInput.value, _dataBytesInput.value) != null) return
+        val canId = parseCanId(_canIdInput.value) ?: return
+        val bytes = parseBytes(_dataBytesInput.value)
 
         val s = seqCounter.incrementAndGet()
         val now = System.currentTimeMillis()
@@ -148,8 +158,8 @@ class CanSenderViewModel(
             repeatJob?.cancel()
             isRepeating.value = false
         } else {
-            if (validateInputs(canIdInput.value, dataBytesInput.value) != null) return
-            val interval = intervalMs.value.toLongOrNull()?.coerceAtLeast(50L) ?: 500L
+            if (validateInputs(_canIdInput.value, _dataBytesInput.value) != null) return
+            val interval = _intervalMs.value.toLongOrNull()?.coerceAtLeast(50L) ?: 500L
             isRepeating.value = true
             repeatJob = viewModelScope.launch {
                 while (isActive) {
