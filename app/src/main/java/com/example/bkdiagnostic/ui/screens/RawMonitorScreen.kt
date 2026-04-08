@@ -1,5 +1,6 @@
 package com.example.bkdiagnostic.ui.screens
 
+import android.app.Application
 import android.content.ContentValues
 import android.content.Context
 import android.os.Build
@@ -19,10 +20,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
@@ -31,12 +34,20 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -49,15 +60,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bkdiagnostic.R
+import com.example.bkdiagnostic.diagnostic.CanSendEntry
+import com.example.bkdiagnostic.diagnostic.CanSenderViewModel
+import com.example.bkdiagnostic.diagnostic.CanSenderViewModelFactory
 import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
 import com.example.bkdiagnostic.diagnostic.RawFrameEntry
+import com.example.bkdiagnostic.diagnostic.SendStatus
 import com.example.bkdiagnostic.ui.components.AppTopBar
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 // ── Màu sắc ─────────────────────────────────────────────────────────────────
 private val BgTerminal  = Color(0xFF060D14)
@@ -89,6 +109,60 @@ fun RawMonitorScreen(
     viewModel: DiagnosticViewModel,
     onBack: () -> Unit
 ) {
+    val canSenderVm: CanSenderViewModel = viewModel(
+        factory = CanSenderViewModelFactory(LocalContext.current.applicationContext as Application)
+    )
+
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Monitor", "Gửi CAN")
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BgTerminal)
+    ) {
+        // ── Top bar ──────────────────────────────────────────────────────────
+        AppTopBar(
+            title = stringResource(R.string.raw_monitor_title),
+            subtitle = null,
+            onBack = onBack
+        )
+
+        // ── Tab row ──────────────────────────────────────────────────────────
+        TabRow(
+            selectedTabIndex = selectedTab,
+            containerColor = BgHeader,
+            contentColor = ColorBlue
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = {
+                        Text(
+                            text = title,
+                            fontSize = 13.sp,
+                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                )
+            }
+        }
+
+        // ── Tab content ───────────────────────────────────────────────────────
+        when (selectedTab) {
+            0 -> MonitorTabContent(viewModel = viewModel)
+            1 -> CanSendTab(vm = canSenderVm)
+        }
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Monitor tab (existing content)
+// ════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
     val rawLog by viewModel.rawFrameLog.collectAsStateWithLifecycle()
     val responseCanId = viewModel.protocolConfig?.responseCanId
     val context = LocalContext.current
@@ -119,21 +193,7 @@ fun RawMonitorScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BgTerminal)
-    ) {
-        // ── Top bar ──────────────────────────────────────────────────────────
-        AppTopBar(
-            title = stringResource(R.string.raw_monitor_title),
-            subtitle = if (paused)
-                "⏸  Paused · ${displayLog.size} frames captured"
-            else
-                "●  Live · ${displayLog.size} frames",
-            onBack = onBack
-        )
-
+    Column(modifier = Modifier.fillMaxSize()) {
         // ── Header cột cố định ───────────────────────────────────────────────
         FrameTableHeader()
 
@@ -206,6 +266,269 @@ fun RawMonitorScreen(
                     strExportError
             }
         )
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  CAN Sender tab
+// ════════════════════════════════════════════════════════════════════════════
+
+@Composable
+fun CanSendTab(vm: CanSenderViewModel) {
+    val canIdInput by vm.canIdInput.collectAsState()
+    val dataBytesInput by vm.dataBytesInput.collectAsState()
+    val intervalMs by vm.intervalMs.collectAsState()
+    val isRepeating by vm.isRepeating.collectAsState()
+    val dlcPreview by vm.dlcPreview.collectAsState()
+    val inputError by vm.inputError.collectAsState()
+    val usbConnected by vm.usbConnected.collectAsState()
+    val sendLog by vm.sendLog.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BgTerminal)
+    ) {
+        // ── Input fields section ──────────────────────────────────────────────
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            colors = CardDefaults.cardColors(containerColor = BgRow),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // CAN ID field
+                OutlinedTextField(
+                    value = canIdInput,
+                    onValueChange = { vm.canIdInput.value = it },
+                    label = { Text("CAN ID (hex)") },
+                    trailingIcon = { Text("/ 7FF", fontSize = 12.sp, color = ColorGray) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Data bytes field
+                OutlinedTextField(
+                    value = dataBytesInput,
+                    onValueChange = { vm.dataBytesInput.value = it },
+                    label = { Text("Data (hex, cách nhau bởi dấu cách)") },
+                    placeholder = { Text("02 01 0C", color = ColorGray) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // DLC preview
+                Text(
+                    text = "DLC: $dlcPreview",
+                    color = ColorTeal,
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+
+                // Error message
+                if (inputError != null) {
+                    Text(
+                        text = inputError!!,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                }
+
+                // Buttons row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Gửi 1 lần
+                    Button(
+                        onClick = { vm.sendOnce() },
+                        enabled = inputError == null && usbConnected,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ColorBlue.copy(alpha = 0.15f),
+                            contentColor = ColorBlue,
+                            disabledContainerColor = Color.White.copy(alpha = 0.04f),
+                            disabledContentColor = ColorGray
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Gửi 1 lần", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    // Toggle repeat
+                    val repeatEnabled = isRepeating || (inputError == null && usbConnected)
+                    Button(
+                        onClick = { vm.toggleRepeat() },
+                        enabled = repeatEnabled,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isRepeating) ColorRed.copy(alpha = 0.15f) else ColorGreen.copy(alpha = 0.15f),
+                            contentColor = if (isRepeating) ColorRed else ColorGreen,
+                            disabledContainerColor = Color.White.copy(alpha = 0.04f),
+                            disabledContentColor = ColorGray
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = if (isRepeating) "Dừng" else "Lặp lại",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // Xóa log
+                    Button(
+                        onClick = { vm.clearLog() },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ColorOrange.copy(alpha = 0.15f),
+                            contentColor = ColorOrange
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Xóa log", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                // Interval field (shown only when not repeating)
+                if (!isRepeating) {
+                    OutlinedTextField(
+                        value = intervalMs,
+                        onValueChange = { vm.intervalMs.value = it },
+                        label = { Text("Interval (ms)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+
+        // ── Send log section ──────────────────────────────────────────────────
+        Text(
+            text = "Log gửi CAN",
+            color = ColorGray,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace,
+            letterSpacing = 1.2.sp,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(ColorMuted.copy(alpha = 0.30f))
+        )
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp),
+            contentPadding = PaddingValues(bottom = 8.dp)
+        ) {
+            items(
+                items = sendLog,
+                key = { it.seq }
+            ) { entry ->
+                CanSendEntryRow(entry = entry)
+                Spacer(Modifier.height(4.dp))
+            }
+        }
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  CanSendEntryRow
+// ════════════════════════════════════════════════════════════════════════════
+
+@Composable
+fun CanSendEntryRow(entry: CanSendEntry) {
+    val sdf = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
+    val timeStr = sdf.format(Date(entry.timestampMs))
+    val idStr = "ID: ${entry.canId.toString(16).uppercase().padStart(3, '0')}"
+    val dataStr = "[${entry.dlc}] ${entry.dataBytes.joinToString(" ") { "%02X".format(it) }}"
+
+    val (statusColor, statusText) = when (entry.status) {
+        SendStatus.PENDING -> ColorGray to "PENDING"
+        SendStatus.ACK     -> ColorGreen to "ACK ${entry.roundTripMs}ms"
+        SendStatus.ERROR   -> ColorRed to "ERROR: ${entry.errorMsg}"
+        SendStatus.TIMEOUT -> ColorOrange to "TIMEOUT"
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(BgRow, shape = RoundedCornerShape(6.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
+        // Main send row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = timeStr,
+                color = ColorMuted,
+                fontSize = 10.sp,
+                fontFamily = FontFamily.Monospace
+            )
+            Text(
+                text = idStr,
+                color = ColorTeal,
+                fontSize = 10.sp,
+                fontFamily = FontFamily.Monospace
+            )
+            Text(
+                text = dataStr,
+                color = Color(0xFF78909C),
+                fontSize = 10.sp,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.weight(1f)
+            )
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = statusColor.copy(alpha = 0.18f)
+            ) {
+                Text(
+                    text = statusText,
+                    color = statusColor,
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
+
+        // Response sub-rows
+        entry.responses.forEach { resp ->
+            val respIdHex = resp.canId.toString(16).uppercase()
+            val respDataStr = resp.dataBytes.joinToString(" ") { "%02X".format(it) }
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 3.dp),
+                shape = RoundedCornerShape(4.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    text = "↳ RESPONSE ID: $respIdHex [${resp.dataBytes.size}] $respDataStr (+${resp.receivedAfterMs}ms)",
+                    color = ColorYellow,
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+            }
+        }
     }
 }
 
