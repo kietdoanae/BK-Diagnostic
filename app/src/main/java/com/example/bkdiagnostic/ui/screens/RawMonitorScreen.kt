@@ -266,7 +266,7 @@ private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
                 if (paused) frozenLog = emptyList()
             },
             onExport = {
-                val result = exportToCsv(context, displayLog)
+                val result = exportToCsv(context, displayLog, viewModel.brandId, viewModel.modelId)
                 exportMessage = if (result != null)
                     "$strExportSuccess ${result.filename}"
                 else
@@ -826,10 +826,19 @@ private fun ActionButton(
 
 private data class ExportResult(val filename: String, val bytes: ByteArray)
 
-private fun exportToCsv(context: Context, frames: List<RawFrameEntry>): ExportResult? {
+private fun exportToCsv(
+    context: Context,
+    frames: List<RawFrameEntry>,
+    brandId: String = "",
+    modelId: String = ""
+): ExportResult? {
     if (frames.isEmpty()) return null
-    val ts = System.currentTimeMillis()
-    val filename = "can_frames_$ts.csv"
+    val sdfFilename = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
+    val datePart = sdfFilename.format(Date())
+    // CAN_FORD_RANGER_2026-04-09_14-30-22.csv
+    val brandPart = brandId.uppercase().ifBlank { "UNKNOWN" }
+    val modelPart = modelId.uppercase().ifBlank { "UNKNOWN" }
+    val filename = "CAN_${brandPart}_${modelPart}_${datePart}.csv"
 
     // Định dạng timestamp thành chuỗi đọc được — dùng Locale.US tránh lỗi AM/PM một số locale
     val sdfExport = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
@@ -903,13 +912,18 @@ private suspend fun uploadExportToStorage(
     displayName: String,
     frameCount:  Int
 ) {
-    runCatching {
-        val user = supabaseClient.auth.currentUserOrNull() ?: return
-        val path = "${user.id}/$filename"
+    val user = supabaseClient.auth.currentUserOrNull()
+    if (user == null) {
+        android.util.Log.w("RawMonitor", "Upload skipped: no active session")
+        return
+    }
+    val path = "${user.id}/$filename"
 
-        // 1. Upload file lên Storage
+    try {
+        // 1. Upload file — khai báo content type rõ ràng để khớp whitelist bucket
         supabaseClient.storage.from("exports").upload(path, bytes) {
-            upsert = false
+            upsert = true          // tránh lỗi nếu file cùng tên đã tồn tại
+            contentType = io.ktor.http.ContentType.parse("text/csv")
         }
         android.util.Log.d("RawMonitor", "Uploaded $filename to Storage")
 
@@ -923,19 +937,21 @@ private suspend fun uploadExportToStorage(
         // 3. Insert record vào bảng export_records
         supabaseClient.postgrest["export_records"].insert(
             ExportRecord(
-                userId       = user.id,
-                username     = username,
-                filename     = filename,
-                brandId      = brandId,
-                modelId      = modelId,
-                displayName  = displayName,
-                frameCount   = frameCount,
+                userId        = user.id,
+                username      = username,
+                filename      = filename,
+                brandId       = brandId,
+                modelId       = modelId,
+                displayName   = displayName,
+                frameCount    = frameCount,
                 fileSizeBytes = bytes.size.toLong(),
-                storagePath  = path
+                storagePath   = path
             )
         )
         android.util.Log.d("RawMonitor", "Saved export_record: $displayName / $filename")
-    }.onFailure { e ->
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e   // không nuốt CancellationException
+    } catch (e: Exception) {
         android.util.Log.e("RawMonitor", "Export upload/record failed: ${e.message}", e)
     }
 }
