@@ -253,7 +253,7 @@ class DiagnosticViewModel(
         )
         val current = _rawFrameLog.value
         _rawFrameLog.value =
-            if (current.size >= 500) current.drop(1) + entry else current + entry
+            if (current.size >= 5000) current.drop(1) + entry else current + entry
     }
 
     /** Cố giải mã frame thành chuỗi mô tả, trả về "—" nếu không nhận dạng được */
