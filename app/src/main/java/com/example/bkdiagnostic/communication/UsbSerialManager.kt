@@ -68,8 +68,8 @@ class UsbSerialManager private constructor(private val context: Context) {
 
     // ── Preferred settings (updated by SettingsViewModel) ───────────────────
 
-    /** Tốc độ UART giữa Android → CP2102 → STM32. Mặc định 115200. */
-    var preferredBaudRate: Int = 115200
+    /** Tốc độ UART giữa Android → CP2102 → STM32. Mặc định 460800. */
+    var preferredBaudRate: Int = 460800
 
     /** Tốc độ CAN bus gửi cho STM32 ngay sau khi kết nối. Mặc định 500 kbps. */
     var preferredCanKbps: Int = 500

@@ -195,9 +195,9 @@ static void MX_USART1_UART_Init(void)
 {
     __HAL_RCC_USART1_CLK_ENABLE();
 
-    /* APB2 = 72 MHz → 115200 baud */
+    /* APB2 = 72 MHz → 460800 baud (BRR = 9+12/16 = 156 → actual 461538, 0.16% err) */
     huart1.Instance          = USART1;
-    huart1.Init.BaudRate     = 115200;
+    huart1.Init.BaudRate     = 460800;
     huart1.Init.WordLength   = UART_WORDLENGTH_8B;
     huart1.Init.StopBits     = UART_STOPBITS_1;
     huart1.Init.Parity       = UART_PARITY_NONE;
@@ -222,6 +222,18 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     if (huart->Instance == USART1)
     {
         Comm_UART_RxCallback();
+    }
+}
+
+/**
+ * @brief  Called by HAL after each IT TX transfer completes.
+ *         Advances the TX queue and sends the next frame if available.
+ */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART1)
+    {
+        Comm_UART_TxCallback();
     }
 }
 

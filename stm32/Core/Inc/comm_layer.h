@@ -14,7 +14,7 @@
  *  CHECKSUM : TYPE XOR LEN XOR payload[0] XOR ... XOR payload[N-1]
  *  EOF      : 0x55
  *
- * UART: USART1, PA9(TX), PA10(RX), 115200 8N1
+ * UART: USART1, PA9(TX), PA10(RX), 460800 8N1
  */
 
 #ifndef COMM_LAYER_H
@@ -98,6 +98,9 @@ const CommFrame_t *Comm_GetFrame(void);
 
 /** @brief Call from HAL_UART_RxCpltCallback() for USART1. */
 void Comm_UART_RxCallback(void);
+
+/** @brief Call from HAL_UART_TxCpltCallback() for USART1. */
+void Comm_UART_TxCallback(void);
 
 /**
  * @brief  Send any error deferred from ISR context. Call from main loop only.

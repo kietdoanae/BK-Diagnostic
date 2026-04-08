@@ -21,6 +21,21 @@ static uint8_t s_rx_byte;
 /* Deferred error: set in ISR context, sent from main loop */
 static volatile uint8_t s_pending_error = 0xFF;  /* 0xFF = no pending error */
 
+/* ── Non-blocking TX queue ───────────────────────────────────────────────── */
+/* 8 slots × 260 bytes ≈ 2 kB SRAM — handles burst of ACK/CAN_RX frames      */
+#define TX_QUEUE_DEPTH  8U
+#define TX_FRAME_MAX    260U
+
+typedef struct {
+    uint8_t  buf[TX_FRAME_MAX];
+    uint16_t len;
+} TxSlot_t;
+
+static TxSlot_t         s_tx_queue[TX_QUEUE_DEPTH];
+static volatile uint8_t s_tx_head  = 0;   /* slot currently being sent       */
+static volatile uint8_t s_tx_tail  = 0;   /* next free slot                  */
+static volatile uint8_t s_tx_busy  = 0;   /* 1 = HAL_UART_Transmit_IT active */
+
 /* ── Private: compute XOR checksum ──────────────────────────────────────── */
 /* CHECKSUM = TYPE XOR LEN XOR payload[0] XOR ... XOR payload[N-1]          */
 static uint8_t xor_checksum(uint8_t type, uint8_t len,
@@ -45,23 +60,60 @@ void Comm_Init(void)
 /* ── Comm_SendFrame ──────────────────────────────────────────────────────── */
 bool Comm_SendFrame(uint8_t type, const uint8_t *payload, uint8_t len)
 {
-    /* max frame: SOF(1)+TYPE(1)+LEN(1)+PAYLOAD(255)+CS(1)+EOF(1) = 260 B   */
-    uint8_t buf[260];
+    /* Build frame locally — max SOF(1)+TYPE(1)+LEN(1)+PAYLOAD(255)+CS(1)+EOF(1) = 260 B */
+    uint8_t  tmp[TX_FRAME_MAX];
     uint16_t idx = 0;
 
-    buf[idx++] = COMM_SOF;
-    buf[idx++] = type;
-    buf[idx++] = len;
+    tmp[idx++] = COMM_SOF;
+    tmp[idx++] = type;
+    tmp[idx++] = len;
 
     if (len > 0 && payload) {
-        memcpy(&buf[idx], payload, len);
+        memcpy(&tmp[idx], payload, len);
         idx += len;
     }
 
-    buf[idx++] = xor_checksum(type, len, payload ? payload : (uint8_t *)"");
-    buf[idx++] = COMM_EOF;
+    tmp[idx++] = xor_checksum(type, len, payload ? payload : (const uint8_t *)"");
+    tmp[idx++] = COMM_EOF;
 
-    return HAL_UART_Transmit(&COMM_UART, buf, idx, 100) == HAL_OK;
+    /* --- Critical section: enqueue + maybe start TX --- */
+    __disable_irq();
+
+    uint8_t next_tail = (uint8_t)((s_tx_tail + 1U) % TX_QUEUE_DEPTH);
+    if (next_tail == s_tx_head) {
+        /* Queue full — drop frame to avoid blocking */
+        __enable_irq();
+        return false;
+    }
+
+    memcpy(s_tx_queue[s_tx_tail].buf, tmp, idx);
+    s_tx_queue[s_tx_tail].len = idx;
+    s_tx_tail = next_tail;
+
+    if (!s_tx_busy) {
+        s_tx_busy = 1U;
+        HAL_UART_Transmit_IT(&COMM_UART,
+                             s_tx_queue[s_tx_head].buf,
+                             s_tx_queue[s_tx_head].len);
+    }
+
+    __enable_irq();
+    return true;
+}
+
+/* ── Comm_UART_TxCallback ────────────────────────────────────────────────── */
+/* Called from HAL_UART_TxCpltCallback in main.c (ISR context).               */
+void Comm_UART_TxCallback(void)
+{
+    s_tx_head = (uint8_t)((s_tx_head + 1U) % TX_QUEUE_DEPTH);
+    if (s_tx_head != s_tx_tail) {
+        /* More frames waiting — send the next one */
+        HAL_UART_Transmit_IT(&COMM_UART,
+                             s_tx_queue[s_tx_head].buf,
+                             s_tx_queue[s_tx_head].len);
+    } else {
+        s_tx_busy = 0U;
+    }
 }
 
 /* ── Comm_SendAck ────────────────────────────────────────────────────────── */
