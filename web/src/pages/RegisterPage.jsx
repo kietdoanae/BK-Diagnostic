@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Form, Input, Button, Alert, Typography } from 'antd'
+import { Form, Input, Button, Alert, Typography, Grid } from 'antd'
 import { Link, Navigate } from 'react-router-dom'
 import { register } from '../services/auth'
 import { logActivity } from '../services/api'
 import { useAuth } from '../hooks/useAuth'
+
+const { useBreakpoint } = Grid
 
 const { Text, Title } = Typography
 
@@ -13,6 +15,8 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false)
   const { session, loading } = useAuth()
   const [form] = Form.useForm()
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
 
   if (loading) return null
   if (session) return <Navigate to="/dashboard" replace />
@@ -40,11 +44,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: 840, display: 'flex', borderRadius: 24, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', minHeight: 520 }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '16px' : 0 }}>
+      <div style={{ width: '100%', maxWidth: isMobile ? 440 : 840, display: 'flex', borderRadius: 24, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', minHeight: isMobile ? 0 : 520 }}>
 
-        {/* Left panel */}
-        <div style={{ width: 300, flexShrink: 0, background: 'linear-gradient(135deg, #0A1E6E 0%, #1565C0 60%, #1E88E5 100%)', padding: 40, color: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        {/* Left panel — hidden on mobile */}
+        {!isMobile && <div style={{ width: 300, flexShrink: 0, background: 'linear-gradient(135deg, #0A1E6E 0%, #1565C0 60%, #1E88E5 100%)', padding: 40, color: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40, opacity: 0.9 }}>
               <img src="https://i.ibb.co/Z0Xc41Z/logo.png" style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.1)', padding: 4 }} alt="logo" />
@@ -68,10 +72,10 @@ export default function RegisterPage() {
             ))}
           </div>
           <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>© 2026 BK Diagnostic · HCMUT</Text>
-        </div>
+        </div>}
 
         {/* Right panel */}
-        <div style={{ flex: 1, background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 48px' }}>
+        <div style={{ flex: 1, background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: isMobile ? '32px 24px' : '40px 48px' }}>
           <Title level={3} style={{ marginBottom: 4 }}>Create Account</Title>
           <Text type="secondary" style={{ marginBottom: 28, display: 'block' }}>Fill in the details below to get started</Text>
 
