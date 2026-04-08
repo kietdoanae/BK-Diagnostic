@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Card, Avatar, Typography, Tag, Row, Col, Form, Input, Button, Alert } from 'antd'
-import { UserOutlined, CalendarOutlined, SafetyOutlined, MailOutlined, LockOutlined } from '@ant-design/icons'
+import { Card, Avatar, Typography, Tag, Row, Col, Form, Input, Button, Alert, Table, Space } from 'antd'
+import { UserOutlined, CalendarOutlined, SafetyOutlined, MailOutlined, LockOutlined, DownloadOutlined, FileTextOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../services/supabase'
+import { useMyExports } from '../hooks/useExports'
 
 const { Text, Title } = Typography
 
@@ -16,6 +17,100 @@ function avatarColor(u = '') {
 
 const ROLE_COLOR = { admin: 'purple', moderator: 'blue', user: 'default', guest: 'default' }
 const STATUS_COLOR = { active: 'success', inactive: 'default', banned: 'error', suspended: 'warning', pending: 'processing' }
+
+function ExportHistoryCard({ session }) {
+  const userId = session?.user?.id
+  const { files, loading, error, reload, getDownloadUrl } = useMyExports(userId)
+  const [downloading, setDownloading] = useState({})
+
+  async function handleDownload(filename) {
+    setDownloading(d => ({ ...d, [filename]: true }))
+    const url = await getDownloadUrl(filename)
+    if (url) {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+    }
+    setDownloading(d => ({ ...d, [filename]: false }))
+  }
+
+  const columns = [
+    {
+      title: 'Tên file',
+      dataIndex: 'name',
+      key: 'name',
+      render: v => (
+        <Space>
+          <FileTextOutlined style={{ color: '#1565C0' }} />
+          <Text style={{ fontFamily: 'monospace', fontSize: 13 }}>{v}</Text>
+        </Space>
+      )
+    },
+    {
+      title: 'Dung lượng',
+      dataIndex: 'metadata',
+      key: 'size',
+      render: meta => {
+        const bytes = meta?.size ?? 0
+        if (bytes < 1024) return `${bytes} B`
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+        return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+      }
+    },
+    {
+      title: 'Thời gian',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: v => v ? new Date(v).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'
+    },
+    {
+      title: '',
+      key: 'action',
+      align: 'right',
+      render: (_, row) => (
+        <Button
+          type="primary"
+          size="small"
+          icon={<DownloadOutlined />}
+          loading={downloading[row.name]}
+          onClick={() => handleDownload(row.name)}
+        >
+          Tải xuống
+        </Button>
+      )
+    }
+  ]
+
+  return (
+    <Card
+      style={{ borderRadius: 20, border: '1px solid #e8edf5', marginTop: 24 }}
+      title={
+        <Space>
+          <FileTextOutlined style={{ color: '#1565C0' }} />
+          <span style={{ fontWeight: 700 }}>Lịch sử xuất file CAN</span>
+          <Text type="secondary" style={{ fontSize: 13 }}>({files.length} file)</Text>
+        </Space>
+      }
+      extra={
+        <Button icon={<ReloadOutlined />} size="small" onClick={reload} loading={loading}>
+          Làm mới
+        </Button>
+      }
+    >
+      {error && <Alert type="error" message={error} style={{ marginBottom: 12 }} />}
+      <Table
+        dataSource={files}
+        columns={columns}
+        rowKey="name"
+        loading={loading}
+        size="small"
+        pagination={{ pageSize: 10, showTotal: (t) => `${t} file` }}
+        locale={{ emptyText: 'Chưa có file xuất nào' }}
+      />
+    </Card>
+  )
+}
 
 export default function DashboardPage({ embedded = false }) {
   const { session, profile, role } = useAuth()
@@ -140,6 +235,8 @@ export default function DashboardPage({ embedded = false }) {
           </Card>
         </Col>
       </Row>
+
+      <ExportHistoryCard session={session} />
     </div>
   )
 

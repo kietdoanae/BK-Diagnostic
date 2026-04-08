@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Tabs, Table, Tag, Button, Input, Select, Space, Typography, Row, Col, Card, Modal, Badge, Alert } from 'antd'
-import { SearchOutlined, ReloadOutlined, ExportOutlined } from '@ant-design/icons'
+import { Tabs, Table, Tag, Button, Input, Select, Space, Typography, Row, Col, Card, Modal, Badge, Alert, Tooltip } from 'antd'
+import { SearchOutlined, ReloadOutlined, ExportOutlined, DownloadOutlined, FileTextOutlined } from '@ant-design/icons'
 import AppLayout from '../components/AppLayout'
 import { useUsers } from '../hooks/useUsers'
 import { useLogs } from '../hooks/useLogs'
+import { useAllExports } from '../hooks/useExports'
 
 const { Text, Title } = Typography
 const { Option } = Select
@@ -229,10 +230,114 @@ function LogsTab() {
   )
 }
 
+function ExportsTab() {
+  const { files, loading, error, reload, getDownloadUrl } = useAllExports()
+  const [downloading, setDownloading] = useState({})
+
+  async function handleDownload(userId, filename) {
+    const key = `${userId}/${filename}`
+    setDownloading(d => ({ ...d, [key]: true }))
+    const url = await getDownloadUrl(userId, filename)
+    if (url) {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+    }
+    setDownloading(d => ({ ...d, [key]: false }))
+  }
+
+  const columns = [
+    {
+      title: 'User ID',
+      dataIndex: 'userId',
+      key: 'userId',
+      width: 160,
+      render: v => (
+        <Tooltip title={v}>
+          <Text code style={{ fontSize: 12 }}>{v.slice(0, 8)}…</Text>
+        </Tooltip>
+      )
+    },
+    {
+      title: 'Tên file',
+      dataIndex: 'name',
+      key: 'name',
+      render: v => (
+        <Space>
+          <FileTextOutlined style={{ color: '#1565C0' }} />
+          <Text style={{ fontFamily: 'monospace', fontSize: 13 }}>{v}</Text>
+        </Space>
+      )
+    },
+    {
+      title: 'Dung lượng',
+      dataIndex: 'metadata',
+      key: 'size',
+      render: meta => {
+        const bytes = meta?.size ?? 0
+        if (bytes < 1024) return `${bytes} B`
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+        return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+      }
+    },
+    {
+      title: 'Thời gian tải lên',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: v => {
+        if (!v) return '—'
+        const d = new Date(v.endsWith('Z') || v.includes('+') ? v : v + 'Z')
+        return d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false })
+      }
+    },
+    {
+      title: '',
+      key: 'action',
+      align: 'right',
+      render: (_, row) => (
+        <Button
+          type="primary"
+          size="small"
+          icon={<DownloadOutlined />}
+          loading={downloading[`${row.userId}/${row.name}`]}
+          onClick={() => handleDownload(row.userId, row.name)}
+        >
+          Tải xuống
+        </Button>
+      )
+    }
+  ]
+
+  return (
+    <Card style={{ borderRadius: 16 }} styles={{ body: { padding: 0 } }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', gap: 12, alignItems: 'center' }}>
+        <Text strong style={{ fontSize: 14 }}>
+          Tổng cộng: <Text style={{ color: '#1565C0' }}>{files.length}</Text> file
+        </Text>
+        <Button icon={<ReloadOutlined />} onClick={reload} loading={loading} style={{ marginLeft: 'auto' }}>
+          Làm mới
+        </Button>
+      </div>
+      {error && <Alert message={error} type="error" style={{ margin: '8px 16px' }} />}
+      <Table
+        columns={columns}
+        dataSource={files}
+        rowKey={r => `${r.userId}/${r.name}`}
+        loading={loading}
+        size="small"
+        pagination={{ pageSize: 20, showTotal: (t) => `${t} file`, showSizeChanger: false }}
+        locale={{ emptyText: 'Chưa có file xuất nào' }}
+      />
+    </Card>
+  )
+}
+
 export default function AdminPage() {
   const items = [
     { key: 'users', label: 'Users', children: <UsersTab /> },
     { key: 'logs', label: 'Activity Logs', children: <LogsTab /> },
+    { key: 'exports', label: '📁 Exports', children: <ExportsTab /> },
     { key: 'wiring', label: 'Wiring Diagram', children: (
       <Card style={{ borderRadius: 16 }}>
         <iframe

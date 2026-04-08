@@ -73,8 +73,14 @@ import com.example.bkdiagnostic.diagnostic.CanSenderViewModelFactory
 import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
 import com.example.bkdiagnostic.diagnostic.RawFrameEntry
 import com.example.bkdiagnostic.diagnostic.SendStatus
+import com.example.bkdiagnostic.supabaseClient
 import com.example.bkdiagnostic.ui.components.AppTopBar
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -259,11 +265,17 @@ private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
                 if (paused) frozenLog = emptyList()
             },
             onExport = {
-                val name = exportToCsv(context, displayLog)
-                exportMessage = if (name != null)
-                    "$strExportSuccess $name"
+                val result = exportToCsv(context, displayLog)
+                exportMessage = if (result != null)
+                    "$strExportSuccess ${result.filename}"
                 else
                     strExportError
+                // Upload lên Supabase Storage (fire-and-forget, không block UI)
+                if (result != null) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        uploadExportToStorage(result.filename, result.bytes)
+                    }
+                }
             }
         )
     }
@@ -803,7 +815,9 @@ private fun ActionButton(
 //  Export to CSV
 // ════════════════════════════════════════════════════════════════════════════
 
-private fun exportToCsv(context: Context, frames: List<RawFrameEntry>): String? {
+private data class ExportResult(val filename: String, val bytes: ByteArray)
+
+private fun exportToCsv(context: Context, frames: List<RawFrameEntry>): ExportResult? {
     if (frames.isEmpty()) return null
     val ts = System.currentTimeMillis()
     val filename = "can_frames_$ts.csv"
@@ -849,8 +863,25 @@ private fun exportToCsv(context: Context, frames: List<RawFrameEntry>): String? 
             dir.mkdirs()
             java.io.File(dir, filename).writeBytes(csvBytes)
         }
-        filename
+        ExportResult(filename, csvBytes)
     } catch (e: Exception) {
         null
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Upload to Supabase Storage
+// ════════════════════════════════════════════════════════════════════════════
+
+private suspend fun uploadExportToStorage(filename: String, bytes: ByteArray) {
+    runCatching {
+        val user = supabaseClient.auth.currentUserOrNull() ?: return
+        val path = "${user.id}/$filename"
+        supabaseClient.storage.from("exports").upload(path, bytes) {
+            upsert = false
+        }
+        android.util.Log.d("RawMonitor", "Uploaded $filename to Storage")
+    }.onFailure { e ->
+        android.util.Log.e("RawMonitor", "Storage upload failed: ${e.message}", e)
     }
 }
