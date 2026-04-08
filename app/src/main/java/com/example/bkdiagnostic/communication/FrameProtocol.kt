@@ -133,6 +133,9 @@ object FrameProtocol {
     /**
      * Parser đúng — đọc từng byte và dựng frame khi đủ.
      * Sử dụng state machine đơn giản.
+     *
+     * Nhận `(ByteArray, Int)` để tránh tạo ByteArray mới khi chỉ cần một phần
+     * của buffer đọc từ USB (giảm GC pressure trong vòng lặp đọc liên tục).
      */
     class StreamParser {
         private enum class State { WAIT_SOF, WAIT_TYPE, WAIT_LEN, PAYLOAD, CHECKSUM, WAIT_EOF }
@@ -143,12 +146,19 @@ object FrameProtocol {
         private val payload = mutableListOf<Byte>()
         private var checksum: Byte = 0
 
+        // Thống kê để debug
+        var totalParsed = 0; private set
+        var totalDropped = 0; private set
+
         private val _ready = mutableListOf<ParsedFrame>()
 
-        /** Nạp 1 batch byte, trả về danh sách frame hoàn chỉnh */
-        fun feed(bytes: ByteArray): List<ParsedFrame> {
+        /**
+         * Nạp [len] byte đầu tiên của [buf], trả về danh sách frame hoàn chỉnh.
+         * Không cấp phát ByteArray phụ.
+         */
+        fun feed(buf: ByteArray, len: Int = buf.size): List<ParsedFrame> {
             _ready.clear()
-            for (b in bytes) processByte(b)
+            for (i in 0 until len) processByte(buf[i])
             return _ready.toList()
         }
 
@@ -173,8 +183,18 @@ object FrameProtocol {
                     state = State.WAIT_SOF
                     if (b == EOF && verifyChecksum()) {
                         _ready.add(ParsedFrame(type, payload.toByteArray()))
+                        totalParsed++
+                    } else {
+                        // Frame không hợp lệ (EOF sai hoặc checksum lỗi) — log để debug
+                        totalDropped++
+                        android.util.Log.w(
+                            "FrameProtocol",
+                            "Dropped frame: EOF=${b == EOF} " +
+                            "checksumOk=${verifyChecksum()} " +
+                            "type=0x${type.toUByte().toString(16)} " +
+                            "total_dropped=$totalDropped"
+                        )
                     }
-                    // frame invalid → drop silently
                 }
             }
         }
@@ -185,7 +205,10 @@ object FrameProtocol {
             return xor.toByte() == checksum
         }
 
-        fun reset() { state = State.WAIT_SOF; payload.clear() }
+        fun reset() {
+            state = State.WAIT_SOF
+            payload.clear()
+        }
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────

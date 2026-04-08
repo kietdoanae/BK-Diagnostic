@@ -56,10 +56,12 @@ class UsbSerialManager private constructor(private val context: Context) {
 
     // ── Luồng CAN frames đến ────────────────────────────────────────────────
 
-    private val _canFrames = MutableSharedFlow<CanFrame>(extraBufferCapacity = 128)
+    // Buffer 512 frame: đủ cho burst CAN 500kbps (~400 frame/s) trong ~1.2 giây
+    private val _canFrames = MutableSharedFlow<CanFrame>(extraBufferCapacity = 512)
     val canFrames: SharedFlow<CanFrame> = _canFrames.asSharedFlow()
 
-    private val _rawFrames = MutableSharedFlow<ParsedFrame>(extraBufferCapacity = 64)
+    // Buffer 256 cho ACK/ERROR/STATUS (tần suất thấp hơn CAN_RX)
+    private val _rawFrames = MutableSharedFlow<ParsedFrame>(extraBufferCapacity = 256)
     val rawFrames: SharedFlow<ParsedFrame> = _rawFrames.asSharedFlow()
 
     // ── Nội bộ ──────────────────────────────────────────────────────────────
@@ -205,21 +207,23 @@ class UsbSerialManager private constructor(private val context: Context) {
 
     private fun startReadLoop(port: UsbSerialPort) {
         scope.launch {
-            val buf = ByteArray(256)
+            // 1024 bytes = ~78 CAN frame (13 byte/frame) mỗi lần đọc — 4x so với 256
+            val buf = ByteArray(1024)
             while (isActive && serialPort != null) {
                 runCatching {
-                    val len = port.read(buf, 100)
+                    // Timeout 50ms: polling nhanh hơn, giảm tích lũy trong UART FIFO
+                    val len = port.read(buf, 50)
                     if (len > 0) {
-                        val frames = parser.feed(buf.copyOf(len))
+                        // Truyền trực tiếp slice không tạo ByteArray mới để giảm GC pressure
+                        val frames = parser.feed(buf, len)
                         frames.forEach { pf -> handleParsedFrame(pf) }
                     }
                 }.onFailure {
-                    // Cổng bị đóng hoặc thiết bị rút ra
                     serialPort = null
                     _state.value = ConnectionState.Disconnected
                     if (autoReconnect) {
                         delay(2000)
-                        connect()   // dùng lại preferredBaudRate / preferredCanKbps
+                        connect()
                     }
                     return@launch
                 }
