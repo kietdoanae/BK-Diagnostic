@@ -214,8 +214,8 @@ class UsbSerialManager private constructor(private val context: Context) {
                     // Timeout 50ms: polling nhanh hơn, giảm tích lũy trong UART FIFO
                     val len = port.read(buf, 50)
                     if (len > 0) {
-                        // Truyền trực tiếp slice không tạo ByteArray mới để giảm GC pressure
-                        val frames = parser.feed(buf, len)
+                        // coerceAtMost đảm bảo len không vượt quá buf.size nếu USB driver vi phạm contract
+                        val frames = parser.feed(buf, len.coerceAtMost(buf.size))
                         frames.forEach { pf -> handleParsedFrame(pf) }
                     }
                 }.onFailure {
