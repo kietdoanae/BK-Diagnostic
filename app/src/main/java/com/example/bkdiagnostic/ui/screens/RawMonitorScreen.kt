@@ -76,6 +76,7 @@ import com.example.bkdiagnostic.diagnostic.SendStatus
 import com.example.bkdiagnostic.supabaseClient
 import com.example.bkdiagnostic.ui.components.AppTopBar
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -270,10 +271,18 @@ private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
                     "$strExportSuccess ${result.filename}"
                 else
                     strExportError
-                // Upload lên Supabase Storage (fire-and-forget, không block UI)
+                // Upload lên Supabase Storage + ghi record (fire-and-forget, không block UI)
                 if (result != null) {
                     CoroutineScope(Dispatchers.IO).launch {
-                        uploadExportToStorage(result.filename, result.bytes)
+                        uploadExportToStorage(
+                            filename    = result.filename,
+                            bytes       = result.bytes,
+                            brandId     = viewModel.brandId,
+                            modelId     = viewModel.modelId,
+                            displayName = viewModel.protocolConfig?.displayName
+                                          ?: "${viewModel.brandId} ${viewModel.modelId}",
+                            frameCount  = displayLog.size
+                        )
                     }
                 }
             }
@@ -870,18 +879,63 @@ private fun exportToCsv(context: Context, frames: List<RawFrameEntry>): ExportRe
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  Upload to Supabase Storage
+//  Upload to Supabase Storage + ghi export_records
 // ════════════════════════════════════════════════════════════════════════════
 
-private suspend fun uploadExportToStorage(filename: String, bytes: ByteArray) {
+@kotlinx.serialization.Serializable
+private data class ExportRecord(
+    @kotlinx.serialization.SerialName("user_id")         val userId:       String,
+    val username:      String,
+    val filename:      String,
+    @kotlinx.serialization.SerialName("brand_id")        val brandId:      String,
+    @kotlinx.serialization.SerialName("model_id")        val modelId:      String,
+    @kotlinx.serialization.SerialName("display_name")    val displayName:  String,
+    @kotlinx.serialization.SerialName("frame_count")     val frameCount:   Int,
+    @kotlinx.serialization.SerialName("file_size_bytes") val fileSizeBytes: Long,
+    @kotlinx.serialization.SerialName("storage_path")    val storagePath:  String
+)
+
+private suspend fun uploadExportToStorage(
+    filename:    String,
+    bytes:       ByteArray,
+    brandId:     String,
+    modelId:     String,
+    displayName: String,
+    frameCount:  Int
+) {
     runCatching {
         val user = supabaseClient.auth.currentUserOrNull() ?: return
         val path = "${user.id}/$filename"
+
+        // 1. Upload file lên Storage
         supabaseClient.storage.from("exports").upload(path, bytes) {
             upsert = false
         }
         android.util.Log.d("RawMonitor", "Uploaded $filename to Storage")
+
+        // 2. Lấy username từ JWT metadata
+        val meta = user.userMetadata?.toString() ?: ""
+        val username = Regex(""""username"\s*:\s*"([^"]+)"""")
+            .find(meta)?.groupValues?.get(1)
+            ?: user.email?.substringBefore("@")
+            ?: "unknown"
+
+        // 3. Insert record vào bảng export_records
+        supabaseClient.postgrest["export_records"].insert(
+            ExportRecord(
+                userId       = user.id,
+                username     = username,
+                filename     = filename,
+                brandId      = brandId,
+                modelId      = modelId,
+                displayName  = displayName,
+                frameCount   = frameCount,
+                fileSizeBytes = bytes.size.toLong(),
+                storagePath  = path
+            )
+        )
+        android.util.Log.d("RawMonitor", "Saved export_record: $displayName / $filename")
     }.onFailure { e ->
-        android.util.Log.e("RawMonitor", "Storage upload failed: ${e.message}", e)
+        android.util.Log.e("RawMonitor", "Export upload/record failed: ${e.message}", e)
     }
 }

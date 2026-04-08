@@ -18,28 +18,46 @@ function avatarColor(u = '') {
 const ROLE_COLOR = { admin: 'purple', moderator: 'blue', user: 'default', guest: 'default' }
 const STATUS_COLOR = { active: 'success', inactive: 'default', banned: 'error', suspended: 'warning', pending: 'processing' }
 
+function formatBytes(bytes) {
+  if (!bytes) return '0 B'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+}
+
 function ExportHistoryCard({ session }) {
   const userId = session?.user?.id
-  const { files, loading, error, reload, getDownloadUrl } = useMyExports(userId)
+  const { records, loading, error, reload, getDownloadUrl } = useMyExports(userId)
   const [downloading, setDownloading] = useState({})
 
-  async function handleDownload(filename) {
-    setDownloading(d => ({ ...d, [filename]: true }))
-    const url = await getDownloadUrl(filename)
+  async function handleDownload(storagePath, filename) {
+    setDownloading(d => ({ ...d, [storagePath]: true }))
+    const url = await getDownloadUrl(storagePath)
     if (url) {
       const a = document.createElement('a')
       a.href = url
       a.download = filename
       a.click()
     }
-    setDownloading(d => ({ ...d, [filename]: false }))
+    setDownloading(d => ({ ...d, [storagePath]: false }))
   }
 
   const columns = [
     {
+      title: 'Hãng / Model',
+      dataIndex: 'display_name',
+      key: 'display_name',
+      render: v => (
+        <Space>
+          <SafetyOutlined style={{ color: '#1565C0' }} />
+          <Text style={{ fontWeight: 600 }}>{v || '—'}</Text>
+        </Space>
+      )
+    },
+    {
       title: 'Tên file',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'filename',
+      key: 'filename',
       render: v => (
         <Space>
           <FileTextOutlined style={{ color: '#1565C0' }} />
@@ -48,15 +66,16 @@ function ExportHistoryCard({ session }) {
       )
     },
     {
+      title: 'Frames',
+      dataIndex: 'frame_count',
+      key: 'frame_count',
+      render: v => v != null ? v.toLocaleString() : '—'
+    },
+    {
       title: 'Dung lượng',
-      dataIndex: 'metadata',
-      key: 'size',
-      render: meta => {
-        const bytes = meta?.size ?? 0
-        if (bytes < 1024) return `${bytes} B`
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-        return `${(bytes / 1024 / 1024).toFixed(2)} MB`
-      }
+      dataIndex: 'file_size_bytes',
+      key: 'file_size_bytes',
+      render: v => formatBytes(v)
     },
     {
       title: 'Thời gian',
@@ -73,8 +92,8 @@ function ExportHistoryCard({ session }) {
           type="primary"
           size="small"
           icon={<DownloadOutlined />}
-          loading={downloading[row.name]}
-          onClick={() => handleDownload(row.name)}
+          loading={downloading[row.storage_path]}
+          onClick={() => handleDownload(row.storage_path, row.filename)}
         >
           Tải xuống
         </Button>
@@ -89,7 +108,7 @@ function ExportHistoryCard({ session }) {
         <Space>
           <FileTextOutlined style={{ color: '#1565C0' }} />
           <span style={{ fontWeight: 700 }}>Lịch sử xuất file CAN</span>
-          <Text type="secondary" style={{ fontSize: 13 }}>({files.length} file)</Text>
+          <Text type="secondary" style={{ fontSize: 13 }}>({records.length} file)</Text>
         </Space>
       }
       extra={
@@ -100,9 +119,9 @@ function ExportHistoryCard({ session }) {
     >
       {error && <Alert type="error" message={error} style={{ marginBottom: 12 }} />}
       <Table
-        dataSource={files}
+        dataSource={records}
         columns={columns}
-        rowKey="name"
+        rowKey="id"
         loading={loading}
         size="small"
         pagination={{ pageSize: 10, showTotal: (t) => `${t} file` }}

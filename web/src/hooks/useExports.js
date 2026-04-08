@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../services/supabase'
 
-// For regular user — lists their own exports
+// Regular user — their own export records from DB
 export function useMyExports(userId) {
-  const [files, setFiles] = useState([])
+  const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -12,11 +12,14 @@ export function useMyExports(userId) {
     setLoading(true)
     setError(null)
     try {
-      const { data, error: err } = await supabase.storage
-        .from('exports')
-        .list(userId, { sortBy: { column: 'created_at', order: 'desc' }, limit: 50 })
+      const { data, error: err } = await supabase
+        .from('export_records')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50)
       if (err) throw err
-      setFiles(data || [])
+      setRecords(data || [])
     } catch (e) {
       setError(e.message)
     } finally {
@@ -26,61 +29,51 @@ export function useMyExports(userId) {
 
   useEffect(() => { load() }, [load])
 
-  const getDownloadUrl = useCallback(async (filename) => {
+  const getDownloadUrl = useCallback(async (storagePath) => {
     const { data } = await supabase.storage
       .from('exports')
-      .createSignedUrl(`${userId}/${filename}`, 3600) // 1 hour
+      .createSignedUrl(storagePath, 3600)
     return data?.signedUrl ?? null
-  }, [userId])
+  }, [])
 
-  return { files, loading, error, reload: load, getDownloadUrl }
+  return { records, loading, error, reload: load, getDownloadUrl }
 }
 
-// For admin — lists all exports from all users (requires Storage RLS to allow admin read)
+// Admin — all export records via RPC
 export function useAllExports() {
-  const [files, setFiles] = useState([])   // [{ userId, filename, ...meta }]
+  const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [filterBrand, setFilterBrand] = useState(null)
+  const [filterUser, setFilterUser] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      // List top-level folders (user IDs)
-      const { data: folders, error: fErr } = await supabase.storage
-        .from('exports')
-        .list('', { limit: 200 })
-      if (fErr) throw fErr
-
-      const allFiles = []
-      // For each folder (userId), list files inside
-      await Promise.all((folders || []).map(async (folder) => {
-        const { data: userFiles } = await supabase.storage
-          .from('exports')
-          .list(folder.name, { sortBy: { column: 'created_at', order: 'desc' }, limit: 100 })
-        ;(userFiles || []).forEach(f => {
-          allFiles.push({ userId: folder.name, ...f })
-        })
-      }))
-
-      // Sort by most recent first
-      allFiles.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      setFiles(allFiles)
+      const { data, error: err } = await supabase.rpc('get_export_records', {
+        p_limit: 200,
+        p_offset: 0,
+        p_brand: filterBrand || null,
+        p_user: filterUser || null,
+      })
+      if (err) throw err
+      setRecords(data || [])
     } catch (e) {
       setError(e.message)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [filterBrand, filterUser])
 
   useEffect(() => { load() }, [load])
 
-  const getDownloadUrl = useCallback(async (userId, filename) => {
+  const getDownloadUrl = useCallback(async (storagePath) => {
     const { data } = await supabase.storage
       .from('exports')
-      .createSignedUrl(`${userId}/${filename}`, 3600)
+      .createSignedUrl(storagePath, 3600)
     return data?.signedUrl ?? null
   }, [])
 
-  return { files, loading, error, reload: load, getDownloadUrl }
+  return { records, loading, error, reload: load, getDownloadUrl, filterBrand, setFilterBrand, filterUser, setFilterUser }
 }

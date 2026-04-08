@@ -230,39 +230,53 @@ function LogsTab() {
   )
 }
 
-function ExportsTab() {
-  const { files, loading, error, reload, getDownloadUrl } = useAllExports()
-  const [downloading, setDownloading] = useState({})
+function formatBytes(bytes) {
+  if (!bytes) return '0 B'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+}
 
-  async function handleDownload(userId, filename) {
-    const key = `${userId}/${filename}`
-    setDownloading(d => ({ ...d, [key]: true }))
-    const url = await getDownloadUrl(userId, filename)
+function ExportsTab() {
+  const { records, loading, error, reload, getDownloadUrl, setFilterBrand, setFilterUser } = useAllExports()
+  const [downloading, setDownloading] = useState({})
+  const [brandInput, setBrandInput] = useState('')
+  const [userInput, setUserInput] = useState('')
+
+  async function handleDownload(storagePath, filename) {
+    setDownloading(d => ({ ...d, [storagePath]: true }))
+    const url = await getDownloadUrl(storagePath)
     if (url) {
       const a = document.createElement('a')
       a.href = url
       a.download = filename
       a.click()
     }
-    setDownloading(d => ({ ...d, [key]: false }))
+    setDownloading(d => ({ ...d, [storagePath]: false }))
   }
 
   const columns = [
     {
-      title: 'User ID',
-      dataIndex: 'userId',
-      key: 'userId',
-      width: 160,
-      render: v => (
-        <Tooltip title={v}>
-          <Text code style={{ fontSize: 12 }}>{v.slice(0, 8)}…</Text>
-        </Tooltip>
+      title: 'User',
+      dataIndex: 'username',
+      key: 'username',
+      render: v => <Text code style={{ fontSize: 12 }}>{v || '—'}</Text>
+    },
+    {
+      title: 'Hãng / Model',
+      dataIndex: 'display_name',
+      key: 'display_name',
+      render: (v, row) => (
+        <div>
+          <Text strong style={{ display: 'block', fontSize: 13 }}>{v || '—'}</Text>
+          <Text type="secondary" style={{ fontSize: 11 }}>{row.brand_id}</Text>
+        </div>
       )
     },
     {
       title: 'Tên file',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'filename',
+      key: 'filename',
       render: v => (
         <Space>
           <FileTextOutlined style={{ color: '#1565C0' }} />
@@ -271,18 +285,19 @@ function ExportsTab() {
       )
     },
     {
-      title: 'Dung lượng',
-      dataIndex: 'metadata',
-      key: 'size',
-      render: meta => {
-        const bytes = meta?.size ?? 0
-        if (bytes < 1024) return `${bytes} B`
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-        return `${(bytes / 1024 / 1024).toFixed(2)} MB`
-      }
+      title: 'Frames',
+      dataIndex: 'frame_count',
+      key: 'frame_count',
+      render: v => v != null ? v.toLocaleString() : '—'
     },
     {
-      title: 'Thời gian tải lên',
+      title: 'Dung lượng',
+      dataIndex: 'file_size_bytes',
+      key: 'file_size_bytes',
+      render: v => formatBytes(v)
+    },
+    {
+      title: 'Thời gian',
       dataIndex: 'created_at',
       key: 'created_at',
       render: v => {
@@ -292,7 +307,7 @@ function ExportsTab() {
       }
     },
     {
-      title: '',
+      title: 'Tải xuống',
       key: 'action',
       align: 'right',
       render: (_, row) => (
@@ -300,8 +315,8 @@ function ExportsTab() {
           type="primary"
           size="small"
           icon={<DownloadOutlined />}
-          loading={downloading[`${row.userId}/${row.name}`]}
-          onClick={() => handleDownload(row.userId, row.name)}
+          loading={downloading[row.storage_path]}
+          onClick={() => handleDownload(row.storage_path, row.filename)}
         >
           Tải xuống
         </Button>
@@ -311,9 +326,28 @@ function ExportsTab() {
 
   return (
     <Card style={{ borderRadius: 16 }} styles={{ body: { padding: 0 } }}>
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Input
+          prefix={<SearchOutlined />}
+          placeholder="Lọc theo username…"
+          value={userInput}
+          onChange={e => { setUserInput(e.target.value); setFilterUser(e.target.value || null) }}
+          style={{ width: 200 }}
+          allowClear
+        />
+        <Select
+          value={brandInput || undefined}
+          onChange={v => { setBrandInput(v ?? ''); setFilterBrand(v || null) }}
+          placeholder="Tất cả hãng xe"
+          allowClear
+          style={{ width: 160 }}
+        >
+          <Option value="ford">Ford</Option>
+          <Option value="toyota">Toyota</Option>
+          <Option value="honda">Honda</Option>
+        </Select>
         <Text strong style={{ fontSize: 14 }}>
-          Tổng cộng: <Text style={{ color: '#1565C0' }}>{files.length}</Text> file
+          Tổng cộng: <Text style={{ color: '#1565C0' }}>{records.length}</Text> file
         </Text>
         <Button icon={<ReloadOutlined />} onClick={reload} loading={loading} style={{ marginLeft: 'auto' }}>
           Làm mới
@@ -322,8 +356,8 @@ function ExportsTab() {
       {error && <Alert message={error} type="error" style={{ margin: '8px 16px' }} />}
       <Table
         columns={columns}
-        dataSource={files}
-        rowKey={r => `${r.userId}/${r.name}`}
+        dataSource={records}
+        rowKey="id"
         loading={loading}
         size="small"
         pagination={{ pageSize: 20, showTotal: (t) => `${t} file`, showSizeChanger: false }}
