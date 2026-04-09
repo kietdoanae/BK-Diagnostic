@@ -30,14 +30,14 @@ package com.example.bkdiagnostic.communication
  *    0x03  ERROR            Báo lỗi từ STM32
  *                           PAYLOAD = [ERROR_CODE:1]                (1 byte)
  *    0x04  STATUS           Trạng thái kết nối CAN
- *                           PAYLOAD = [CAN_OK:1][BAUD_KBPS:2BE]   (3 bytes)
+ *                           PAYLOAD = [STATUS_FLAGS:1]             (1 byte)
  *
  *  ERROR_CODE:  0x01=CAN_BUS_OFF  0x02=CAN_ERROR_PASSIVE
  *               0x03=TX_TIMEOUT   0x04=UNKNOWN
  * ══════════════════════════════════════════════════════════════════════════════
  *  STM32 firmware note: MCP2515 đặt ở chế độ Normal/Listen-only mode
  *  CAN_ID big-endian → byte[0] MSB, byte[3] LSB
- *  Tốc độ UART mặc định: 115200 baud 8N1
+ *  Tốc độ UART mặc định: 460800 baud 8N1
  * ══════════════════════════════════════════════════════════════════════════════
  */
 object FrameProtocol {
@@ -80,55 +80,6 @@ object FrameProtocol {
     fun encodePing(): ByteArray = buildFrame(CMD_PING, ByteArray(0))
 
     // ── Decode ─────────────────────────────────────────────────────────────
-
-    /**
-     * Parser trạng thái để tách các frame ra khỏi luồng byte liên tục.
-     * Tạo 1 instance cho mỗi kết nối USB và gọi [feed] với mỗi batch byte nhận được.
-     */
-    class FrameParser {
-        private val buffer = ArrayDeque<Byte>(512)
-
-        /**
-         * Nạp [bytes] vào bộ đệm và trả về tất cả các [ParsedFrame] hoàn chỉnh tìm được.
-         */
-        fun feed(bytes: ByteArray): List<ParsedFrame> {
-            bytes.forEach { buffer.addLast(it) }
-            val frames = mutableListOf<ParsedFrame>()
-            while (true) {
-                frames += tryExtractFrame() ?: break
-            }
-            return frames
-        }
-
-        private fun tryExtractFrame(): ParsedFrame? {
-            // Tìm SOF
-            while (buffer.isNotEmpty() && buffer.first() != SOF) {
-                buffer.removeFirst()
-            }
-            // Cần ít nhất MIN_FRAME_SIZE byte
-            if (buffer.size < MIN_FRAME_SIZE) return null
-
-            val type = buffer[1]
-            val len = buffer[2].toUByte().toInt()
-            val totalSize = MIN_FRAME_SIZE + len  // SOF+TYPE+LEN + PAYLOAD + CHECKSUM + EOF
-
-            if (buffer.size < totalSize) return null
-
-            // Kiểm tra EOF
-            if (buffer[totalSize - 1] != EOF) {
-                buffer.removeFirst() // SOF sai, thử lại
-                return null
-            }
-
-            // Lấy frame ra
-            repeat(totalSize) { buffer.removeFirst() }
-            val frameBytes = ByteArray(totalSize) { buffer.elementAt(it) }
-            // Đã remove rồi, phải lấy trước khi remove. Sửa lại:
-            return null // placeholder, xem buildFrame logic bên dưới
-        }
-
-        fun clear() = buffer.clear()
-    }
 
     /**
      * Parser đúng — đọc từng byte và dựng frame khi đủ.
