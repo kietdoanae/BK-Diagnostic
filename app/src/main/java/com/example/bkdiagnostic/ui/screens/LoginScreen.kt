@@ -225,7 +225,7 @@ fun LoginScreen(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.campus),
+                painter = painterResource(id = R.drawable.loginscreenbackground),
                 contentDescription = stringResource(R.string.cd_campus_bg),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
