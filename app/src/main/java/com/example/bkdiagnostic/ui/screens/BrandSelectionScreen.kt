@@ -179,13 +179,14 @@ fun BrandSelectionScreen(
         )
 
         // ─── Brand grid (4×2, fills remaining screen) ────────────────────────
+        val brandRows = remember { carBrands.chunked(4) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            carBrands.chunked(4).forEach { rowBrands ->
+            brandRows.forEach { rowBrands ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -230,6 +231,27 @@ private fun BrandCard(
     val accentColor = if (isAvailable) brand.primaryColor else Color(0xFF9E9E9E)
     val accentSecondary = if (isAvailable) brand.secondaryColor else Color(0xFFBDBDBD)
 
+    // Memoize brushes — shader compilation khá tốn kém nếu tạo mới mỗi recomposition
+    val topBarBrush = remember(accentColor, accentSecondary) {
+        Brush.horizontalGradient(colors = listOf(accentColor, accentSecondary))
+    }
+    val logoBgBrush = remember(accentColor, isAvailable) {
+        Brush.radialGradient(
+            colors = listOf(
+                accentColor.copy(alpha = if (isAvailable) 0.07f else 0.03f),
+                Color(0xFFF8FAFF)
+            )
+        )
+    }
+    val separatorBrush = remember(accentColor, accentSecondary) {
+        Brush.horizontalGradient(
+            colors = listOf(accentColor.copy(alpha = 0.4f), accentSecondary.copy(alpha = 0.1f))
+        )
+    }
+    val leftBarBrush = remember(accentColor, accentSecondary) {
+        Brush.verticalGradient(colors = listOf(accentColor, accentSecondary))
+    }
+
     Card(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
@@ -245,11 +267,7 @@ private fun BrandCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(10.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(accentColor, accentSecondary)
-                        )
-                    )
+                    .background(topBarBrush)
             )
 
             // ── Logo section ──────────────────────────────────────────────────
@@ -257,14 +275,7 @@ private fun BrandCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                accentColor.copy(alpha = if (isAvailable) 0.07f else 0.03f),
-                                Color(0xFFF8FAFF)
-                            )
-                        )
-                    ),
+                    .background(logoBgBrush),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -313,14 +324,7 @@ private fun BrandCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(2.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                accentColor.copy(alpha = 0.4f),
-                                accentSecondary.copy(alpha = 0.1f)
-                            )
-                        )
-                    )
+                    .background(separatorBrush)
             )
 
             // ── Bottom info row ───────────────────────────────────────────────
@@ -337,11 +341,7 @@ private fun BrandCard(
                         .width(3.dp)
                         .height(32.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(accentColor, accentSecondary)
-                            )
-                        )
+                        .background(leftBarBrush)
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))

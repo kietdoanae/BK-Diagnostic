@@ -71,8 +71,8 @@ fun ModelSelectionScreen(
     onModelSelected: (CarModel) -> Unit,
     onBack: () -> Unit
 ) {
-    val brand = carBrands.find { it.id == brandId }
-    val models = brandModels[brandId] ?: emptyList()
+    val brand = remember(brandId) { carBrands.find { it.id == brandId } }
+    val models = remember(brandId) { brandModels[brandId] ?: emptyList() }
 
     var comingSoonModel by remember { mutableStateOf<CarModel?>(null) }
     val brandColor = brand?.primaryColor ?: Color(0xFF003087)
@@ -247,6 +247,21 @@ private fun ModelCard(
 ) {
     val cardColor = if (isAvailable) brandColor else Color(0xFF9E9E9E)
 
+    // Memoize brushes — tránh tạo mới shader mỗi recomposition
+    val imageBgBrush = remember(cardColor, isAvailable) {
+        Brush.radialGradient(
+            colors = listOf(
+                cardColor.copy(alpha = if (isAvailable) 0.08f else 0.04f),
+                Color(0xFFF0F4FF)
+            )
+        )
+    }
+    val accentLineBrush = remember(cardColor) {
+        Brush.horizontalGradient(
+            colors = listOf(cardColor, cardColor.copy(alpha = 0.2f))
+        )
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -263,14 +278,7 @@ private fun ModelCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                cardColor.copy(alpha = if (isAvailable) 0.08f else 0.04f),
-                                Color(0xFFF0F4FF)
-                            )
-                        )
-                    )
+                    .background(imageBgBrush)
             ) {
                 Image(
                     painter = painterResource(id = model.imageRes),
@@ -335,11 +343,7 @@ private fun ModelCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(2.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(cardColor, cardColor.copy(alpha = 0.2f))
-                        )
-                    )
+                    .background(accentLineBrush)
             )
 
             // ── Info section ────────────────────────────────────────────────
