@@ -24,7 +24,7 @@ data class DiagnosticsSettings(
 enum class ThemeMode { DARK, LIGHT, SYSTEM }
 
 data class DisplaySettings(
-    val themeMode: ThemeMode  = ThemeMode.DARK,
+    val themeMode: ThemeMode  = ThemeMode.LIGHT,
     val keepScreenOn: Boolean = false,
     /** "en" hoặc "vi". Áp dụng khi có i18n resources. */
     val language: String      = "en"
@@ -75,7 +75,7 @@ internal data class UserSettingsRow(
     @SerialName("use_imperial")        val useImperial: Boolean    = false,
     @SerialName("auto_clear_dtc")      val autoClearDtc: Boolean   = false,
     // ── Display ───────────────────────────────────────────────────────────
-    @SerialName("theme_mode")          val themeMode: String       = "dark",
+    @SerialName("theme_mode")          val themeMode: String       = "light",
     @SerialName("keep_screen_on")      val keepScreenOn: Boolean   = false,
     @SerialName("language")            val language: String        = "en"
 ) {

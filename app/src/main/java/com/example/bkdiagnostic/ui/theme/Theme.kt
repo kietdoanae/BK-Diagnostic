@@ -67,7 +67,7 @@ private val LightAppColors = AppColors(
     headerGradient    = listOf(Color(0xFF0A1E6E), Color(0xFF1565C0), Color(0xFF1E88E5))
 )
 
-val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
+val LocalAppColors = staticCompositionLocalOf { LightAppColors }
 
 // ── CompositionLocal for display settings ─────────────────────────────────────
 
