@@ -48,16 +48,32 @@ fun DashboardScreen(
     onSettingsClick: () -> Unit = {},
     authViewModel: AuthViewModel = viewModel()
 ) {
-    val features = listOf(
-        DashboardFeature("diagnostics",    stringResource(R.string.feature_diagnostics),    Icons.Filled.Build,          Color(0xFF1565C0), Color(0xFFBBDEFB), isEnabled = true),
-        DashboardFeature("service",        stringResource(R.string.feature_service),        Icons.Filled.Construction,   Color(0xFF2E7D32), Color(0xFFC8E6C9)),
-        DashboardFeature("data_manager",   stringResource(R.string.feature_data_manager),   Icons.Filled.Storage,        Color(0xFF6A1B9A), Color(0xFFE1BEE7)),
-        DashboardFeature("settings",       stringResource(R.string.feature_settings),       Icons.Filled.Tune,           Color(0xFF00695C), Color(0xFFB2DFDB), isEnabled = true),
-        DashboardFeature("update",         stringResource(R.string.feature_update),         Icons.Filled.SystemUpdate,   Color(0xFFE65100), Color(0xFFFFE0B2)),
-        DashboardFeature("remote_desktop", stringResource(R.string.feature_remote_desktop), Icons.Filled.DesktopWindows, Color(0xFF37474F), Color(0xFFCFD8DC)),
-        DashboardFeature("wiring_diagram", stringResource(R.string.feature_wiring_diagram), Icons.Filled.Cable,          Color(0xFFC62828), Color(0xFFFFCDD2), isEnabled = true),
-        DashboardFeature("support",        stringResource(R.string.feature_support),        Icons.Filled.SupportAgent,   Color(0xFF283593), Color(0xFFC5CAE9)),
-    )
+    // Đọc strings trong composable context (nhanh), sau đó remember list để
+    // tránh tạo 8 DashboardFeature objects mới trên mỗi recomposition.
+    // Language switch gọi recreate() nên không cần lo cache stale.
+    val sDiagnostics   = stringResource(R.string.feature_diagnostics)
+    val sService       = stringResource(R.string.feature_service)
+    val sDataManager   = stringResource(R.string.feature_data_manager)
+    val sSettings      = stringResource(R.string.feature_settings)
+    val sUpdate        = stringResource(R.string.feature_update)
+    val sRemoteDesktop = stringResource(R.string.feature_remote_desktop)
+    val sWiring        = stringResource(R.string.feature_wiring_diagram)
+    val sSupport       = stringResource(R.string.feature_support)
+
+    val features = remember(sDiagnostics, sService, sDataManager, sSettings,
+                            sUpdate, sRemoteDesktop, sWiring, sSupport) {
+        listOf(
+            DashboardFeature("diagnostics",    sDiagnostics,   Icons.Filled.Build,          Color(0xFF1565C0), Color(0xFFBBDEFB), isEnabled = true),
+            DashboardFeature("service",        sService,       Icons.Filled.Construction,   Color(0xFF2E7D32), Color(0xFFC8E6C9)),
+            DashboardFeature("data_manager",   sDataManager,   Icons.Filled.Storage,        Color(0xFF6A1B9A), Color(0xFFE1BEE7)),
+            DashboardFeature("settings",       sSettings,      Icons.Filled.Tune,           Color(0xFF00695C), Color(0xFFB2DFDB), isEnabled = true),
+            DashboardFeature("update",         sUpdate,        Icons.Filled.SystemUpdate,   Color(0xFFE65100), Color(0xFFFFE0B2)),
+            DashboardFeature("remote_desktop", sRemoteDesktop, Icons.Filled.DesktopWindows, Color(0xFF37474F), Color(0xFFCFD8DC)),
+            DashboardFeature("wiring_diagram", sWiring,        Icons.Filled.Cable,          Color(0xFFC62828), Color(0xFFFFCDD2), isEnabled = true),
+            DashboardFeature("support",        sSupport,       Icons.Filled.SupportAgent,   Color(0xFF283593), Color(0xFFC5CAE9)),
+        )
+    }
+    val featureRows = remember(features) { features.chunked(4) }
 
     val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
     val isLoading = uiState is AuthUiState.Loading
@@ -93,7 +109,8 @@ fun DashboardScreen(
         else    -> Color.White
     }
     val initials = username.take(2).uppercase()
-    val greeting = when (java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)) {
+    val currentHour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+    val greeting = when (currentHour) {
         in 5..11  -> stringResource(R.string.greeting_morning)
         in 12..17 -> stringResource(R.string.greeting_afternoon)
         else      -> stringResource(R.string.greeting_evening)
@@ -110,6 +127,15 @@ fun DashboardScreen(
     }
 
     val appColors = LocalAppColors.current
+
+    // Memoize static gradients — shader compilation chỉ xảy ra 1 lần
+    val headerBrush = remember {
+        Brush.linearGradient(colors = listOf(Color(0xFF0A1E6E), Color(0xFF1565C0), Color(0xFF1E88E5)))
+    }
+    val avatarBrush = remember(avatarAccent) {
+        Brush.linearGradient(listOf(avatarAccent.copy(alpha = 0.8f), avatarAccent))
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -119,11 +145,7 @@ fun DashboardScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(Color(0xFF0A1E6E), Color(0xFF1565C0), Color(0xFF1E88E5))
-                    )
-                )
+                .background(headerBrush)
         ) {
             // Decorative circles
             Box(Modifier.size(200.dp).offset((-70).dp, (-70).dp)
@@ -209,11 +231,7 @@ fun DashboardScreen(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                listOf(avatarAccent.copy(alpha = 0.8f), avatarAccent)
-                            )
-                        ),
+                        .background(avatarBrush),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -261,7 +279,7 @@ fun DashboardScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            features.chunked(4).forEach { rowFeatures ->
+            featureRows.forEach { rowFeatures ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -297,6 +315,9 @@ private fun FeatureCard(
     onClick: () -> Unit = {}
 ) {
     val appColors = LocalAppColors.current
+    val iconBgBrush = remember(feature.colorLight) {
+        Brush.radialGradient(colors = listOf(feature.colorLight, feature.colorLight.copy(alpha = 0.3f)))
+    }
     Box(modifier = modifier) {
         Card(
             modifier = Modifier
@@ -318,11 +339,7 @@ private fun FeatureCard(
                     modifier = Modifier
                         .size(150.dp)
                         .clip(RoundedCornerShape(22.dp))
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(feature.colorLight, feature.colorLight.copy(alpha = 0.3f))
-                            )
-                        ),
+                        .background(iconBgBrush),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
