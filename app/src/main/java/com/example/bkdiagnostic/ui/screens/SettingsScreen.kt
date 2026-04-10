@@ -75,7 +75,6 @@ fun SettingsScreen(
     var showSignOutConfirm by remember { mutableStateOf(false) }
 
     // Dialog visibility — connection
-    var showBaudPicker  by remember { mutableStateOf(false) }
     var showCanPicker   by remember { mutableStateOf(false) }
 
     // Dialog visibility — diagnostics
@@ -119,7 +118,6 @@ fun SettingsScreen(
     val strSecurity         = stringResource(R.string.settings_section_security)
     val strChangePassword   = stringResource(R.string.settings_label_change_password)
     val strConnection       = stringResource(R.string.settings_section_connection)
-    val strUsbBaud          = stringResource(R.string.settings_label_usb_baud)
     val strCanSpeed         = stringResource(R.string.settings_label_can_speed)
     val strKbps             = stringResource(R.string.settings_unit_kbps)
     val strAutoReconnect    = stringResource(R.string.settings_label_auto_reconnect)
@@ -153,7 +151,6 @@ fun SettingsScreen(
     val strLangNote         = stringResource(R.string.settings_lang_localization_note)
     val strPickerRefresh    = stringResource(R.string.settings_picker_refresh_rate)
     val strPickerTimeout    = stringResource(R.string.settings_picker_timeout)
-    val strPickerBaud       = stringResource(R.string.settings_picker_baud)
     val strPickerCan        = stringResource(R.string.settings_picker_can)
 
     val appColors = LocalAppColors.current
@@ -252,15 +249,6 @@ fun SettingsScreen(
                 SectionLabel(strConnection)
                 Spacer(Modifier.height(6.dp))
                 SettingsCard {
-                    SettingsRow(
-                        icon         = Icons.Filled.Speed,
-                        iconBg       = Color(0xFF00695C),
-                        label        = strUsbBaud,
-                        trailingText = connSettings.usbBaudRate.toString(),
-                        showChevron  = true,
-                        onClick      = { showBaudPicker = true }
-                    )
-                    SettingsDivider()
                     SettingsRow(
                         icon         = Icons.Filled.NetworkCheck,
                         iconBg       = Color(0xFF1565C0),
@@ -486,21 +474,6 @@ fun SettingsScreen(
                 showTimeoutPicker = false
             },
             onDismiss = { showTimeoutPicker = false }
-        )
-    }
-
-    // ── USB Baud Rate Picker ──────────────────────────────────────────────────
-    if (showBaudPicker) {
-        RadioPickerDialog(
-            title    = strPickerBaud,
-            options  = listOf(9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600),
-            selected = connSettings.usbBaudRate,
-            label    = { it.toString() },
-            onSelect = { baud ->
-                settingsViewModel.saveConnectionSettings(connSettings.copy(usbBaudRate = baud))
-                showBaudPicker = false
-            },
-            onDismiss = { showBaudPicker = false }
         )
     }
 

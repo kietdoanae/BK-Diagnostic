@@ -118,7 +118,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     // ── Apply to hardware ────────────────────────────────────────────────────
 
     private fun applyToUsbManager(settings: ConnectionSettings) {
-        usbManager.preferredBaudRate = settings.usbBaudRate
+        // preferredBaudRate cố định 460800 — không expose ra settings nữa
         usbManager.preferredCanKbps  = settings.canSpeedKbps
         usbManager.autoReconnect     = settings.autoReconnect
     }

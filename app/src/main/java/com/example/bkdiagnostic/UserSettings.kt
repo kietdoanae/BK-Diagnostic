@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 // ── Connection Settings ───────────────────────────────────────────────────────
 
 data class ConnectionSettings(
-    val usbBaudRate: Int       = 115200,
     val canSpeedKbps: Int      = 500,
     val autoReconnect: Boolean = false
 )
@@ -67,7 +66,7 @@ data class DisplaySettings(
 internal data class UserSettingsRow(
     val id: String,
     // ── Connection ────────────────────────────────────────────────────────
-    @SerialName("usb_baud_rate")       val usbBaudRate: Int       = 115200,
+    // usb_baud_rate đã bị loại bỏ — cố định 460800 trên cả firmware lẫn Android
     @SerialName("can_speed_kbps")      val canSpeedKbps: Int      = 500,
     @SerialName("auto_reconnect")      val autoReconnect: Boolean = false,
     // ── Diagnostics ───────────────────────────────────────────────────────
@@ -80,7 +79,7 @@ internal data class UserSettingsRow(
     @SerialName("keep_screen_on")      val keepScreenOn: Boolean   = false,
     @SerialName("language")            val language: String        = "en"
 ) {
-    fun toConnectionSettings()  = ConnectionSettings(usbBaudRate, canSpeedKbps, autoReconnect)
+    fun toConnectionSettings()  = ConnectionSettings(canSpeedKbps, autoReconnect)
     fun toDiagnosticsSettings() = DiagnosticsSettings(pollIntervalMs, responseTimeoutMs,
                                                        useImperial, autoClearDtc)
     fun toDisplaySettings()     = DisplaySettings(
@@ -98,7 +97,6 @@ internal fun buildSettingsRow(
     disp:   DisplaySettings
 ) = UserSettingsRow(
     id                = userId,
-    usbBaudRate       = conn.usbBaudRate,
     canSpeedKbps      = conn.canSpeedKbps,
     autoReconnect     = conn.autoReconnect,
     pollIntervalMs    = diag.pollIntervalMs,
