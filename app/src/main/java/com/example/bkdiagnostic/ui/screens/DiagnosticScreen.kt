@@ -22,14 +22,11 @@ import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Cable
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.FindReplace
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LinkOff
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -69,7 +66,7 @@ import com.example.bkdiagnostic.ui.components.AppTopBar
 //  DiagnosticViewModel được chia sẻ cho tất cả sub-views
 // ─────────────────────────────────────────────────────────────────────────────
 
-private enum class DiagView { HUB, LIVE_DATA, RAW_MONITOR, ACTIVE_TEST }
+private enum class DiagView { HUB, RAW_MONITOR, ACTIVE_TEST }
 
 @Composable
 fun DiagnosticScreen(
@@ -99,11 +96,6 @@ fun DiagnosticScreen(
                 onNavigate = { currentView = it },
                 isAdmin = isAdmin
             )
-        DiagView.LIVE_DATA ->
-            LiveDataScreen(
-                viewModel = viewModel,
-                onBack = { currentView = DiagView.HUB }
-            )
         DiagView.RAW_MONITOR ->
             RawMonitorScreen(
                 viewModel = viewModel,
@@ -129,8 +121,6 @@ private fun DiagnosticHub(
     isAdmin: Boolean = false
 ) {
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
-    val dtcList by viewModel.dtcList.collectAsStateWithLifecycle()
-    val isDtcLoading by viewModel.isDtcLoading.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
 
     val snackbarHost = remember { SnackbarHostState() }
@@ -165,59 +155,12 @@ private fun DiagnosticHub(
 
             val isConnected = connectionState is UsbSerialManager.ConnectionState.Connected
 
-            // Resolve strings needed in description lambdas (non-composable context)
-            val strScanning   = stringResource(R.string.diagnostic_read_dtc_scanning)
-            val strDtcEmpty   = stringResource(R.string.diagnostic_read_dtc_empty)
-            val strDtcCount   = stringResource(R.string.diagnostic_dtc_count_label)
-            val strClearDesc  = stringResource(R.string.diagnostic_clear_dtc_desc)
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // 1. Live Data
-                DiagnosticFunctionCard(
-                    icon = Icons.Default.Speed,
-                    title = stringResource(R.string.diagnostic_live_data_title),
-                    description = stringResource(R.string.diagnostic_live_data_desc),
-                    accentColor = Color(0xFF1565C0),
-                    enabled = isConnected,
-                    actionIcon = Icons.Default.Speed,
-                    actionLabel = stringResource(R.string.diagnostic_btn_view),
-                    onClick = { onNavigate(DiagView.LIVE_DATA) }
-                )
-
-                // 2. Đọc DTC
-                DiagnosticFunctionCard(
-                    icon = Icons.Default.Warning,
-                    title = stringResource(R.string.diagnostic_read_dtc_title),
-                    description = when {
-                        isDtcLoading -> strScanning
-                        dtcList.isEmpty() -> strDtcEmpty
-                        else -> "${dtcList.size} $strDtcCount ${dtcList.take(3).joinToString(", ")}"
-                    },
-                    accentColor = Color(0xFFE65100),
-                    enabled = isConnected,
-                    actionIcon = Icons.Default.FindReplace,
-                    actionLabel = if (isDtcLoading) "..." else stringResource(R.string.diagnostic_btn_scan),
-                    onClick = { viewModel.readDtcs() }
-                )
-
-                // 3. Xóa DTC
-                DiagnosticFunctionCard(
-                    icon = Icons.Default.Delete,
-                    title = stringResource(R.string.diagnostic_clear_dtc_title),
-                    description = if (dtcList.isEmpty()) strClearDesc
-                    else "Clear ${dtcList.size} fault code(s) found",
-                    accentColor = Color(0xFFC62828),
-                    enabled = isConnected && dtcList.isNotEmpty(),
-                    actionIcon = Icons.Default.Delete,
-                    actionLabel = stringResource(R.string.diagnostic_btn_clear),
-                    onClick = { viewModel.clearDtcs() }
-                )
-
                 // Raw Frame Monitor — chỉ hiện với Admin
                 if (isAdmin) {
                     DiagnosticFunctionCard(
