@@ -71,6 +71,9 @@ dependencies {
     // USB Serial (CP2102 / CH340 / FTDI)
     implementation(libs.usb.serial.android)
 
+    // Coil — async image loading (tránh decode PNG trên main thread)
+    implementation(libs.coil.compose)
+
     // Supabase
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.auth)

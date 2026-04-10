@@ -2,7 +2,6 @@ package com.example.bkdiagnostic.ui.screens
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,8 +23,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import coil3.compose.AsyncImage
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -280,8 +279,8 @@ private fun ModelCard(
                     .aspectRatio(16f / 9f)
                     .background(imageBgBrush)
             ) {
-                Image(
-                    painter = painterResource(id = model.imageRes),
+                AsyncImage(
+                    model = model.imageRes,
                     contentDescription = model.name,
                     modifier = Modifier
                         .fillMaxSize()
