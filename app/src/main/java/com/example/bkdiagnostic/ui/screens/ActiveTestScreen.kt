@@ -1,8 +1,11 @@
 package com.example.bkdiagnostic.ui.screens
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,7 +43,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -63,7 +65,7 @@ import kotlinx.coroutines.launch
 private const val DASHBOARD_RATIO = 2816f / 1536f
 
 /** Icon diameter as a fraction of the displayed image width */
-private const val ICON_SIZE_FRAC = 0.055f
+private const val ICON_SIZE_FRAC = 0.038f
 
 // ── Data model ────────────────────────────────────────────────────────────────
 
@@ -211,8 +213,20 @@ fun ActiveTestScreen(
             .build()
     }
 
-    // id → true while the icon's pulse animation is playing
+    // id → true while the icon's blink sequence is running
     val firingIcons = remember { mutableStateMapOf<String, Boolean>() }
+
+    // One shared InfiniteTransition drives all blinking icons simultaneously
+    val blinkTransition = rememberInfiniteTransition(label = "warning_blink")
+    val blinkBrightness by blinkTransition.animateFloat(
+        initialValue   = 1.00f,
+        targetValue    = 0.05f,
+        animationSpec  = infiniteRepeatable(
+            animation  = tween(durationMillis = 180, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "blink_brightness",
+    )
 
     LaunchedEffect(message) {
         message?.let {
@@ -265,22 +279,16 @@ fun ActiveTestScreen(
                 WARNING_ICONS.forEach { icon ->
                     val firing = firingIcons[icon.id] == true
 
-                    val scale by animateFloatAsState(
-                        targetValue   = if (firing) 1.40f else 1.00f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness    = Spring.StiffnessMedium,
-                        ),
-                        label = "scale_${icon.id}",
-                    )
-                    val iconAlpha by animateFloatAsState(
-                        targetValue = when {
-                            !isConnected -> 0.30f
-                            firing       -> 1.00f
-                            else         -> 0.72f
-                        },
-                        label = "alpha_${icon.id}",
-                    )
+                    // When firing: blink between full-bright and near-black (real lamp-test feel)
+                    // When idle:   dim to 65% so the dashboard art stays readable
+                    // When offline: 25% — clearly inactive
+                    val displayAlpha = when {
+                        firing       -> blinkBrightness
+                        !isConnected -> 0.25f
+                        else         -> 0.65f
+                    }
+                    // Glow radius pulses with the blink brightness
+                    val glowAlpha = if (firing) blinkBrightness * 0.55f else 0f
 
                     // Centre position of this icon on screen (dp)
                     val cx = (imgX + icon.xFrac * imgW).dp
@@ -291,21 +299,21 @@ fun ActiveTestScreen(
                         modifier = Modifier
                             .offset(x = cx - iconSz / 2, y = cy - iconSz / 2)
                             .size(iconSz)
-                            .graphicsLayer { scaleX = scale; scaleY = scale }
-                            .alpha(iconAlpha)
                             .background(
-                                brush = if (firing) Brush.radialGradient(
-                                    colors = listOf(icon.color.copy(alpha = 0.40f), Color.Transparent)
-                                ) else Brush.radialGradient(
-                                    colors = listOf(Color.Transparent, Color.Transparent)
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        icon.color.copy(alpha = glowAlpha),
+                                        Color.Transparent,
+                                    ),
                                 ),
                                 shape = CircleShape,
                             )
+                            .alpha(displayAlpha)
                             .clickable(enabled = isConnected && !firing) {
                                 scope.launch {
                                     firingIcons[icon.id] = true
                                     viewModel.sendActiveTestCommand(icon.canId, icon.canData)
-                                    delay(700)
+                                    delay(2000) // ~11 blink cycles @ 180 ms each
                                     firingIcons[icon.id] = false
                                 }
                             },
