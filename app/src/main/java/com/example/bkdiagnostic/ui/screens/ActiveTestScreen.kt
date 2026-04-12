@@ -118,94 +118,94 @@ private val WARNING_ICONS: List<DashboardWarningIcon> = listOf(
 
     // ════════════════════════════════════════════════════════════════════════
     // 🔴 RED — Đèn chiếu sáng  (top-LEFT bezel)
-    // Row at y ≈ 0.17 | x spread: 0.20 → 0.38 (spacing 0.09 each)
-    // Add fog light here when SVG is ready: xFrac=0.38f, yFrac=0.17f
+    // Row y=0.29 | x: 0.28, 0.32  (spacing 0.04)
+    // Add fog light here when SVG is ready: xFrac=0.24f, yFrac=0.29f
     // ════════════════════════════════════════════════════════════════════════
     DashboardWarningIcon(
         id = "high_beam", label = "Đèn pha (High Beam)",
         asset = "HighBeamLight-01.svg", color = Color(0xFF42A5F5),
-        xFrac = 0.20f, yFrac = 0.17f,
+        xFrac = 0.28f, yFrac = 0.29f,
     ),
     DashboardWarningIcon(
         id = "lamp_on", label = "Đèn cos / Đèn bật",
         asset = "LampOnLight-01.svg", color = Color(0xFF66BB6A),
-        xFrac = 0.32f, yFrac = 0.17f,
+        xFrac = 0.32f, yFrac = 0.29f,
     ),
 
     // ════════════════════════════════════════════════════════════════════════
-    // 🔵 BLUE — An toàn  (top-RIGHT bezel, spans above speedometer + RPM)
-    // Row at y ≈ 0.17 | x spread: 0.56 → 0.84 (spacing 0.14 each)
+    // 🔵 BLUE — An toàn  (top-RIGHT bezel)
+    // Row y=0.29 | x: 0.56, 0.68, 0.72
     // ════════════════════════════════════════════════════════════════════════
     DashboardWarningIcon(
         id = "seat_belt", label = "Dây an toàn (Seatbelt)",
         asset = "SeatBelt-01.svg", color = Color(0xFFE53935),
-        xFrac = 0.56f, yFrac = 0.17f,
+        xFrac = 0.56f, yFrac = 0.29f,
     ),
     DashboardWarningIcon(
         id = "tire", label = "Áp suất lốp (TPMS)",
         asset = "TireLowPressure-01.svg", color = Color(0xFFFFA726),
-        xFrac = 0.70f, yFrac = 0.17f,
+        xFrac = 0.68f, yFrac = 0.29f,
     ),
     DashboardWarningIcon(
         id = "battery", label = "Ắc quy / Alternator",
         asset = "Battery-01.svg", color = Color(0xFFE53935),
-        xFrac = 0.84f, yFrac = 0.17f,
+        xFrac = 0.72f, yFrac = 0.29f,
     ),
 
     // ════════════════════════════════════════════════════════════════════════
     // 🟡 YELLOW — Động cơ & Túi khí  (bottom-LEFT oval)
-    // Row at y ≈ 0.67 | x spread: 0.10 → 0.31 (spacing 0.07 each)
+    // Row y=0.72 | x: 0.17, 0.21, 0.25, 0.29  (spacing 0.04)
     // ════════════════════════════════════════════════════════════════════════
     DashboardWarningIcon(
         id = "engine_chk", label = "Check Engine",
         asset = "Engine-01.svg", color = Color(0xFFFFA726),
-        xFrac = 0.10f, yFrac = 0.67f,
+        xFrac = 0.17f, yFrac = 0.72f,
     ),
     DashboardWarningIcon(
         id = "airbag", label = "Túi khí (Airbag)",
         asset = "AirBag-01.svg", color = Color(0xFFE53935),
-        xFrac = 0.17f, yFrac = 0.67f,
+        xFrac = 0.21f, yFrac = 0.72f,
     ),
     DashboardWarningIcon(
         id = "engine", label = "Lỗi động cơ",
         asset = "Engine.svg", color = Color(0xFFFFA726),
-        xFrac = 0.24f, yFrac = 0.67f,
+        xFrac = 0.25f, yFrac = 0.72f,
     ),
     DashboardWarningIcon(
         id = "overheat", label = "Quá nhiệt động cơ",
         asset = "EngineOverheat-01.svg", color = Color(0xFFE53935),
-        xFrac = 0.31f, yFrac = 0.67f,
+        xFrac = 0.29f, yFrac = 0.72f,
     ),
 
     // ════════════════════════════════════════════════════════════════════════
     // 🟢 GREEN — Hệ thống hỗ trợ  (bottom-RIGHT oval)
-    // Row at y ≈ 0.67 | x spread: 0.65 → 0.91 (spacing 0.065 each)
+    // Row y=0.71 | x: 0.71, 0.75, 0.79, 0.83, 0.87  (spacing 0.04)
     // Add 4x4 / HDC / Diff-lock here when SVG is ready
     // ════════════════════════════════════════════════════════════════════════
     DashboardWarningIcon(
         id = "abs", label = "ABS",
         asset = "ABS-01.svg", color = Color(0xFFFFA726),
-        xFrac = 0.65f, yFrac = 0.67f,
+        xFrac = 0.71f, yFrac = 0.71f,
     ),
     DashboardWarningIcon(
         id = "brake", label = "Cảnh báo phanh",
         asset = "BrakeWarning-01.svg", color = Color(0xFFE53935),
-        xFrac = 0.71f, yFrac = 0.67f,
+        xFrac = 0.75f, yFrac = 0.71f,
     ),
     DashboardWarningIcon(
         id = "stability", label = "Ổn định thân xe (ESC)",
         asset = "StabilityandTractionControl-01.svg", color = Color(0xFFFFA726),
-        xFrac = 0.77f, yFrac = 0.67f,
+        xFrac = 0.79f, yFrac = 0.71f,
     ),
     DashboardWarningIcon(
         id = "oil", label = "Áp suất dầu",
         asset = "OilPressureWarning-01.svg", color = Color(0xFFE53935),
-        xFrac = 0.84f, yFrac = 0.67f,
+        xFrac = 0.83f, yFrac = 0.71f,
     ),
     DashboardWarningIcon(
         id = "fuel", label = "Mức nhiên liệu",
         asset = "Fuel-01.svg", color = Color(0xFFFFA726),
-        xFrac = 0.91f, yFrac = 0.67f,
+        xFrac = 0.87f, yFrac = 0.71f,
     ),
 )
 
