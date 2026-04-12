@@ -65,7 +65,7 @@ import kotlinx.coroutines.launch
 private const val DASHBOARD_RATIO = 2816f / 1536f
 
 /** Icon diameter as a fraction of the displayed image width */
-private const val ICON_SIZE_FRAC = 0.038f
+private const val ICON_SIZE_FRAC = 0.019f
 
 // ── Data model ────────────────────────────────────────────────────────────────
 
