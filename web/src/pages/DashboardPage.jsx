@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { Card, Avatar, Typography, Tag, Row, Col, Form, Input, Button, Alert, Table, Space } from 'antd'
-import { UserOutlined, CalendarOutlined, SafetyOutlined, MailOutlined, LockOutlined, DownloadOutlined, FileTextOutlined, ReloadOutlined } from '@ant-design/icons'
+import { useState, useEffect } from 'react'
+import { Card, Avatar, Typography, Tag, Row, Col, Form, Input, Button, Alert, Table, Space, Tooltip } from 'antd'
+import { UserOutlined, CalendarOutlined, SafetyOutlined, MailOutlined, LockOutlined, DownloadOutlined, FileTextOutlined, ReloadOutlined, IdcardOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
@@ -131,11 +131,80 @@ function ExportHistoryCard({ session }) {
   )
 }
 
+function MssvCard({ userId, currentMssv, onSaved }) {
+  const [mssvMsg, setMssvMsg] = useState(null)
+  const [mssvLoading, setMssvLoading] = useState(false)
+  const [mssvForm] = Form.useForm()
+
+  async function handleSetMssv({ mssv }) {
+    setMssvMsg(null)
+    setMssvLoading(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ mssv: mssv.trim() })
+      .eq('id', userId)
+    setMssvLoading(false)
+    if (error) {
+      setMssvMsg({ type: 'error', text: error.message.includes('MSSV cannot be changed') ? 'Mã số sinh viên đã được thiết lập và không thể thay đổi.' : error.message })
+    } else {
+      setMssvMsg({ type: 'success', text: 'Cập nhật mã số sinh viên thành công!' })
+      mssvForm.resetFields()
+      if (onSaved) onSaved()
+    }
+  }
+
+  if (currentMssv) return null
+
+  return (
+    <Card
+      style={{ borderRadius: 24, border: '2px solid #fbbf24', background: '#fffbeb', marginBottom: 24 }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 14, background: 'linear-gradient(135deg,#d97706,#f59e0b)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <IdcardOutlined style={{ color: '#fff', fontSize: 18 }} />
+        </div>
+        <div>
+          <Text strong style={{ display: 'block', fontSize: 15 }}>Cập nhật Mã số sinh viên</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>Chỉ cập nhật được 1 lần — không thể thay đổi sau khi xác nhận</Text>
+        </div>
+      </div>
+      {mssvMsg && <Alert message={mssvMsg.text} type={mssvMsg.type} showIcon style={{ marginBottom: 16 }} />}
+      <Form form={mssvForm} layout="inline" onFinish={handleSetMssv}>
+        <Form.Item
+          name="mssv"
+          rules={[
+            { required: true, message: 'Vui lòng nhập MSSV' },
+            { pattern: /^\d{7}$/, message: 'MSSV phải gồm đúng 7 chữ số' }
+          ]}
+          style={{ flex: 1, minWidth: 200 }}
+        >
+          <Input prefix={<IdcardOutlined style={{ color: '#d97706' }} />} placeholder="Nhập MSSV (7 chữ số)" maxLength={7} />
+        </Form.Item>
+        <Form.Item>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={mssvLoading}
+            style={{ background: 'linear-gradient(135deg,#d97706,#f59e0b)', border: 'none', fontWeight: 600 }}
+            icon={<CheckCircleOutlined />}
+          >
+            Xác nhận
+          </Button>
+        </Form.Item>
+      </Form>
+    </Card>
+  )
+}
+
 export default function DashboardPage({ embedded = false }) {
   const { session, profile, role } = useAuth()
   const [pwMsg, setPwMsg] = useState(null)
   const [pwLoading, setPwLoading] = useState(false)
   const [form] = Form.useForm()
+  const [mssv, setMssv] = useState(profile?.mssv ?? null)
+
+  // Sync mssv from profile when it loads
+  useEffect(() => { if (profile?.mssv) setMssv(profile.mssv) }, [profile?.mssv])
 
   const username = profile?.username ?? session?.user?.email?.split('@')[0] ?? 'User'
   const email = session?.user?.email ?? '—'
@@ -143,6 +212,13 @@ export default function DashboardPage({ embedded = false }) {
   const status = profile?.status ?? 'active'
   const bg = avatarColor(username)
   const initial = username[0]?.toUpperCase() ?? 'U'
+  const displayMssv = mssv ?? profile?.mssv
+
+  async function handleMssvSaved() {
+    // Reload profile data from Supabase after MSSV is saved
+    const { data } = await supabase.from('profiles').select('mssv').eq('id', session?.user?.id).maybeSingle()
+    if (data?.mssv) setMssv(data.mssv)
+  }
 
   async function handleChangePassword({ current, newPw }) {
     setPwMsg(null)
@@ -157,6 +233,9 @@ export default function DashboardPage({ embedded = false }) {
 
   const content = (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      {/* MSSV update banner — shown only when mssv not set */}
+      <MssvCard userId={session?.user?.id} currentMssv={displayMssv} onSaved={handleMssvSaved} />
+
       <Card style={{ borderRadius: 24, marginBottom: 24, overflow: 'hidden', border: '1px solid #e8edf5' }} styles={{ body: { padding: 0 } }}>
         <div style={{ height: 140, background: 'linear-gradient(180deg,#002a80 0%,#1565C0 45%,#5b9bd5 75%,#ffffff 100%)', position: 'relative' }}>
           <div style={{ position: 'absolute', top: 16, right: 20 }}>
@@ -191,12 +270,25 @@ export default function DashboardPage({ embedded = false }) {
                 </div>
               </Col>
             ))}
-            <Col span={24}>
+            <Col xs={24} sm={12}>
               <div style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 16, padding: '16px', display: 'flex', gap: 12 }}>
                 <div style={{ width: 32, height: 32, background: '#f0f9ff', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><MailOutlined style={{ color: '#0284c7' }} /></div>
                 <div>
                   <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>Email Address</Text>
                   <div style={{ fontWeight: 700, fontSize: 14, marginTop: 2 }}>{email}</div>
+                </div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12}>
+              <div style={{ background: '#fafafa', border: `1px solid ${displayMssv ? '#f0f0f0' : '#fbbf24'}`, borderRadius: 16, padding: '16px', display: 'flex', gap: 12 }}>
+                <div style={{ width: 32, height: 32, background: displayMssv ? '#fff7ed' : '#fffbeb', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <IdcardOutlined style={{ color: '#d97706' }} />
+                </div>
+                <div>
+                  <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>Mã số sinh viên</Text>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginTop: 2, color: displayMssv ? 'inherit' : '#d97706' }}>
+                    {displayMssv ?? <Tooltip title="Cuộn lên để cập nhật"><span style={{ cursor: 'pointer' }}>Chưa cập nhật ⚠</span></Tooltip>}
+                  </div>
                 </div>
               </div>
             </Col>

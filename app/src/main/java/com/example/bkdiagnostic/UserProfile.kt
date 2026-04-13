@@ -8,7 +8,8 @@ data class UserProfile(
     val id: String,
     val username: String,
     val role: String = "user",
-    val status: String = "active"
+    val status: String = "active",
+    val mssv: String? = null
 ) {
     val isAdmin: Boolean       get() = role.equals("admin",     ignoreCase = true)
     val isModerator: Boolean   get() = role.equals("moderator", ignoreCase = true)
