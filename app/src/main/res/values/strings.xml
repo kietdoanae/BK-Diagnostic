@@ -144,6 +144,8 @@
     <string name="settings_section_account">ACCOUNT</string>
     <string name="settings_label_username">Username</string>
     <string name="settings_label_email">Email</string>
+    <string name="settings_label_full_name">Full Name</string>
+    <string name="settings_full_name_not_set">Not set — update on website</string>
     <string name="settings_label_mssv">Student ID (MSSV)</string>
     <string name="settings_mssv_not_set">Not set — update on website</string>
     <string name="settings_section_security">SECURITY</string>

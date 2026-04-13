@@ -144,6 +144,8 @@
     <string name="settings_section_account">TÀI KHOẢN</string>
     <string name="settings_label_username">Tên đăng nhập</string>
     <string name="settings_label_email">Email</string>
+    <string name="settings_label_full_name">Họ và tên</string>
+    <string name="settings_full_name_not_set">Chưa cập nhật — vui lòng cập nhật trên website</string>
     <string name="settings_label_mssv">Mã số sinh viên</string>
     <string name="settings_mssv_not_set">Chưa cập nhật — vui lòng cập nhật trên website</string>
     <string name="settings_section_security">BẢO MẬT</string>

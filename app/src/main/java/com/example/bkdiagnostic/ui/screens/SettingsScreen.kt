@@ -64,6 +64,7 @@ fun SettingsScreen(
     val isModerator = userProfile?.isModerator ?: false
     val isLoading   = uiState is AuthUiState.Loading
     val mssv        = userProfile?.mssv
+    val fullName    = userProfile?.fullName
 
     var userEmail by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
@@ -116,6 +117,8 @@ fun SettingsScreen(
     val strAccount          = stringResource(R.string.settings_section_account)
     val strUsername         = stringResource(R.string.settings_label_username)
     val strEmail            = stringResource(R.string.settings_label_email)
+    val strFullName         = stringResource(R.string.settings_label_full_name)
+    val strFullNameNotSet   = stringResource(R.string.settings_full_name_not_set)
     val strMssv             = stringResource(R.string.settings_label_mssv)
     val strMssvNotSet       = stringResource(R.string.settings_mssv_not_set)
     val strSecurity         = stringResource(R.string.settings_section_security)
@@ -224,6 +227,15 @@ fun SettingsScreen(
                         iconBg       = Color(0xFF2E7D32),
                         label        = strEmail,
                         trailingText = userEmail.ifEmpty { "—" },
+                        showChevron  = false,
+                        onClick      = null
+                    )
+                    SettingsDivider()
+                    SettingsRow(
+                        icon         = Icons.Filled.Person,
+                        iconBg       = Color(0xFF0097A7),
+                        label        = strFullName,
+                        trailingText = fullName ?: strFullNameNotSet,
                         showChevron  = false,
                         onClick      = null
                     )

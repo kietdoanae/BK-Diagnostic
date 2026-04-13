@@ -9,7 +9,9 @@ data class UserProfile(
     val username: String,
     val role: String = "user",
     val status: String = "active",
-    val mssv: String? = null
+    val mssv: String? = null,
+    @SerialName("full_name")
+    val fullName: String? = null
 ) {
     val isAdmin: Boolean       get() = role.equals("admin",     ignoreCase = true)
     val isModerator: Boolean   get() = role.equals("moderator", ignoreCase = true)
