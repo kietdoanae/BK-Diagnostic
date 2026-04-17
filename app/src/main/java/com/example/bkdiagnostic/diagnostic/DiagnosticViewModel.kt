@@ -6,6 +6,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.bkdiagnostic.ActivityLogger
 import com.example.bkdiagnostic.BKDiagnosticApp
+import com.example.bkdiagnostic.lab.LabEvidenceRepository
+import com.example.bkdiagnostic.lab.LabModeManager
+import com.example.bkdiagnostic.lab.LabModeState
 import com.example.bkdiagnostic.DiagnosticsSettings
 import com.example.bkdiagnostic.communication.CanFrame
 import com.example.bkdiagnostic.communication.UsbSerialManager
@@ -104,6 +107,11 @@ class DiagnosticViewModel(
             usbManager.canFrames.collect { frame ->
                 dispatchFrame(frame)
                 addToRawLog(frame)
+                // Lab: enqueue frame for evidence collection when session is active
+                val labState = LabModeManager.state.value
+                if (labState is LabModeState.Active) {
+                    LabEvidenceRepository.enqueueRawFrame(labState.sessionId, frame)
+                }
             }
         }
     }
@@ -232,11 +240,16 @@ class DiagnosticViewModel(
     fun sendActiveTestCommand(canId: Int, data: ByteArray) {
         viewModelScope.launch(Dispatchers.IO) {
             val frame = CanFrame(
-                id = canId,
+                id  = canId,
                 dlc = data.size.coerceAtMost(8),
                 data = ByteArray(8).also { buf -> data.copyInto(buf) }
             )
             usbManager.sendFrame(frame)
+            // Lab: push active_test evidence when session is active
+            val labState = LabModeManager.state.value
+            if (labState is LabModeState.Active) {
+                LabEvidenceRepository.pushActiveTest(labState.sessionId, canId, data)
+            }
         }
     }
 
