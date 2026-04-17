@@ -60,6 +60,9 @@ import com.example.bkdiagnostic.communication.UsbSerialManager
 import com.example.bkdiagnostic.DiagnosticsSettings
 import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
 import com.example.bkdiagnostic.ui.components.AppTopBar
+import androidx.compose.material.icons.filled.Science
+import com.example.bkdiagnostic.lab.LabModeManager
+import com.example.bkdiagnostic.lab.LabModeState
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Màn hình Hub Chẩn đoán — quản lý sub-screens bằng internal state
@@ -75,7 +78,8 @@ fun DiagnosticScreen(
     onBack: () -> Unit,
     application: android.app.Application,
     isAdmin: Boolean = false,
-    diagSettings: DiagnosticsSettings = DiagnosticsSettings()
+    diagSettings: DiagnosticsSettings = DiagnosticsSettings(),
+    onLabModeClick: () -> Unit = {}
 ) {
     val viewModel: DiagnosticViewModel = viewModel(
         factory = DiagnosticViewModel.Factory(application, brandId, modelId, diagSettings)
@@ -91,10 +95,11 @@ fun DiagnosticScreen(
     when (currentView) {
         DiagView.HUB ->
             DiagnosticHub(
-                viewModel = viewModel,
-                onBack = onBack,
-                onNavigate = { currentView = it },
-                isAdmin = isAdmin
+                viewModel      = viewModel,
+                onBack         = onBack,
+                onNavigate     = { currentView = it },
+                isAdmin        = isAdmin,
+                onLabModeClick = onLabModeClick
             )
         DiagView.RAW_MONITOR ->
             RawMonitorScreen(
@@ -118,10 +123,13 @@ private fun DiagnosticHub(
     viewModel: DiagnosticViewModel,
     onBack: () -> Unit,
     onNavigate: (DiagView) -> Unit,
-    isAdmin: Boolean = false
+    isAdmin: Boolean = false,
+    onLabModeClick: () -> Unit = {}
 ) {
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val labModeState by LabModeManager.state.collectAsStateWithLifecycle()
+    val isLabActive  = labModeState is LabModeState.Active
 
     val snackbarHost = remember { SnackbarHostState() }
     LaunchedEffect(message) {
@@ -185,6 +193,19 @@ private fun DiagnosticHub(
                     actionIcon = Icons.Default.DirectionsCar,
                     actionLabel = stringResource(R.string.diagnostic_btn_open),
                     onClick = { onNavigate(DiagView.ACTIVE_TEST) }
+                )
+
+                // Lab Mode card
+                DiagnosticFunctionCard(
+                    icon        = Icons.Default.Science,
+                    title       = if (isLabActive) "Lab Mode — Active" else "Lab Mode",
+                    description = if (isLabActive) "Session in progress · Tap to manage"
+                                  else "Join a TR4021 lab session by entering a 6-digit code",
+                    accentColor = Color(0xFFF59E0B),
+                    enabled     = true,
+                    actionIcon  = Icons.Default.Science,
+                    actionLabel = if (isLabActive) "Manage" else "Enter",
+                    onClick     = onLabModeClick
                 )
 
                 // 5–7. Placeholder (sắp có)
