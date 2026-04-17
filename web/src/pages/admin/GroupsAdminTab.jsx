@@ -1,0 +1,241 @@
+import { useEffect, useState } from 'react'
+import {
+  Card,
+  Button,
+  Table,
+  Tag,
+  Space,
+  Typography,
+  Popconfirm,
+  message,
+  Select,
+  Input,
+} from 'antd'
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
+  ImportOutlined,
+  SearchOutlined,
+} from '@ant-design/icons'
+import {
+  listGroups,
+  deleteGroup,
+  listLabs,
+  listGroupMembers,
+} from '../../services/labApi'
+import GroupForm from '../../components/admin/GroupForm'
+import GroupBulkImport from '../../components/admin/GroupBulkImport'
+
+const { Text } = Typography
+
+export default function GroupsAdminTab() {
+  const [labs, setLabs] = useState([])
+  const [groups, setGroups] = useState([])
+  const [memberCache, setMemberCache] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [filterLab, setFilterLab] = useState(null)
+  const [search, setSearch] = useState('')
+  const [formOpen, setFormOpen] = useState(false)
+  const [editingGroup, setEditingGroup] = useState(null)
+  const [bulkOpen, setBulkOpen] = useState(false)
+
+  async function reload() {
+    setLoading(true)
+    const [{ data: gs, error }, { data: ls }] = await Promise.all([
+      listGroups(filterLab),
+      listLabs(),
+    ])
+    setLoading(false)
+    if (error) {
+      message.error(error.message)
+      return
+    }
+    setLabs(ls || [])
+    setGroups(gs || [])
+    const memberEntries = await Promise.all(
+      (gs || []).map(async (g) => {
+        const { data } = await listGroupMembers(g.id)
+        return [g.id, data || []]
+      })
+    )
+    setMemberCache(Object.fromEntries(memberEntries))
+  }
+
+  useEffect(() => {
+    reload()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterLab])
+
+  async function handleDelete(g) {
+    const { error } = await deleteGroup(g.id)
+    if (error) message.error(error.message)
+    else {
+      message.success('Đã xóa nhóm')
+      reload()
+    }
+  }
+
+  const filtered = groups.filter((g) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      g.name.toLowerCase().includes(q) ||
+      (g.semester || '').toLowerCase().includes(q) ||
+      (g.lab?.code || '').toLowerCase().includes(q)
+    )
+  })
+
+  const columns = [
+    {
+      title: 'Lab',
+      dataIndex: ['lab', 'code'],
+      width: 200,
+      render: (v, r) => (
+        <div>
+          <Text code>{v}</Text>
+          <div style={{ fontSize: 11, color: '#9ca3af' }}>{r.lab?.title}</div>
+        </div>
+      ),
+    },
+    { title: 'Tên nhóm', dataIndex: 'name' },
+    { title: 'Học kỳ', dataIndex: 'semester', width: 140 },
+    {
+      title: 'Thành viên',
+      key: 'members',
+      render: (_, g) => {
+        const ms = memberCache[g.id] || []
+        if (ms.length === 0) return <Text type="secondary">— chưa có —</Text>
+        return (
+          <Space size={4} wrap>
+            {ms.map((m) => (
+              <Tag
+                key={m.user_id}
+                color={m.role === 'leader' ? 'gold' : 'default'}
+              >
+                {m.role === 'leader' ? '👑 ' : ''}
+                {m.profile?.mssv || m.profile?.username || '—'}
+              </Tag>
+            ))}
+          </Space>
+        )
+      },
+    },
+    {
+      title: 'Hành động',
+      key: 'actions',
+      align: 'right',
+      width: 180,
+      render: (_, g) => (
+        <Space>
+          <Button
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setEditingGroup(g)
+              setFormOpen(true)
+            }}
+          >
+            Sửa
+          </Button>
+          <Popconfirm
+            title="Xóa nhóm này (và tất cả thành viên + sessions của nó)?"
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
+            onConfirm={() => handleDelete(g)}
+          >
+            <Button size="small" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ]
+
+  return (
+    <Card style={{ borderRadius: 16 }} styles={{ body: { padding: 0 } }}>
+      <div
+        style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid #f0f0f0',
+          display: 'flex',
+          gap: 12,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Select
+          placeholder="Lọc theo lab"
+          value={filterLab || undefined}
+          onChange={(v) => setFilterLab(v ?? null)}
+          allowClear
+          style={{ width: 280 }}
+          options={labs.map((l) => ({
+            value: l.id,
+            label: `${l.code} — ${l.title}`,
+          }))}
+        />
+        <Input
+          prefix={<SearchOutlined />}
+          placeholder="Tìm theo tên / học kỳ / mã lab…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ width: 260 }}
+          allowClear
+        />
+        <Button icon={<ReloadOutlined />} onClick={reload}>
+          Làm mới
+        </Button>
+        <Button
+          icon={<ImportOutlined />}
+          onClick={() => setBulkOpen(true)}
+          style={{ marginLeft: 'auto' }}
+        >
+          Bulk import CSV
+        </Button>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            setEditingGroup(null)
+            setFormOpen(true)
+          }}
+        >
+          Tạo nhóm
+        </Button>
+      </div>
+
+      <Table
+        rowKey="id"
+        loading={loading}
+        size="small"
+        columns={columns}
+        dataSource={filtered}
+        pagination={{ pageSize: 20 }}
+      />
+
+      <GroupForm
+        open={formOpen}
+        labId={filterLab}
+        labs={labs}
+        group={editingGroup}
+        onClose={() => setFormOpen(false)}
+        onSaved={() => {
+          setFormOpen(false)
+          reload()
+        }}
+      />
+
+      <GroupBulkImport
+        open={bulkOpen}
+        labs={labs}
+        onClose={() => setBulkOpen(false)}
+        onImported={() => {
+          setBulkOpen(false)
+          reload()
+        }}
+      />
+    </Card>
+  )
+}

@@ -5,6 +5,10 @@ import AppLayout from '../components/AppLayout'
 import { useUsers } from '../hooks/useUsers'
 import { useLogs } from '../hooks/useLogs'
 import { useAllExports } from '../hooks/useExports'
+import LabsAdminTab from './admin/LabsAdminTab'
+import GroupsAdminTab from './admin/GroupsAdminTab'
+import SessionsAdminTab from './admin/SessionsAdminTab'
+import SubmissionsAdminTab from './admin/SubmissionsAdminTab'
 
 const { Text, Title } = Typography
 const { Option } = Select
@@ -369,6 +373,10 @@ function ExportsTab() {
 
 export default function AdminPage() {
   const items = [
+    { key: 'labs', label: '🧪 Labs', children: <LabsAdminTab /> },
+    { key: 'groups', label: '👥 Groups', children: <GroupsAdminTab /> },
+    { key: 'sessions', label: '🎯 Sessions', children: <SessionsAdminTab /> },
+    { key: 'submissions', label: '📝 Submissions', children: <SubmissionsAdminTab /> },
     { key: 'users', label: 'Users', children: <UsersTab /> },
     { key: 'logs', label: 'Activity Logs', children: <LogsTab /> },
     { key: 'exports', label: '📁 Exports', children: <ExportsTab /> },
