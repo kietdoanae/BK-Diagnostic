@@ -21,18 +21,22 @@ $$;
 GRANT EXECUTE ON FUNCTION public.is_staff() TO authenticated;
 
 -- ── user_is_in_group(p_group uuid) ──────────────────────────────────────────
+-- NOTE: LANGUAGE plpgsql (not sql) so body compiles lazily — table
+--       lab_group_members is created in lab_schema.sql which runs after this file.
 CREATE OR REPLACE FUNCTION public.user_is_in_group(p_group uuid)
 RETURNS boolean
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-    SELECT EXISTS (
+BEGIN
+    RETURN EXISTS (
         SELECT 1 FROM public.lab_group_members
         WHERE group_id = p_group
           AND user_id = auth.uid()
     );
+END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.user_is_in_group(uuid) TO authenticated;
