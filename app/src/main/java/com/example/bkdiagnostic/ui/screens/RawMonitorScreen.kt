@@ -75,6 +75,9 @@ import com.example.bkdiagnostic.diagnostic.RawFrameEntry
 import com.example.bkdiagnostic.diagnostic.SendStatus
 import com.example.bkdiagnostic.supabaseClient
 import com.example.bkdiagnostic.ui.components.AppTopBar
+import com.example.bkdiagnostic.lab.LabEvidenceRepository
+import com.example.bkdiagnostic.lab.LabModeManager
+import com.example.bkdiagnostic.lab.LabModeState
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
@@ -274,15 +277,22 @@ private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
                 // Upload lên Supabase Storage + ghi record (fire-and-forget, không block UI)
                 if (result != null) {
                     CoroutineScope(Dispatchers.IO).launch {
+                        val labState     = LabModeManager.state.value
+                        val labSessionId = (labState as? LabModeState.Active)?.sessionId
                         uploadExportToStorage(
-                            filename    = result.filename,
-                            bytes       = result.bytes,
-                            brandId     = viewModel.brandId,
-                            modelId     = viewModel.modelId,
-                            displayName = viewModel.protocolConfig?.displayName
-                                          ?: "${viewModel.brandId} ${viewModel.modelId}",
-                            frameCount  = displayLog.size
+                            filename     = result.filename,
+                            bytes        = result.bytes,
+                            brandId      = viewModel.brandId,
+                            modelId      = viewModel.modelId,
+                            displayName  = viewModel.protocolConfig?.displayName
+                                           ?: "${viewModel.brandId} ${viewModel.modelId}",
+                            frameCount   = displayLog.size,
+                            labSessionId = labSessionId
                         )
+                        // Also push the exported frames as lab evidence batch
+                        if (labSessionId != null) {
+                            LabEvidenceRepository.pushRawFrameBatch(labSessionId, displayLog)
+                        }
                     }
                 }
             }
@@ -905,12 +915,13 @@ private data class ExportRecord(
 )
 
 private suspend fun uploadExportToStorage(
-    filename:    String,
-    bytes:       ByteArray,
-    brandId:     String,
-    modelId:     String,
-    displayName: String,
-    frameCount:  Int
+    filename:     String,
+    bytes:        ByteArray,
+    brandId:      String,
+    modelId:      String,
+    displayName:  String,
+    frameCount:   Int,
+    labSessionId: String? = null
 ) {
     val user = supabaseClient.auth.currentUserOrNull()
     if (user == null) {
