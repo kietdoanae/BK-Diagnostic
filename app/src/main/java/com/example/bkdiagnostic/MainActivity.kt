@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -37,7 +38,10 @@ import com.example.bkdiagnostic.ui.screens.SplashScreen
 import com.example.bkdiagnostic.SettingsViewModel
 import com.example.bkdiagnostic.ui.screens.SettingsScreen
 import com.example.bkdiagnostic.ui.screens.WiringDiagramScreen
+import com.example.bkdiagnostic.ui.screens.LabModeScreen
 import com.example.bkdiagnostic.ui.theme.BKDiagnosticTheme
+import com.example.bkdiagnostic.lab.LabModeManager
+import com.example.bkdiagnostic.ui.components.LabModeBanner
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
 
@@ -93,6 +97,7 @@ class MainActivity : ComponentActivity() {
                 val canViewRawFrame = userProfile?.canViewRawFrame == true
 
                 val navController = rememberNavController()
+                val labModeState by LabModeManager.state.collectAsStateWithLifecycle()
 
                 // Lắng nghe navigation event từ deep link handler
                 LaunchedEffect(Unit) {
@@ -106,6 +111,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                Box(modifier = Modifier.fillMaxSize()) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(
                         navController = navController,
@@ -230,16 +236,25 @@ class MainActivity : ComponentActivity() {
                             val diagSettings by settingsViewModel.diagnosticsSettings
                                 .collectAsStateWithLifecycle()
                             DiagnosticScreen(
-                                brandId      = brandId,
-                                modelId      = modelId,
-                                onBack       = { navController.popBackStack() },
-                                application  = application,
-                                isAdmin      = canViewRawFrame,
-                                diagSettings = diagSettings
+                                brandId        = brandId,
+                                modelId        = modelId,
+                                onBack         = { navController.popBackStack() },
+                                application    = application,
+                                isAdmin        = canViewRawFrame,
+                                diagSettings   = diagSettings,
+                                onLabModeClick = { navController.navigate("lab_mode") }
                             )
+                        }
+                        composable("lab_mode") {
+                            LabModeScreen(onBack = { navController.popBackStack() })
                         }
                     }
                 }
+                LabModeBanner(
+                    state    = labModeState,
+                    onManage = { navController.navigate("lab_mode") }
+                )
+                }  // end Box
             }
         }
     }
