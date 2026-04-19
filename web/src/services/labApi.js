@@ -408,3 +408,230 @@ export async function getReportSignedUrl(storagePath, expiresIn = 60) {
 export async function downloadReportBlob(storagePath) {
   return supabase.storage.from('lab-reports').download(storagePath)
 }
+
+// ─── Student-facing queries ──────────────────────────────────────────────────
+
+/**
+ * Labs the given user is assigned to (via group membership) + the user's
+ * role (leader/member) and group info. Filters to published labs only.
+ * Returns an array of { lab, group, role }.
+ */
+export async function listAssignedLabsForUser(userId) {
+  const { data, error } = await supabase
+    .from('lab_group_members')
+    .select(
+      'role, group:lab_groups(id, name, semester, lab_id, lab:labs(*))'
+    )
+    .eq('user_id', userId)
+  if (error) return { data: [], error }
+  const rows = (data || [])
+    .filter((r) => r.group?.lab?.is_published)
+    .map((r) => ({ lab: r.group.lab, group: r.group, role: r.role }))
+  return { data: rows, error: null }
+}
+
+/**
+ * Latest pre-quiz attempt for (user, lab). Returns row or null.
+ */
+export async function getLatestPreQuizForLab(userId, labId) {
+  const { data, error } = await supabase
+    .from('lab_pre_quiz_submissions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lab_id', labId)
+    .order('submitted_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return { data, error }
+}
+
+/**
+ * The most recent session for a group (any status). Used by the state
+ * machine to distinguish PRACTICE_ACTIVE vs PRACTICE_DONE_POST_PENDING.
+ */
+export async function getLatestSessionForGroup(groupId) {
+  const { data, error } = await supabase
+    .from('lab_sessions')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return { data, error }
+}
+
+/**
+ * The current ACTIVE session for a group, or null.
+ */
+export async function getActiveSessionForGroup(groupId) {
+  const { data, error } = await supabase
+    .from('lab_sessions')
+    .select('*')
+    .eq('group_id', groupId)
+    .eq('status', 'ACTIVE')
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return { data, error }
+}
+
+/** User's own post-lab submission for a session, or null. */
+export async function getMyPostSubmission(userId, sessionId) {
+  return supabase
+    .from('lab_post_submissions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('session_id', sessionId)
+    .maybeSingle()
+}
+
+/** User's own report (PDF row) for a session, or null. */
+export async function getMyReportForSession(userId, sessionId) {
+  return supabase
+    .from('lab_reports')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('session_id', sessionId)
+    .maybeSingle()
+}
+
+/** All reports owned by the user — powers /my-reports. */
+export async function listMyReports(userId) {
+  return supabase
+    .from('lab_reports')
+    .select(
+      'id, session_id, pdf_storage_path, file_size_bytes, generated_at, ' +
+        'session:lab_sessions(id, session_code, started_at, ended_at, ' +
+        '  lab:labs(id, code, title), group:lab_groups(id, name, semester))'
+    )
+    .eq('user_id', userId)
+    .order('generated_at', { ascending: false })
+}
+
+// ─── RPC wrappers ────────────────────────────────────────────────────────────
+
+export async function rpcStartLabSession(labId) {
+  return supabase.rpc('start_lab_session', { p_lab_id: labId })
+}
+
+export async function rpcSubmitPreQuiz(labId, answers) {
+  // answers: { "<question_id>": "A" | "..." }
+  return supabase.rpc('submit_pre_quiz', {
+    p_lab_id: labId,
+    p_answers: answers,
+  })
+}
+
+export async function rpcSetCurrentStep(sessionId, stepId) {
+  return supabase.rpc('set_current_step', {
+    p_session_id: sessionId,
+    p_step_id: stepId,
+  })
+}
+
+export async function rpcEndCurrentStep(sessionId) {
+  return supabase.rpc('end_current_step', { p_session_id: sessionId })
+}
+
+export async function rpcCompleteLabSession(sessionId) {
+  return supabase.rpc('complete_lab_session', { p_session_id: sessionId })
+}
+
+// ─── Post-lab auto-save ──────────────────────────────────────────────────────
+
+/**
+ * Upsert-ish: if a row for (user, session) exists, update it; else insert
+ * with is_draft=true. UNIQUE(user_id, session_id) makes a single onConflict
+ * upsert safe.
+ */
+export async function saveDraftPostSubmission(userId, sessionId, answers, uploadedImages) {
+  return supabase
+    .from('lab_post_submissions')
+    .upsert(
+      {
+        user_id: userId,
+        session_id: sessionId,
+        answers,
+        uploaded_images: uploadedImages,
+        is_draft: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,session_id' }
+    )
+    .select()
+    .single()
+}
+
+export async function finalizePostSubmission(userId, sessionId, answers, uploadedImages) {
+  return supabase
+    .from('lab_post_submissions')
+    .upsert(
+      {
+        user_id: userId,
+        session_id: sessionId,
+        answers,
+        uploaded_images: uploadedImages,
+        is_draft: false,
+        submitted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,session_id' }
+    )
+    .select()
+    .single()
+}
+
+// ─── Screenshot evidence upload (web-originated) ────────────────────────────
+
+/**
+ * Uploads an image to the `lab-images` bucket and inserts a matching
+ * lab_evidence row with evidence_type='screenshot'. Used by StepDetail
+ * when the current step's evidence_type is 'screenshot'.
+ */
+export async function uploadScreenshotEvidence({
+  sessionId,
+  stepId,
+  userId,
+  file,
+}) {
+  const ext = (file.name.split('.').pop() || 'png').toLowerCase()
+  const storageKey = `${userId}/${sessionId}/${stepId}/${crypto.randomUUID()}.${ext}`
+  const { error: upErr } = await supabase.storage
+    .from('lab-images')
+    .upload(storageKey, file, { contentType: file.type || 'image/png' })
+  if (upErr) return { data: null, error: upErr }
+
+  const { data, error } = await supabase
+    .from('lab_evidence')
+    .insert({
+      session_id: sessionId,
+      step_id: stepId,
+      submitted_by: userId,
+      evidence_type: 'screenshot',
+      payload: { image_path: storageKey, original_name: file.name },
+      client_timestamp_ms: Date.now(),
+    })
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function getLabImageSignedUrl(storagePath, expiresIn = 120) {
+  return supabase.storage
+    .from('lab-images')
+    .createSignedUrl(storagePath, expiresIn)
+}
+
+// ─── Evidence queries for a session (student view) ──────────────────────────
+
+/**
+ * All evidence for a session, grouped by step client-side. Used by
+ * EvidenceInlineViewer and the live counter's initial state.
+ */
+export async function listEvidenceForSession(sessionId) {
+  return supabase
+    .from('lab_evidence')
+    .select('id, step_id, submitted_by, evidence_type, payload, client_timestamp_ms, created_at')
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: true })
+}

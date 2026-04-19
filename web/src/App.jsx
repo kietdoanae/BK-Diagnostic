@@ -10,6 +10,12 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import AdminPage from './pages/AdminPage'
 import WiringPage from './pages/WiringPage'
+import LabsListPage from './pages/LabsListPage'
+import LabOverviewPage from './pages/LabOverviewPage'
+import LabSessionPage from './pages/LabSessionPage'
+import LabPostLabPage from './pages/LabPostLabPage'
+import LabReportPage from './pages/LabReportPage'
+import MyReportsPage from './pages/MyReportsPage'
 
 const theme = {
   token: {
@@ -32,6 +38,12 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/wiring" element={<ProtectedRoute><WiringPage /></ProtectedRoute>} />
+          <Route path="/labs" element={<ProtectedRoute><LabsListPage /></ProtectedRoute>} />
+          <Route path="/labs/:labId" element={<ProtectedRoute><LabOverviewPage /></ProtectedRoute>} />
+          <Route path="/labs/:labId/session/:sid" element={<ProtectedRoute><LabSessionPage /></ProtectedRoute>} />
+          <Route path="/labs/:labId/session/:sid/post" element={<ProtectedRoute><LabPostLabPage /></ProtectedRoute>} />
+          <Route path="/labs/:labId/session/:sid/report" element={<ProtectedRoute><LabReportPage /></ProtectedRoute>} />
+          <Route path="/my-reports" element={<ProtectedRoute><MyReportsPage /></ProtectedRoute>} />
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
