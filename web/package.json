@@ -17,6 +17,7 @@
     "@supabase/supabase-js": "^2.101.1",
     "@uiw/react-md-editor": "^4.1.0",
     "antd": "^6.3.5",
+    "html2pdf.js": "^0.10.3",
     "jszip": "^3.10.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
