@@ -146,7 +146,7 @@ export async function listGroupMembers(groupId) {
   return supabase
     .from('lab_group_members')
     .select(
-      'group_id, user_id, role, profile:profiles!user_id(username, full_name, mssv, email)'
+      'group_id, user_id, role, profile:profiles!user_id(username, full_name, mssv)'
     )
     .eq('group_id', groupId)
 }
@@ -326,7 +326,7 @@ export async function listPostSubmissions({ labId, sessionId } = {}) {
       'id, user_id, session_id, is_draft, submitted_at, updated_at, teacher_comment, ' +
         'session:lab_sessions(id, session_code, lab_id, group_id, ' +
         '  lab:labs(code,title), group:lab_groups(name,semester)), ' +
-        'profile:profiles!user_id(username,full_name,mssv,email)'
+        'profile:profiles!user_id(username,full_name,mssv)'
     )
     .order('updated_at', { ascending: false })
   if (sessionId) q = q.eq('session_id', sessionId)
