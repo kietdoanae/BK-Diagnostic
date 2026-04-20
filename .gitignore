@@ -27,3 +27,6 @@ stm32/Release/
 stm32/.settings/
 stm32/.cproject
 stm32/.project
+
+# Pilot evidence (downloaded PDFs, screenshots — not committed to git)
+docs/superpowers/pilot/phase-7-evidence/
