@@ -409,6 +409,38 @@ export async function downloadReportBlob(storagePath) {
   return supabase.storage.from('lab-reports').download(storagePath)
 }
 
+/**
+ * Upsert a lab_reports row. UNIQUE(user_id, session_id) means that if a
+ * student regenerates their PDF we overwrite storage + metadata.
+ */
+export async function insertLabReport({
+  userId, sessionId, pdfStoragePath, contentHash, fileSizeBytes,
+}) {
+  return supabase
+    .from('lab_reports')
+    .upsert(
+      {
+        user_id: userId,
+        session_id: sessionId,
+        pdf_storage_path: pdfStoragePath,
+        content_hash: contentHash,
+        file_size_bytes: fileSizeBytes,
+      },
+      { onConflict: 'user_id,session_id' }
+    )
+    .select()
+    .single()
+}
+
+export async function uploadLabReport(storagePath, blob) {
+  return supabase.storage
+    .from('lab-reports')
+    .upload(storagePath, blob, {
+      contentType: 'application/pdf',
+      upsert: true,
+    })
+}
+
 // ─── Student-facing queries ──────────────────────────────────────────────────
 
 /**
