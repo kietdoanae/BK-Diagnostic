@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react'
-import { Card, Button, Alert, Typography, Space, Tag, Spin } from 'antd'
-import { FilePdfOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { useEffect, useRef, useState } from 'react'
+import { Card, Button, Alert, Typography, Space, Tag, Spin, message } from 'antd'
+import { FilePdfOutlined, ArrowLeftOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useParams, useNavigate } from 'react-router-dom'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
-import {
-  getMyPostSubmission,
-  getMyReportForSession,
-  getReportSignedUrl,
-} from '../services/labApi'
+import { getReportSignedUrl } from '../services/labApi'
+import { supabase } from '../services/supabase'
+import { fetchLabReportData } from '../services/labReportData'
+import { generateAndUploadReport } from '../services/labReportGenerator'
+import LabReportPdfTemplate from '../components/lab/pdf/LabReportPdfTemplate'
 
 const { Title, Text } = Typography
 
@@ -19,36 +19,45 @@ export default function LabReportPage() {
   const userId = auth?.user?.id
 
   const [loading, setLoading] = useState(true)
-  const [submission, setSubmission] = useState(null)
-  const [report, setReport] = useState(null)
-  const [downloadUrl, setDownloadUrl] = useState(null)
   const [error, setError] = useState(null)
+  const [data, setData] = useState(null)
+  const [existingReport, setExistingReport] = useState(null)
+  const [existingSignedUrl, setExistingSignedUrl] = useState(null)
+
+  // Preview-iframe + generation state
+  const [generating, setGenerating] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState(null) // blob: URL
+  const [lastFilename, setLastFilename] = useState(null)
+  const [lastHash, setLastHash] = useState(null)
+
+  const templateRef = useRef(null)
 
   useEffect(() => {
     if (!userId) return
     let cancelled = false
     async function load() {
-      const [sub, rep] = await Promise.all([
-        getMyPostSubmission(userId, sid),
-        getMyReportForSession(userId, sid),
-      ])
+      const result = await fetchLabReportData(userId, sid)
       if (cancelled) return
-      if (sub.error) {
-        setError(sub.error.message)
+      if (result.error) {
+        setError(result.error.message)
         setLoading(false)
         return
       }
-      if (rep.error) {
-        setError(rep.error.message)
-        setLoading(false)
-        return
-      }
-      setSubmission(sub.data)
-      setReport(rep.data)
-      if (rep.data?.pdf_storage_path) {
-        const { data, error: err } = await getReportSignedUrl(rep.data.pdf_storage_path, 300)
+      setData(result.data)
+
+      // Check if a report already exists for this user/session.
+      const { data: existing } = await supabase
+        .from('lab_reports')
+        .select('id, pdf_storage_path, content_hash, generated_at, file_size_bytes')
+        .eq('user_id', userId)
+        .eq('session_id', sid)
+        .maybeSingle()
+      if (cancelled) return
+      if (existing) {
+        setExistingReport(existing)
+        const { data: url } = await getReportSignedUrl(existing.pdf_storage_path, 300)
         if (cancelled) return
-        if (!err) setDownloadUrl(data.signedUrl)
+        if (url) setExistingSignedUrl(url.signedUrl)
       }
       setLoading(false)
     }
@@ -56,24 +65,56 @@ export default function LabReportPage() {
     return () => { cancelled = true }
   }, [userId, sid])
 
-  if (loading) return <AppLayout><Spin /></AppLayout>
+  // Revoke any previous blob URL when a new one is created.
+  useEffect(() => {
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }
+  }, [previewUrl])
 
+  async function handleGenerate() {
+    if (!templateRef.current) return
+    setGenerating(true)
+    try {
+      const res = await generateAndUploadReport({
+        element: templateRef.current,
+        data,
+        userId,
+        sessionId: sid,
+      })
+      setPreviewUrl(res.blobUrl)
+      setLastFilename(res.filename)
+      setLastHash(res.contentHash)
+      setExistingReport(res.reportRow)
+      message.success('Đã tạo báo cáo')
+    } catch (e) {
+      message.error(e.message || String(e))
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  function handleDownloadFresh() {
+    if (!previewUrl || !lastFilename) return
+    const a = document.createElement('a')
+    a.href = previewUrl
+    a.download = lastFilename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }
+
+  if (loading) return <AppLayout><Spin /></AppLayout>
   if (error) return <AppLayout><Alert type="error" message={error} showIcon /></AppLayout>
 
-  if (!submission || submission.is_draft) {
+  if (!data?.postSubmission || data.postSubmission.is_draft) {
     return (
       <AppLayout>
         <Alert
-          type="warning"
-          showIcon
+          type="warning" showIcon
           message="Bạn chưa nộp post-lab"
           description="Hoàn thành và nộp post-lab để sinh báo cáo PDF."
           style={{ marginBottom: 16 }}
         />
-        <Button
-          type="primary"
-          onClick={() => navigate(`/labs/${labId}/session/${sid}/post`)}
-        >
+        <Button type="primary" onClick={() => navigate(`/labs/${labId}/session/${sid}/post`)}>
           Sang trang post-lab
         </Button>
       </AppLayout>
@@ -82,61 +123,79 @@ export default function LabReportPage() {
 
   return (
     <AppLayout>
-      <div style={{ maxWidth: 860, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <Space style={{ marginBottom: 12 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/labs')}>
             Danh sách lab
           </Button>
           <Title level={4} style={{ margin: 0 }}>Báo cáo lab</Title>
-          {report ? <Tag color="success">Đã phát hành</Tag> : <Tag>Chưa phát hành</Tag>}
+          {existingReport
+            ? <Tag color="success">Đã phát hành</Tag>
+            : <Tag>Chưa phát hành</Tag>}
         </Space>
 
         <Card>
-          {!report && (
+          <Space wrap style={{ marginBottom: 16 }}>
+            <Button
+              type="primary" icon={<FilePdfOutlined />}
+              loading={generating} onClick={handleGenerate}
+            >
+              {existingReport ? 'Tạo lại PDF' : 'Tạo PDF'}
+            </Button>
+            {previewUrl && (
+              <Button icon={<DownloadOutlined />} onClick={handleDownloadFresh}>
+                Tải xuống ({lastFilename})
+              </Button>
+            )}
+            {existingSignedUrl && !previewUrl && (
+              <Button
+                icon={<DownloadOutlined />}
+                href={existingSignedUrl} target="_blank" rel="noreferrer"
+              >
+                Tải bản đã phát hành (link 5 phút)
+              </Button>
+            )}
+          </Space>
+
+          {lastHash && (
             <Alert
-              type="info"
-              showIcon
-              message="Template PDF sẽ được thêm ở Phase 5"
-              description={
-                <>
-                  <div>Post-lab đã được ghi nhận. Tại Phase 5, nút "Tạo PDF" sẽ
-                  xuất hiện ở đây để render template, tính hash SHA-256, upload
-                  lên bucket <Text code>lab-reports</Text> và tải xuống về máy.</div>
-                </>
-              }
+              type="success" showIcon
+              message="Hash báo cáo (SHA-256)"
+              description={<Text code>{lastHash}</Text>}
               style={{ marginBottom: 16 }}
             />
           )}
 
-          {report && (
-            <>
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                <Space>
-                  <FilePdfOutlined style={{ fontSize: 28, color: '#d97706' }} />
-                  <div>
-                    <Text strong>Báo cáo đã phát hành</Text>
-                    <div>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Hash: <Text code>{report.content_hash?.slice(0, 16)}...</Text>
-                      </Text>
-                    </div>
-                  </div>
-                </Space>
-                {downloadUrl && (
-                  <Button
-                    type="primary"
-                    icon={<FilePdfOutlined />}
-                    href={downloadUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Tải PDF (link có hạn 5 phút)
-                  </Button>
-                )}
-              </Space>
-            </>
+          {/* Live preview in iframe (same-origin blob: URL, no CORS issue). */}
+          {previewUrl ? (
+            <iframe
+              title="PDF preview"
+              src={previewUrl}
+              style={{ width: '100%', height: '80vh', border: '1px solid #ddd' }}
+            />
+          ) : (
+            <Alert
+              type="info" showIcon
+              message="Nhấn 'Tạo PDF' để dựng báo cáo"
+              description="Dữ liệu đã có đủ. Quá trình render mất khoảng 5–15 giây."
+            />
           )}
         </Card>
+
+        {/* Off-screen template — html2pdf reads from this DOM. We position it
+            off-screen rather than display:none, because html2canvas cannot
+            rasterize a node inside a display:none ancestor. */}
+        <div
+          style={{
+            position: 'fixed',
+            left: '-10000px',
+            top: 0,
+            width: '210mm',
+          }}
+          aria-hidden="true"
+        >
+          <LabReportPdfTemplate ref={templateRef} data={data} hashPreview={(lastHash || '').slice(0, 16)} />
+        </div>
       </div>
     </AppLayout>
   )
