@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion, useScroll } from 'framer-motion'
 import { Button, Avatar, Drawer } from 'antd'
 import { MenuOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
@@ -24,6 +25,7 @@ export default function Navbar() {
   const { session, profile } = useAuth()
   const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const { scrollYProgress } = useScroll()
 
   const username = profile?.username ?? session?.user?.email?.split('@')[0] ?? 'User'
   const initial = username[0]?.toUpperCase() ?? 'U'
@@ -75,6 +77,19 @@ export default function Navbar() {
             style={{ display: 'inline-flex' }}
           />
         </div>
+
+        <motion.div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 2,
+            background: 'var(--bk-blue-500)',
+            transformOrigin: '0 0',
+            scaleX: scrollYProgress,
+          }}
+        />
       </nav>
 
       <Drawer

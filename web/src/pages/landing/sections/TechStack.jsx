@@ -56,15 +56,12 @@ export default function TechStack() {
           }}
         >
           {CLUSTERS.map((c, i) => (
-            <motion.div key={i} variants={fadeUpItem} style={{
+            <motion.div key={i} variants={fadeUpItem} whileHover={{ y: -4 }} style={{
               background: 'var(--paper-soft)',
               borderRadius: 'var(--radius-card)',
               padding: 24,
               border: '1px solid var(--rule)',
-              transition: 'transform 200ms ease-out',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}>
+            }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                 <span style={{ fontSize: 24 }}>{c.icon}</span>
                 <h3 style={{

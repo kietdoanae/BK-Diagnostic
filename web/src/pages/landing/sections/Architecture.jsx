@@ -59,23 +59,19 @@ export default function Architecture() {
           }}
         >
           {PILLARS.map((p, i) => (
-            <motion.div key={i} variants={fadeUpItem} style={{
-              background: 'var(--paper)',
-              borderRadius: 'var(--radius-card)',
-              border: '1px solid var(--rule)',
-              padding: 28,
-              textAlign: 'center',
-              transition: 'transform 200ms ease-out, box-shadow 200ms ease-out',
-              cursor: 'default',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-4px)'
-              e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.08)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}>
+            <motion.div
+              key={i}
+              variants={fadeUpItem}
+              whileHover={{ y: -4, boxShadow: '0 12px 24px rgba(0,0,0,0.08)' }}
+              transition={{ duration: 0.2 }}
+              style={{
+                background: 'var(--paper)',
+                borderRadius: 'var(--radius-card)',
+                border: '1px solid var(--rule)',
+                padding: 28,
+                textAlign: 'center',
+              }}
+            >
               <img src={p.icon} alt="" style={{ width: 56, height: 56, marginBottom: 16 }} />
               <h3 style={{
                 fontSize: 14,

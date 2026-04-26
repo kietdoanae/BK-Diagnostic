@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 
 /**
  * Hiển thị ảnh thật nếu file tồn tại tại path,
@@ -37,11 +38,13 @@ export default function PlaceholderImage({ path, alt, ratio = '16/9', caption })
         padding: 16,
       }}>
         {exists ? (
-          <img
+          <motion.img
             src={src}
             alt={alt}
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             loading="lazy"
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.4 }}
           />
         ) : (
           <>
