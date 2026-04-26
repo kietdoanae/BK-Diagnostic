@@ -26,8 +26,10 @@ export async function logout() {
   return supabase.auth.signOut()
 }
 
-export async function register(email, password, username) {
-  return supabase.auth.signUp({ email, password, options: { data: { username } } })
+export async function register(email, password, username, mssv) {
+  const data = { username }
+  if (mssv) data.mssv = mssv
+  return supabase.auth.signUp({ email, password, options: { data } })
 }
 
 export async function forgotPassword(email, redirectTo) {
