@@ -11,12 +11,12 @@ const CLUSTERS = [
   {
     icon: '📱',
     title: 'MOBILE',
-    items: ['Kotlin 1.9 · Coroutines', 'Jetpack Compose · Material 3', 'usb-serial-for-android', 'Supabase Auth + Realtime'],
+    items: ['Kotlin 2.2 · Coroutines', 'Jetpack Compose · Material 3', 'usb-serial-for-android', 'Supabase Auth + Realtime'],
   },
   {
     icon: '🌐',
     title: 'WEB',
-    items: ['React 18 + Vite', 'Ant Design 5', 'Framer Motion', 'React Router'],
+    items: ['React 19 + Vite 8', 'Ant Design 6', 'Framer Motion 11', 'React Router 7'],
   },
   {
     icon: '☁️',
