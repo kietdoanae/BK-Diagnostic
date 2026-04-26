@@ -270,16 +270,16 @@ private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
             },
             onExport = {
                 val result = exportToCsv(context, displayLog, viewModel.brandId, viewModel.modelId)
-                exportMessage = if (result != null)
-                    "$strExportSuccess ${result.filename}"
-                else
-                    strExportError
-                // Upload lên Supabase Storage + ghi record (fire-and-forget, không block UI)
-                if (result != null) {
+                if (result == null) {
+                    exportMessage = strExportError
+                } else {
+                    // Bước 1: báo lưu cục bộ thành công, đang tải lên
+                    exportMessage = "$strExportSuccess ${result.filename} · Đang tải lên…"
+                    // Upload lên Supabase Storage + ghi record — cập nhật toast sau khi xong
                     CoroutineScope(Dispatchers.IO).launch {
                         val labState     = LabModeManager.state.value
                         val labSessionId = (labState as? LabModeState.Active)?.sessionId
-                        uploadExportToStorage(
+                        val uploaded = uploadExportToStorage(
                             filename     = result.filename,
                             bytes        = result.bytes,
                             brandId      = viewModel.brandId,
@@ -289,6 +289,11 @@ private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
                             frameCount   = displayLog.size,
                             labSessionId = labSessionId
                         )
+                        // Cập nhật toast từ background thread (Compose State là thread-safe)
+                        exportMessage = if (uploaded)
+                            "☁ ${result.filename} · Đã đồng bộ"
+                        else
+                            "⚠ Lưu OK · Tải lên thất bại (xem Logcat)"
                         // Also push the exported frames as lab evidence batch
                         if (labSessionId != null) {
                             LabEvidenceRepository.pushRawFrameBatch(labSessionId, displayLog)
@@ -914,6 +919,7 @@ private data class ExportRecord(
     @kotlinx.serialization.SerialName("storage_path")    val storagePath:  String
 )
 
+/** Trả về true nếu cả upload lẫn insert record đều thành công. */
 private suspend fun uploadExportToStorage(
     filename:     String,
     bytes:        ByteArray,
@@ -922,21 +928,22 @@ private suspend fun uploadExportToStorage(
     displayName:  String,
     frameCount:   Int,
     labSessionId: String? = null
-) {
+): Boolean {
     val user = supabaseClient.auth.currentUserOrNull()
     if (user == null) {
         android.util.Log.w("RawMonitor", "Upload skipped: no active session")
-        return
+        return false
     }
     val path = "${user.id}/$filename"
 
-    try {
+    return try {
         // 1. Upload file — khai báo content type rõ ràng để khớp whitelist bucket
+        android.util.Log.d("RawMonitor", "Uploading $filename (${bytes.size} bytes) → $path")
         supabaseClient.storage.from("exports").upload(path, bytes) {
             upsert = true          // tránh lỗi nếu file cùng tên đã tồn tại
             contentType = io.ktor.http.ContentType.parse("text/csv")
         }
-        android.util.Log.d("RawMonitor", "Uploaded $filename to Storage")
+        android.util.Log.d("RawMonitor", "✓ Uploaded $filename to Storage")
 
         // 2. Lấy username từ JWT metadata
         val meta = user.userMetadata?.toString() ?: ""
@@ -946,6 +953,7 @@ private suspend fun uploadExportToStorage(
             ?: "unknown"
 
         // 3. Insert record vào bảng export_records
+        android.util.Log.d("RawMonitor", "Inserting export_record for user=$username file=$filename")
         supabaseClient.postgrest["export_records"].insert(
             ExportRecord(
                 userId        = user.id,
@@ -959,10 +967,12 @@ private suspend fun uploadExportToStorage(
                 storagePath   = path
             )
         )
-        android.util.Log.d("RawMonitor", "Saved export_record: $displayName / $filename")
+        android.util.Log.d("RawMonitor", "✓ Saved export_record: $displayName / $filename")
+        true
     } catch (e: kotlinx.coroutines.CancellationException) {
         throw e   // không nuốt CancellationException
     } catch (e: Exception) {
-        android.util.Log.e("RawMonitor", "Export upload/record failed: ${e.message}", e)
+        android.util.Log.e("RawMonitor", "✗ Export upload/record failed: ${e.message}", e)
+        false
     }
 }
