@@ -249,14 +249,21 @@ function ExportsTab() {
 
   async function handleDownload(storagePath, filename) {
     setDownloading(d => ({ ...d, [storagePath]: true }))
-    const url = await getDownloadUrl(storagePath)
-    if (url) {
-      const a = document.createElement('a')
-      a.href = url
-      a.download = filename
-      a.click()
+    try {
+      const url = await getDownloadUrl(storagePath)
+      if (url) {
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+      } else {
+        alert(`Không tìm thấy file trong Storage.\nPath: ${storagePath}`)
+      }
+    } catch (e) {
+      alert(`Lỗi tải xuống: ${e.message}`)
+    } finally {
+      setDownloading(d => ({ ...d, [storagePath]: false }))
     }
-    setDownloading(d => ({ ...d, [storagePath]: false }))
   }
 
   const columns = [
