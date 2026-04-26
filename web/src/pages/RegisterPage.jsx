@@ -17,15 +17,17 @@ export default function RegisterPage() {
   const [form] = Form.useForm()
   const screens = useBreakpoint()
   const isMobile = !screens.md
+  const watchedEmail = Form.useWatch('email', form)
+  const isEduVn = /\.edu\.vn$/i.test(watchedEmail || '')
 
   if (loading) return null
   if (session) return <Navigate to="/dashboard" replace />
 
-  async function handleSubmit({ username, email, password }) {
+  async function handleSubmit({ username, email, password, mssv }) {
     setError('')
     setFormLoading(true)
 
-    const { error: err } = await register(email, password, username)
+    const { error: err } = await register(email, password, username, mssv)
 
     if (err) {
       setFormLoading(false)
@@ -139,6 +141,26 @@ export default function RegisterPage() {
               >
                 <Input.Password placeholder="••••••••" autoComplete="new-password" />
               </Form.Item>
+              {isEduVn && (
+                <>
+                  <Alert
+                    type="info"
+                    showIcon
+                    message="Bạn sẽ được gán role Sinh viên"
+                    description="Email .edu.vn được nhận diện là tài khoản sinh viên. Bạn có thể nhập MSSV ngay hoặc cập nhật sau."
+                    style={{ marginBottom: 16 }}
+                  />
+                  <Form.Item
+                    label="Mã số sinh viên (tùy chọn)"
+                    name="mssv"
+                    rules={[
+                      { pattern: /^\d{7,8}$/, message: 'MSSV phải là 7-8 chữ số' },
+                    ]}
+                  >
+                    <Input placeholder="VD: 2052345" maxLength={8} />
+                  </Form.Item>
+                </>
+              )}
               <Button type="primary" htmlType="submit" block loading={formLoading} style={{ height: 44, fontWeight: 600, background: 'linear-gradient(135deg, #1565C0, #1E88E5)', border: 'none' }}>
                 Create Account
               </Button>
