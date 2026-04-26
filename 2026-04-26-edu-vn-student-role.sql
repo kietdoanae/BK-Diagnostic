@@ -30,6 +30,10 @@ BEFORE UPDATE ON profiles
 FOR EACH ROW EXECUTE FUNCTION fn_enforce_mssv_immutable();
 
 -- 2. RPC update_profile_fields (cho phép user tự cập nhật MSSV/full_name khi đang null)
+-- DROP trước vì mssv_migration.sql cũ có version trả về VOID, không thể CREATE OR REPLACE
+DROP FUNCTION IF EXISTS update_profile_fields(TEXT, TEXT);
+DROP FUNCTION IF EXISTS public.update_profile_fields(TEXT, TEXT);
+
 CREATE OR REPLACE FUNCTION update_profile_fields(p_mssv TEXT, p_full_name TEXT)
 RETURNS profiles AS $$
 DECLARE
@@ -43,6 +47,9 @@ BEGIN
   RETURN result;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute để authenticated user gọi qua PostgREST RPC
+GRANT EXECUTE ON FUNCTION update_profile_fields(TEXT, TEXT) TO authenticated;
 
 -- 3. Mở rộng role check constraint
 ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
