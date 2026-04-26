@@ -1,0 +1,78 @@
+/* BK Diagnostic — Design Tokens
+   Reference: docs/superpowers/specs/2026-04-26-landing-redesign-design.md */
+
+:root {
+  /* Primary — BK Identity */
+  --bk-navy-900: #0A1E6E;
+  --bk-navy-700: #003291;
+  --bk-blue-500: #1565C0;
+  --bk-blue-100: #DBEAFE;
+
+  /* Neutral — Whitepaper */
+  --paper:        #FFFFFF;
+  --paper-soft:   #F9FAFB;
+  --ink-900:      #111827;
+  --ink-700:      #374151;
+  --ink-500:      #6B7280;
+  --rule:         #E5E7EB;
+
+  /* Accent */
+  --gold-500:     #D4A017;
+  --green-600:    #16A34A;
+  --red-600:      #DC2626;
+
+  /* Typography */
+  --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* Spacing */
+  --container-max: 1200px;
+  --section-pad-y: 64px;
+  --gutter:        24px;
+  --radius-card:   12px;
+  --radius-btn:    8px;
+  --radius-tag:    4px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --section-pad-y: 112px;
+    --gutter:        48px;
+  }
+}
+
+/* Global resets specific to landing page */
+.landing-root {
+  font-family: var(--font-sans);
+  color: var(--ink-700);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+.landing-root h1, .landing-root h2, .landing-root h3, .landing-root h4 {
+  color: var(--ink-900);
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.landing-container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
+
+.landing-section {
+  padding-top: var(--section-pad-y);
+  padding-bottom: var(--section-pad-y);
+}
+
+/* Animation defaults — respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
