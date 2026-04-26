@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 
 const STEPS = [
@@ -10,8 +12,18 @@ const STEPS = [
 ]
 
 export default function UseCase() {
+  const { ref, inView } = useInViewAnimation()
+
   return (
-    <section id="lab" className="landing-section" style={{ background: 'var(--paper-soft)' }}>
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      variants={fadeUp}
+      id="lab"
+      className="landing-section"
+      style={{ background: 'var(--paper-soft)' }}
+    >
       <div className="landing-container">
         <SectionHeader
           eyebrow="USE CASE"
@@ -19,13 +31,19 @@ export default function UseCase() {
           sub="Quy trình 6 bước chuẩn hóa, từ lúc giảng viên mở phiên đến khi báo cáo PDF được lưu vào hệ thống."
         />
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-          gap: 16,
-        }}>
+        <motion.div
+          variants={fadeUpStagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 16,
+          }}
+        >
           {STEPS.map((s, i) => (
-            <div key={s.num} style={{
+            <motion.div key={s.num} variants={fadeUpItem} style={{
               background: 'var(--paper)',
               borderRadius: 'var(--radius-card)',
               padding: 20,
@@ -56,10 +74,10 @@ export default function UseCase() {
                 lineHeight: 1.5,
                 margin: 0,
               }}>{s.desc}</p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   )
 }

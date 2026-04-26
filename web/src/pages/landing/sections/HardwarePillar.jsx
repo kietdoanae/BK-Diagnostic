@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PlaceholderImage from '../shared/PlaceholderImage'
 
@@ -27,8 +29,17 @@ const PROTOCOLS = [
 ]
 
 export default function HardwarePillar() {
+  const { ref, inView } = useInViewAnimation()
+
   return (
-    <section className="landing-section" style={{ background: 'var(--paper)' }}>
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      variants={fadeUp}
+      className="landing-section"
+      style={{ background: 'var(--paper)' }}
+    >
       <div className="landing-container">
         <SectionHeader
           eyebrow="TRỤ CỘT 1 · PHẦN CỨNG"
@@ -59,14 +70,20 @@ export default function HardwarePillar() {
             border: '1px solid var(--rule)',
           }}>
             <h3 style={{ margin: '0 0 16px', fontSize: 18, color: 'var(--ink-900)' }}>Thành phần</h3>
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <motion.ul
+              variants={fadeUpStagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
               {COMPONENTS.map((c, i) => (
-                <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--ink-700)' }}>
+                <motion.li key={i} variants={fadeUpItem} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--ink-700)' }}>
                   <span style={{ color: 'var(--green-600)', fontWeight: 700 }}>✓</span>
                   <span>{c}</span>
-                </li>
+                </motion.li>
               ))}
-            </ul>
+            </motion.ul>
           </div>
         </div>
 
@@ -129,14 +146,20 @@ export default function HardwarePillar() {
             border: '1px solid var(--rule)',
           }}>
             <h3 style={{ margin: '0 0 12px', fontSize: 16, color: 'var(--ink-900)' }}>Giao thức hỗ trợ</h3>
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <motion.ul
+              variants={fadeUpStagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}
+            >
               {PROTOCOLS.map((p, i) => (
-                <li key={i} style={{ display: 'flex', gap: 10, fontSize: 13, color: 'var(--ink-700)' }}>
+                <motion.li key={i} variants={fadeUpItem} style={{ display: 'flex', gap: 10, fontSize: 13, color: 'var(--ink-700)' }}>
                   <span style={{ color: 'var(--bk-blue-500)' }}>●</span>
                   <span>{p}</span>
-                </li>
+                </motion.li>
               ))}
-            </ul>
+            </motion.ul>
           </div>
         </div>
       </div>
@@ -146,6 +169,6 @@ export default function HardwarePillar() {
           .landing-container .responsive-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-    </section>
+    </motion.section>
   )
 }

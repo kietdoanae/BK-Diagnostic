@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+import { useInViewAnimation, fadeUp } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PlaceholderImage from '../shared/PlaceholderImage'
 
@@ -26,8 +28,18 @@ const MEMBERS = [
 ]
 
 export default function Team() {
+  const { ref, inView } = useInViewAnimation()
+
   return (
-    <section id="team" className="landing-section" style={{ background: 'var(--paper-soft)' }}>
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      variants={fadeUp}
+      id="team"
+      className="landing-section"
+      style={{ background: 'var(--paper-soft)' }}
+    >
       <div className="landing-container">
         <SectionHeader
           eyebrow="TEAM"
@@ -83,6 +95,6 @@ export default function Team() {
           </div>
         </div>
       </div>
-    </section>
+    </motion.section>
   )
 }

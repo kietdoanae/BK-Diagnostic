@@ -1,5 +1,7 @@
 import { Button } from 'antd'
+import { motion } from 'framer-motion'
 import PlaceholderImage from '../shared/PlaceholderImage'
+import { fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import heroBgSvg from '../../../assets/svg/hero-bg-mesh.svg'
 
 function scrollTo(id) {
@@ -16,8 +18,14 @@ export default function Hero() {
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }}>
-      <div className="landing-container" style={{ textAlign: 'center' }}>
-        <div style={{
+      <motion.div
+        className="landing-container"
+        style={{ textAlign: 'center' }}
+        initial="hidden"
+        animate="visible"
+        variants={fadeUpStagger}
+      >
+        <motion.div variants={fadeUpItem} style={{
           display: 'inline-block',
           background: 'var(--bk-blue-100)',
           color: 'var(--bk-navy-700)',
@@ -29,9 +37,9 @@ export default function Hero() {
           marginBottom: 24,
         }}>
           ĐỒ ÁN TỐT NGHIỆP · HCMUT · 2026
-        </div>
+        </motion.div>
 
-        <h1 style={{
+        <motion.h1 variants={fadeUpItem} style={{
           fontSize: 'clamp(36px, 6vw, 56px)',
           fontWeight: 800,
           lineHeight: 1.15,
@@ -43,9 +51,9 @@ export default function Hero() {
           marginRight: 'auto',
         }}>
           Hệ thống chẩn đoán xe<br />và đào tạo CAN bus
-        </h1>
+        </motion.h1>
 
-        <p style={{
+        <motion.p variants={fadeUpItem} style={{
           fontSize: 'clamp(15px, 2vw, 18px)',
           lineHeight: 1.7,
           color: 'var(--ink-700)',
@@ -55,9 +63,9 @@ export default function Hero() {
           Nền tảng tích hợp ba thành phần — phần cứng nhúng, ứng dụng Android và web platform —
           phục vụ giảng dạy giao thức CAN bus và quy trình chẩn đoán xe ô tô cho sinh viên
           ngành Kỹ thuật Ô tô.
-        </p>
+        </motion.p>
 
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 56 }}>
+        <motion.div variants={fadeUpItem} style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 56 }}>
           <Button
             type="primary"
             size="large"
@@ -73,15 +81,17 @@ export default function Hero() {
           >
             Xem hệ thống Lab
           </Button>
-        </div>
+        </motion.div>
 
-        <PlaceholderImage
-          path="hero/sa-ban-overview.jpg"
-          alt="Sa bàn thực hành CAN bus tại phòng lab Bộ môn Kỹ thuật Ô tô"
-          ratio="16/9"
-          caption="Hình 1 — Sa bàn thực hành CAN bus tại phòng lab Bộ môn Kỹ thuật Ô tô, Khoa Kỹ thuật Giao thông HCMUT."
-        />
-      </div>
+        <motion.div variants={fadeUpItem}>
+          <PlaceholderImage
+            path="hero/sa-ban-overview.jpg"
+            alt="Sa bàn thực hành CAN bus tại phòng lab Bộ môn Kỹ thuật Ô tô"
+            ratio="16/9"
+            caption="Hình 1 — Sa bàn thực hành CAN bus tại phòng lab Bộ môn Kỹ thuật Ô tô, Khoa Kỹ thuật Giao thông HCMUT."
+          />
+        </motion.div>
+      </motion.div>
     </section>
   )
 }

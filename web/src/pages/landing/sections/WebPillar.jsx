@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { useInViewAnimation, fadeUp } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PlaceholderImage from '../shared/PlaceholderImage'
 
@@ -28,9 +30,18 @@ const TABS = [
 export default function WebPillar() {
   const [activeTab, setActiveTab] = useState('sessions')
   const tab = TABS.find(t => t.key === activeTab) ?? TABS[2]
+  const { ref, inView } = useInViewAnimation()
 
   return (
-    <section id="web" className="landing-section" style={{ background: 'var(--paper)' }}>
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      variants={fadeUp}
+      id="web"
+      className="landing-section"
+      style={{ background: 'var(--paper)' }}
+    >
       <div className="landing-container">
         <SectionHeader
           eyebrow="TRỤ CỘT 3 · WEB PLATFORM"
@@ -127,6 +138,6 @@ export default function WebPillar() {
           <PlaceholderImage path={tab.img} alt={`Tab ${tab.label}`} ratio="16/9" />
         </div>
       </div>
-    </section>
+    </motion.section>
   )
 }

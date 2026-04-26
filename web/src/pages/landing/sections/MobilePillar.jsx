@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PlaceholderImage from '../shared/PlaceholderImage'
 
@@ -18,8 +20,18 @@ const LAB_STEPS = [
 ]
 
 export default function MobilePillar() {
+  const { ref, inView } = useInViewAnimation()
+
   return (
-    <section id="mobile" className="landing-section" style={{ background: 'var(--paper-soft)' }}>
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      variants={fadeUp}
+      id="mobile"
+      className="landing-section"
+      style={{ background: 'var(--paper-soft)' }}
+    >
       <div className="landing-container">
         <SectionHeader
           eyebrow="TRỤ CỘT 2 · MOBILE APP"
@@ -43,9 +55,15 @@ export default function MobilePillar() {
             border: '1px solid var(--rule)',
           }}>
             <h3 style={{ margin: '0 0 16px', fontSize: 18, color: 'var(--ink-900)' }}>Tính năng chính</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <motion.div
+              variants={fadeUpStagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+            >
               {FEATURES.map(([icon, title, desc], i) => (
-                <div key={i} style={{ display: 'flex', gap: 12 }}>
+                <motion.div key={i} variants={fadeUpItem} style={{ display: 'flex', gap: 12 }}>
                   <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>{icon}</span>
                   <div>
                     <strong style={{ color: 'var(--ink-900)', fontSize: 14, display: 'block', marginBottom: 2 }}>
@@ -55,9 +73,9 @@ export default function MobilePillar() {
                       {desc}
                     </span>
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -87,13 +105,19 @@ export default function MobilePillar() {
             giảng viên. Báo cáo PDF sinh tự động cuối buổi.
           </p>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-            gap: 12,
-          }}>
+          <motion.div
+            variants={fadeUpStagger}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: 12,
+            }}
+          >
             {LAB_STEPS.map((s, i) => (
-              <div key={i} style={{
+              <motion.div key={i} variants={fadeUpItem} style={{
                 background: 'var(--paper)',
                 borderRadius: 999,
                 padding: '14px 18px',
@@ -112,11 +136,11 @@ export default function MobilePillar() {
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)' }}>{s.label}</div>
                   <div style={{ fontSize: 11, color: 'var(--ink-500)' }}>{s.sub}</div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </div>
-    </section>
+    </motion.section>
   )
 }

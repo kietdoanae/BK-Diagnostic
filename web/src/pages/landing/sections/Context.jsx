@@ -1,9 +1,20 @@
+import { motion } from 'framer-motion'
+import { useInViewAnimation, fadeUp } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import contextDiagramSvg from '../../../assets/svg/context-diagram.svg'
 
 export default function Context() {
+  const { ref, inView } = useInViewAnimation()
+
   return (
-    <section className="landing-section" style={{ background: 'var(--paper)' }}>
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      variants={fadeUp}
+      className="landing-section"
+      style={{ background: 'var(--paper)' }}
+    >
       <div className="landing-container">
         <SectionHeader
           eyebrow="BỐI CẢNH"
@@ -50,6 +61,6 @@ export default function Context() {
           </figure>
         </div>
       </div>
-    </section>
+    </motion.section>
   )
 }

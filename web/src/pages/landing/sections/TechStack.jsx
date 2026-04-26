@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 
 const CLUSTERS = [
@@ -24,8 +26,17 @@ const CLUSTERS = [
 ]
 
 export default function TechStack() {
+  const { ref, inView } = useInViewAnimation()
+
   return (
-    <section className="landing-section" style={{ background: 'var(--paper)' }}>
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      variants={fadeUp}
+      className="landing-section"
+      style={{ background: 'var(--paper)' }}
+    >
       <div className="landing-container">
         <SectionHeader
           eyebrow="TECH STACK"
@@ -33,13 +44,19 @@ export default function TechStack() {
           sub="Lựa chọn công nghệ ưu tiên mã nguồn mở, cộng đồng lớn và phù hợp môi trường giáo dục."
         />
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: 24,
-        }}>
+        <motion.div
+          variants={fadeUpStagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: 24,
+          }}
+        >
           {CLUSTERS.map((c, i) => (
-            <div key={i} style={{
+            <motion.div key={i} variants={fadeUpItem} style={{
               background: 'var(--paper-soft)',
               borderRadius: 'var(--radius-card)',
               padding: 24,
@@ -68,10 +85,10 @@ export default function TechStack() {
                   }}>{item}</li>
                 ))}
               </ul>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   )
 }

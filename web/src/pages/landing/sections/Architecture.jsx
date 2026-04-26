@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PipelineDiagram from '../shared/PipelineDiagram'
 import iconHardware from '../../../assets/svg/three-pillars/icon-hardware.svg'
@@ -26,8 +28,18 @@ const PILLARS = [
 ]
 
 export default function Architecture() {
+  const { ref, inView } = useInViewAnimation()
+
   return (
-    <section id="kien-truc" className="landing-section" style={{ background: 'var(--paper-soft)' }}>
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      variants={fadeUp}
+      id="kien-truc"
+      className="landing-section"
+      style={{ background: 'var(--paper-soft)' }}
+    >
       <div className="landing-container">
         <SectionHeader
           eyebrow="KIẾN TRÚC"
@@ -35,13 +47,19 @@ export default function Architecture() {
           sub="Phần cứng đo lường, ứng dụng di động hiển thị, web platform quản trị — kết nối qua giao thức CAN, USB và HTTPS."
         />
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: 24,
-        }}>
+        <motion.div
+          variants={fadeUpStagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 24,
+          }}
+        >
           {PILLARS.map((p, i) => (
-            <div key={i} style={{
+            <motion.div key={i} variants={fadeUpItem} style={{
               background: 'var(--paper)',
               borderRadius: 'var(--radius-card)',
               border: '1px solid var(--rule)',
@@ -75,12 +93,12 @@ export default function Architecture() {
               <p style={{ fontSize: 13, color: 'var(--ink-700)', lineHeight: 1.6, margin: 0 }}>
                 {p.desc}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         <PipelineDiagram />
       </div>
-    </section>
+    </motion.section>
   )
 }
