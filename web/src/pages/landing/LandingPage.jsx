@@ -1,3 +1,4 @@
+import { MotionConfig } from 'framer-motion'
 import Navbar from './shared/Navbar'
 import Hero from './sections/Hero'
 import MetricStrip from './sections/MetricStrip'
@@ -13,19 +14,21 @@ import Footer from './sections/Footer'
 
 export default function LandingPage() {
   return (
-    <div className="landing-root">
-      <Navbar />
-      <Hero />
-      <MetricStrip />
-      <Context />
-      <Architecture />
-      <HardwarePillar />
-      <MobilePillar />
-      <WebPillar />
-      <UseCase />
-      <TechStack />
-      <Team />
-      <Footer />
-    </div>
+    <MotionConfig reducedMotion="user">
+      <div className="landing-root">
+        <Navbar />
+        <Hero />
+        <MetricStrip />
+        <Context />
+        <Architecture />
+        <HardwarePillar />
+        <MobilePillar />
+        <WebPillar />
+        <UseCase />
+        <TechStack />
+        <Team />
+        <Footer />
+      </div>
+    </MotionConfig>
   )
 }
