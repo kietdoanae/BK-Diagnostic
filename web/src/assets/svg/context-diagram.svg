@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" fill="none">
+  <style>
+    .lbl { font: 600 13px 'Be Vietnam Pro', sans-serif; fill: #003291; }
+    .sub { font: 400 11px 'Be Vietnam Pro', sans-serif; fill: #6B7280; }
+  </style>
+
+  <!-- Box 1 — Vấn đề -->
+  <rect x="20" y="100" width="120" height="80" rx="12" fill="#FEF2F2" stroke="#DC2626" stroke-width="2"/>
+  <text x="80" y="130" class="lbl" text-anchor="middle">Vấn đề</text>
+  <text x="80" y="148" class="sub" text-anchor="middle">Thiết bị</text>
+  <text x="80" y="162" class="sub" text-anchor="middle">đắt &amp; đóng kín</text>
+
+  <!-- Arrow 1 -->
+  <path d="M145 140 L175 140" stroke="#6B7280" stroke-width="2"/>
+  <polygon points="175,135 185,140 175,145" fill="#6B7280"/>
+
+  <!-- Box 2 — Giải pháp -->
+  <rect x="190" y="100" width="120" height="80" rx="12" fill="#DBEAFE" stroke="#1565C0" stroke-width="2"/>
+  <text x="250" y="130" class="lbl" text-anchor="middle">Giải pháp</text>
+  <text x="250" y="148" class="sub" text-anchor="middle">Hệ thống mở</text>
+  <text x="250" y="162" class="sub" text-anchor="middle">tự thiết kế</text>
+
+  <!-- Arrow 2 -->
+  <path d="M315 140 L345 140" stroke="#6B7280" stroke-width="2"/>
+  <polygon points="345,135 355,140 345,145" fill="#6B7280"/>
+
+  <!-- Box 3 — Mục tiêu -->
+  <rect x="360" y="100" width="120" height="80" rx="12" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
+  <text x="420" y="130" class="lbl" text-anchor="middle">Mục tiêu</text>
+  <text x="420" y="148" class="sub" text-anchor="middle">Đào tạo CAN</text>
+  <text x="420" y="162" class="sub" text-anchor="middle">cho sinh viên</text>
+</svg>
