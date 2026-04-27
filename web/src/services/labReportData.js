@@ -51,7 +51,7 @@ export async function fetchLabReportData(userId, sessionId) {
         .maybeSingle(),
       supabase
         .from('lab_post_submissions')
-        .select('id, answers, uploaded_images, finalized_at, is_draft, submitted_at')
+        .select('id, answers, uploaded_images, is_draft, submitted_at')
         .eq('user_id', userId)
         .eq('session_id', sessionId)
         .maybeSingle(),

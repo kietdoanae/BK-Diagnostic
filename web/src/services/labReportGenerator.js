@@ -67,7 +67,7 @@ export async function generateAndUploadReport({ element, data, userId, sessionId
       sessionId,
       answers: data.postSubmission?.answers,
       startedAt: data.session?.started_at,
-      finalizedAt: data.postSubmission?.finalized_at,
+      finalizedAt: data.postSubmission?.submitted_at,
     })
   )
 
