@@ -62,9 +62,9 @@ export async function fetchLabReportData(userId, sessionId) {
         .order('question_order', { ascending: true }),
       supabase
         .from('lab_evidence')
-        .select('id, step_id, evidence_type, payload, captured_at')
+        .select('id, step_id, evidence_type, payload, created_at')
         .eq('session_id', sessionId)
-        .order('captured_at', { ascending: true }),
+        .order('created_at', { ascending: true }),
     ])
 
   for (const r of [stepsRes, preQuizRes, postRes, questionsRes, evidenceRes]) {

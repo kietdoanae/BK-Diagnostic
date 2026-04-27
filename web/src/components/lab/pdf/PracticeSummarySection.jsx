@@ -114,7 +114,7 @@ export default function PracticeSummarySection({ session, steps, evidenceByStep,
               <tbody>
                 {rows.map((e) => (
                   <tr key={e.id}>
-                    <td>{fmt(e.captured_at)}</td>
+                    <td>{fmt(e.created_at)}</td>
                     <td>{e.evidence_type}</td>
                     <td><code>{briefPayload(e.payload)}</code></td>
                   </tr>
