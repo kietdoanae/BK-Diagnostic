@@ -97,5 +97,28 @@ export function useLabSession(sessionId) {
     return { ok: true }
   }, [sessionId, reload])
 
-  return { session, loading, error, startStep, endStep, completeSession, reload }
+  // Derived flags ──────────────────────────────────────────────────
+  // isExpired: true khi session vẫn ACTIVE nhưng expires_at đã qua.
+  // Không tin tuyệt đối client clock — server vẫn enforce qua RPCs/RLS,
+  // nhưng dùng cho UI gating (hide buttons, hiển thị banner).
+  const isExpired =
+    !!session &&
+    session.status === 'ACTIVE' &&
+    !!session.expires_at &&
+    new Date(session.expires_at).getTime() <= Date.now()
+
+  // readOnly: không cho mutate. Bao gồm expired + đã COMPLETED/CANCELLED.
+  const readOnly = !session || session.status !== 'ACTIVE' || isExpired
+
+  return {
+    session,
+    loading,
+    error,
+    isExpired,
+    readOnly,
+    startStep,
+    endStep,
+    completeSession,
+    reload,
+  }
 }
