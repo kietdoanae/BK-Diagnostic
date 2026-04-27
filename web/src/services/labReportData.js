@@ -57,7 +57,7 @@ export async function fetchLabReportData(userId, sessionId) {
         .maybeSingle(),
       supabase
         .from('lab_questions')
-        .select('id, question_order, question_type, question_text, options, correct_answer, stage, points')
+        .select('id, question_order, question_type, question_text, options, correct_answer, phase, points')
         .eq('lab_id', session.lab_id)
         .order('question_order', { ascending: true }),
       supabase

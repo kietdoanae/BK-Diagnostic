@@ -1,6 +1,6 @@
 // Pre-quiz table: question, chosen answer, correct/incorrect, score + verdict.
 // `preQuiz.answers` is stored as { [questionId]: answerKey } (see submit_pre_quiz RPC).
-// `questions` is the full question bank filtered to the pre-lab stage.
+// `questions` is the full question bank filtered to the pre-lab phase.
 
 function answerLabel(question, key) {
   if (!question?.options || key == null) return '—'
@@ -10,7 +10,7 @@ function answerLabel(question, key) {
 }
 
 export default function PreQuizSection({ preQuiz, questions, lab }) {
-  const preQs = (questions || []).filter((q) => q.stage === 'pre_lab')
+  const preQs = (questions || []).filter((q) => q.phase === 'pre_lab')
 
   if (!preQuiz) {
     return (
