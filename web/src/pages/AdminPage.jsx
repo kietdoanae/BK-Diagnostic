@@ -14,7 +14,7 @@ const { Text, Title } = Typography
 const { Option } = Select
 
 const STATUS_COLOR = { active: 'success', inactive: 'default', banned: 'error', suspended: 'warning', pending: 'processing' }
-const ROLE_COLOR   = { admin: 'purple', moderator: 'blue', user: 'default', guest: 'default' }
+const ROLE_COLOR   = { admin: 'purple', moderator: 'blue', instructor: 'cyan', student: 'green', user: 'default', guest: 'default' }
 const ACTION_COLOR = {
   LOGIN: 'green', LOGIN_FAILED: 'red', LOGOUT: 'orange', REGISTER: 'blue',
   DIAGNOSTIC_START: 'cyan', DIAGNOSTIC_STOP: 'orange', ACTIVE_TEST_RUN: 'purple', RAW_EXPORT: 'geekblue',
@@ -125,7 +125,7 @@ function UsersTab() {
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           <Input prefix={<SearchOutlined />} placeholder="Search name, email or username…" value={search} onChange={e => setSearch(e.target.value)} style={{ width: 260 }} />
           <Select value={filterRole || undefined} onChange={v => setFilterRole(v ?? '')} placeholder="All Roles" allowClear style={{ width: 140 }}>
-            {['admin','moderator','user','guest'].map(r => <Option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</Option>)}
+            {['admin','moderator','instructor','student','user','guest'].map(r => <Option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</Option>)}
           </Select>
           <Select value={filterStatus || undefined} onChange={v => setFilterStatus(v ?? '')} placeholder="All Statuses" allowClear style={{ width: 150 }}>
             {['active','inactive','pending','suspended','banned'].map(s => <Option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</Option>)}
@@ -152,7 +152,7 @@ function UsersTab() {
         )}
         {editModal?.field === 'role' && (
           <Space direction="vertical" style={{ width: '100%' }}>
-            {['user','moderator','admin','guest'].map(r => (
+            {['user','student','instructor','moderator','admin','guest'].map(r => (
               <Button key={r} block type={editModal.user.role === r ? 'primary' : 'default'} onClick={() => handleEditSave(r)}>
                 {r.charAt(0).toUpperCase() + r.slice(1)}
               </Button>

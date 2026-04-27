@@ -9,6 +9,7 @@ import {
   ApartmentOutlined,
   ExperimentOutlined,
   HistoryOutlined,
+  ReadOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -35,15 +36,18 @@ export default function AppLayout({ children }) {
   const initial = username[0]?.toUpperCase() ?? 'U'
   const bg = avatarColor(username)
 
+  const STUDENT_PLUS = ['student', 'instructor', 'moderator', 'admin']
+  const TEACH_PLUS = ['instructor', 'moderator', 'admin']
+  const ADMIN_PLUS = ['moderator', 'admin']
+
   const menuItems = [
-    { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-    { key: '/labs', icon: <ExperimentOutlined />, label: 'Labs' },
-    { key: '/my-reports', icon: <HistoryOutlined />, label: 'Báo cáo của tôi' },
-    { key: '/wiring', icon: <ApartmentOutlined />, label: 'Wiring Diagram' },
-    ...(role === 'admin' || role === 'moderator'
-      ? [{ key: '/admin', icon: <CrownOutlined />, label: 'Admin Panel' }]
-      : []),
-  ]
+    { key: '/dashboard',  icon: <DashboardOutlined />,  label: 'Dashboard',         show: true },
+    { key: '/labs',       icon: <ExperimentOutlined />, label: 'Labs',              show: STUDENT_PLUS.includes(role) },
+    { key: '/my-reports', icon: <HistoryOutlined />,    label: 'Báo cáo của tôi',   show: STUDENT_PLUS.includes(role) },
+    { key: '/wiring',     icon: <ApartmentOutlined />,  label: 'Wiring Diagram',    show: true },
+    { key: '/teach',      icon: <ReadOutlined />,       label: 'Giảng dạy',         show: TEACH_PLUS.includes(role) },
+    { key: '/admin',      icon: <CrownOutlined />,      label: 'Admin Panel',       show: ADMIN_PLUS.includes(role) },
+  ].filter(item => item.show).map(({ show, ...rest }) => rest)
 
   const userMenuItems = [
     { key: 'logout', icon: <LogoutOutlined />, label: 'Sign Out', danger: true },
