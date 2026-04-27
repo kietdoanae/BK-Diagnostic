@@ -101,6 +101,20 @@ export default function LabsListPage() {
             Vào dashboard thực hành
           </Button>
         )
+      case LAB_STATES.PRACTICE_EXPIRED:
+        // Session ACTIVE quá hạn — vẫn cho click vào để xem read-only.
+        return (
+          <Space>
+            <Button onClick={() =>
+              navigate(`/labs/${labId}/session/${row.activeSession.id}`)}>
+              Xem lại phiên
+            </Button>
+            <Button type="primary" onClick={() =>
+              navigate(`/labs/${labId}/session/${row.activeSession.id}/post`)}>
+              Làm post-lab
+            </Button>
+          </Space>
+        )
       case LAB_STATES.PRACTICE_DONE_POST_PENDING:
         return (
           <Button type="primary" onClick={() =>
