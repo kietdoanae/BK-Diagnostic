@@ -57,8 +57,14 @@ ALTER TABLE profiles ADD CONSTRAINT profiles_role_check
   CHECK (role IN ('admin','moderator','instructor','student','user','guest'));
 
 -- 4. Replace handle_new_user trigger để derive role từ email + pickup MSSV
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
+-- IMPORTANT: phải dùng schema-qualified names (public.profiles) và SET search_path
+-- vì SECURITY DEFINER chạy trong context của auth schema khi Supabase Auth API gọi.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   derived_role TEXT;
   signup_mssv TEXT;
@@ -76,15 +82,16 @@ BEGIN
     split_part(NEW.email, '@', 1)
   );
 
-  INSERT INTO profiles (id, username, role, status, mssv)
-  VALUES (NEW.id, signup_username, derived_role, 'active', signup_mssv);
+  INSERT INTO public.profiles (id, username, role, status, mssv)
+  VALUES (NEW.id, signup_username, derived_role, 'active', signup_mssv)
+  ON CONFLICT (id) DO NOTHING;
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
--- Trigger on_auth_user_created đã tồn tại từ setup.sql, chỉ replace function body
--- Nếu vì lý do nào đó trigger chưa có, uncomment dòng dưới:
--- CREATE TRIGGER on_auth_user_created
---   AFTER INSERT ON auth.users
---   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+-- Recreate trigger để chắc chắn nó point tới public.handle_new_user
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
