@@ -23,6 +23,7 @@ export default function StepDetail({
   countForStep,
   onStart,
   onEnd,
+  readOnly = false,
 }) {
   const [uploading, setUploading] = useState(false)
 
@@ -81,45 +82,47 @@ export default function StepDetail({
         <EvidenceLiveCounter got={countForStep} required={step.required_count} />
       </div>
 
-      <Space style={{ marginTop: 24, width: '100%' }} wrap>
-        {isLeader && !isCurrent && (
-          <Button
-            type="primary"
-            icon={<PlayCircleOutlined />}
-            onClick={() => onStart?.(step)}
-          >
-            Bắt đầu bước này
-          </Button>
-        )}
-        {isLeader && isCurrent && (
-          <Button
-            danger
-            icon={<StopOutlined />}
-            onClick={() => onEnd?.()}
-          >
-            Kết thúc bước
-          </Button>
-        )}
-        {isCurrent && step.evidence_type === 'screenshot' && (
-          <Upload
-            accept="image/png,image/jpeg"
-            showUploadList={false}
-            beforeUpload={handleUpload}
-          >
-            <Button loading={uploading} icon={<UploadOutlined />}>
-              Upload screenshot
+      {!readOnly && (
+        <Space style={{ marginTop: 24, width: '100%' }} wrap>
+          {isLeader && !isCurrent && (
+            <Button
+              type="primary"
+              icon={<PlayCircleOutlined />}
+              onClick={() => onStart?.(step)}
+            >
+              Bắt đầu bước này
             </Button>
-          </Upload>
-        )}
-        {isCurrent && step.evidence_type === 'none' && isLeader && (
-          <Button
-            icon={<CheckOutlined />}
-            onClick={() => onEnd?.()}
-          >
-            Đánh dấu hoàn tất
-          </Button>
-        )}
-      </Space>
+          )}
+          {isLeader && isCurrent && (
+            <Button
+              danger
+              icon={<StopOutlined />}
+              onClick={() => onEnd?.()}
+            >
+              Kết thúc bước
+            </Button>
+          )}
+          {isCurrent && step.evidence_type === 'screenshot' && (
+            <Upload
+              accept="image/png,image/jpeg"
+              showUploadList={false}
+              beforeUpload={handleUpload}
+            >
+              <Button loading={uploading} icon={<UploadOutlined />}>
+                Upload screenshot
+              </Button>
+            </Upload>
+          )}
+          {isCurrent && step.evidence_type === 'none' && isLeader && (
+            <Button
+              icon={<CheckOutlined />}
+              onClick={() => onEnd?.()}
+            >
+              Đánh dấu hoàn tất
+            </Button>
+          )}
+        </Space>
+      )}
     </Card>
   )
 }

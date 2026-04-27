@@ -21,7 +21,7 @@ export default function LabSessionPage() {
   const { session: auth } = useAuth()
   const userId = auth?.user?.id
 
-  const { session, loading, error, startStep, endStep, completeSession } = useLabSession(sid)
+  const { session, loading, error, isExpired, readOnly, startStep, endStep, completeSession } = useLabSession(sid)
   const { evidence, countsByStep } = useLiveEvidence(sid)
 
   const [steps, setSteps] = useState([])
@@ -103,7 +103,9 @@ export default function LabSessionPage() {
   if (error) return <AppLayout><Alert type="error" message={error} showIcon /></AppLayout>
   if (!session) return <AppLayout><Alert type="warning" message="Session không tồn tại." /></AppLayout>
 
-  if (session.status !== 'ACTIVE') {
+  // Session đã COMPLETED hoặc CANCELLED — chuyển sang post-lab.
+  // Lưu ý: EXPIRED status xử lý khác, vẫn hiện dashboard read-only ở dưới.
+  if (session.status !== 'ACTIVE' && session.status !== 'EXPIRED') {
     return (
       <AppLayout>
         <Alert
@@ -123,6 +125,9 @@ export default function LabSessionPage() {
     )
   }
 
+  // readOnly = isExpired (ACTIVE quá hạn theo client clock) HOẶC status='EXPIRED' đã set bởi cron.
+  const sessionExpired = isExpired || session.status === 'EXPIRED'
+
   return (
     <AppLayout>
       <Space style={{ marginBottom: 12 }}>
@@ -130,6 +135,21 @@ export default function LabSessionPage() {
         <Title level={4} style={{ margin: 0 }}>Dashboard thực hành</Title>
         {isLeader ? <Text type="success">(Bạn là leader)</Text> : <Text type="secondary">(Thành viên)</Text>}
       </Space>
+
+      {sessionExpired && (
+        <Alert
+          type="warning"
+          showIcon
+          message="Phiên thực hành đã hết hạn"
+          description="Bạn đang ở chế độ chỉ xem. Có thể xem lại các bước và bằng chứng đã upload, nhưng không thể thực hiện thao tác nào nữa."
+          style={{ marginBottom: 16 }}
+          action={
+            <Button size="small" onClick={() => navigate(`/labs/${labId}/session/${sid}/post`)}>
+              Làm post-lab
+            </Button>
+          }
+        />
+      )}
 
       <Row gutter={16}>
         <Col xs={24} md={10}>
@@ -140,8 +160,9 @@ export default function LabSessionPage() {
               countsByStep={countsByStep}
               isLeader={isLeader}
               onSelectStep={handleStart}
+              readOnly={readOnly}
             />
-            {allStepsSatisfied && (
+            {allStepsSatisfied && !readOnly && (
               <Button
                 block
                 size="large"
@@ -164,6 +185,7 @@ export default function LabSessionPage() {
             countForStep={currentStep ? (countsByStep[currentStep.id] || 0) : 0}
             onStart={handleStart}
             onEnd={handleEnd}
+            readOnly={readOnly}
           />
           <Card style={{ marginTop: 16 }} size="small">
             <Text type="secondary">Tổng evidence đã thu: </Text>

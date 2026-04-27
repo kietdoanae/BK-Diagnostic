@@ -12,6 +12,7 @@ const { Text } = Typography
  *   countsByStep         — { [stepId]: number } of evidence counted
  *   isLeader             — boolean, gates the "Chọn" button
  *   onSelectStep(step)   — leader-only: make this step current
+ *   readOnly             — boolean, hides all action buttons (expired/completed session)
  */
 export default function StepList({
   steps,
@@ -19,6 +20,7 @@ export default function StepList({
   countsByStep,
   isLeader,
   onSelectStep,
+  readOnly = false,
 }) {
   function statusFor(step) {
     const got = countsByStep[step.id] || 0
@@ -41,7 +43,7 @@ export default function StepList({
         return (
           <List.Item
             actions={
-              isLeader && step.id !== currentStepId
+              !readOnly && isLeader && step.id !== currentStepId
                 ? [<Button size="small" key="sel" onClick={() => onSelectStep?.(step)}>Chọn</Button>]
                 : []
             }
