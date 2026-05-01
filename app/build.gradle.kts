@@ -80,9 +80,7 @@ dependencies {
     implementation(libs.supabase.auth)
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.storage)
-    // OkHttp engine: ổn định hơn ktor-client-android trên Android API 28+
-    // ktor-client-android (HttpURLConnection) có bug keep-alive trên API 35
-    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.android)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
