@@ -23,6 +23,7 @@ import com.example.bkdiagnostic.supabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
 fun SplashScreen(
@@ -32,15 +33,18 @@ fun SplashScreen(
     val scale = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
+        Log.d("BKDiag/Splash", "Splash started")
         Log.d("BKDiag/Splash", "SUPABASE_URL = ${BuildConfig.SUPABASE_URL}")
         Log.d("BKDiag/Splash", "SUPABASE_KEY prefix = ${BuildConfig.SUPABASE_KEY.take(20)}...")
 
         // Chạy song song: animation + session check trên IO thread
-        // → không block Main Thread, tổng thời gian = max(animation, session_check) ≈ 700ms
+        // Có timeout 5s để tránh trường hợp Supabase init hang vô tận → splash kẹt mãi.
         val sessionDeferred = async(Dispatchers.IO) {
-            runCatching { supabaseClient.auth.currentSessionOrNull() }
-                .onFailure { Log.e("BKDiag/Splash", "Session check failed", it) }
-                .getOrNull()
+            withTimeoutOrNull(5000L) {
+                runCatching { supabaseClient.auth.currentSessionOrNull() }
+                    .onFailure { Log.e("BKDiag/Splash", "Session check failed", it) }
+                    .getOrNull()
+            }
         }
 
         scale.animateTo(
@@ -48,10 +52,12 @@ fun SplashScreen(
             animationSpec = tween(durationMillis = 700)
         )
 
-        // Animation xong (~700ms), session check thường đã hoàn tất
-        if (sessionDeferred.await() != null) {
+        val session = sessionDeferred.await()
+        if (session != null) {
+            Log.d("BKDiag/Splash", "Session found → main")
             onNavigateToMain()
         } else {
+            Log.d("BKDiag/Splash", "No session (or timeout) → login")
             onNavigateToLogin()
         }
     }
