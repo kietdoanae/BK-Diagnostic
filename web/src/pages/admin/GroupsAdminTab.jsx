@@ -108,16 +108,21 @@ export default function GroupsAdminTab() {
         const ms = memberCache[g.id] || []
         if (ms.length === 0) return <Text type="secondary">— chưa có —</Text>
         return (
-          <Space size={4} wrap>
-            {ms.map((m) => (
-              <Tag
-                key={m.user_id}
-                color={m.role === 'leader' ? 'gold' : 'default'}
-              >
-                {m.role === 'leader' ? '👑 ' : ''}
-                {m.profile?.mssv || m.profile?.username || '—'}
-              </Tag>
-            ))}
+          <Space direction="vertical" size={2}>
+            {ms.map((m) => {
+              const name = m.profile?.full_name || m.profile?.username || '—'
+              const mssv = m.profile?.mssv
+              const isLeader = m.role === 'leader'
+              return (
+                <span key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {isLeader && <Tag color="gold" style={{ margin: 0 }}>👑 Leader</Tag>}
+                  <Text>{name}</Text>
+                  {mssv && (
+                    <Text type="secondary" style={{ fontSize: 12 }}>[{mssv}]</Text>
+                  )}
+                </span>
+              )
+            })}
           </Space>
         )
       },
