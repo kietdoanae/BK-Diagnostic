@@ -14,9 +14,16 @@ import com.example.bkdiagnostic.ThemeMode
 // ── Color schemes ─────────────────────────────────────────────────────────────
 
 private val AppDarkColorScheme = darkColorScheme(
-    primary   = Purple80,
-    secondary = PurpleGrey80,
-    tertiary  = Pink80
+    primary       = Color(0xFF5BC8F5),
+    onPrimary     = Color.White,
+    secondary     = PurpleGrey80,
+    tertiary      = Pink80,
+    background    = Color(0xFF0A0E1A),
+    onBackground  = Color.White,
+    surface       = Color(0xFF141B2D),
+    onSurface     = Color.White,
+    surfaceVariant = Color(0xFF1F2A40),
+    onSurfaceVariant = Color.White.copy(alpha = 0.80f)
 )
 
 private val AppLightColorScheme = lightColorScheme(
