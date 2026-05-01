@@ -2,6 +2,8 @@ package com.example.bkdiagnostic
 
 import android.util.Log
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.exceptions.HttpRequestException
+import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -76,7 +78,12 @@ object ActivityLogger {
                 )
                 Log.d(TAG, "Logged: $action | user=$username")
             }.onFailure { e ->
-                Log.e(TAG, "Failed to insert log [$action] user=$username: ${e.message}", e)
+                val detail = when (e) {
+                    is RestException      -> "HTTP ${e.statusCode}: ${e.error} — ${e.description}"
+                    is HttpRequestException -> "Network error: ${e.cause?.message ?: e.message}"
+                    else                  -> e.message
+                }
+                Log.e(TAG, "Failed to insert log [$action] user=$username: $detail")
             }
         }
     }
@@ -112,7 +119,12 @@ object ActivityLogger {
                 )
                 Log.d(TAG, "Logged: $action | user=$username")
             }.onFailure { e ->
-                Log.e(TAG, "Failed to insert log [$action]: ${e.message}", e)
+                val detail = when (e) {
+                    is RestException      -> "HTTP ${e.statusCode}: ${e.error} — ${e.description}"
+                    is HttpRequestException -> "Network error: ${e.cause?.message ?: e.message}"
+                    else                  -> e.message
+                }
+                Log.e(TAG, "Failed to insert log [$action]: $detail")
             }
         }
     }

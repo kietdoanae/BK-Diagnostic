@@ -16,6 +16,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import android.util.Log
+import com.example.bkdiagnostic.BuildConfig
 import com.example.bkdiagnostic.R
 import com.example.bkdiagnostic.supabaseClient
 import io.github.jan.supabase.auth.auth
@@ -30,10 +32,15 @@ fun SplashScreen(
     val scale = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
+        Log.d("BKDiag/Splash", "SUPABASE_URL = ${BuildConfig.SUPABASE_URL}")
+        Log.d("BKDiag/Splash", "SUPABASE_KEY prefix = ${BuildConfig.SUPABASE_KEY.take(20)}...")
+
         // Chạy song song: animation + session check trên IO thread
         // → không block Main Thread, tổng thời gian = max(animation, session_check) ≈ 700ms
         val sessionDeferred = async(Dispatchers.IO) {
-            supabaseClient.auth.currentSessionOrNull()
+            runCatching { supabaseClient.auth.currentSessionOrNull() }
+                .onFailure { Log.e("BKDiag/Splash", "Session check failed", it) }
+                .getOrNull()
         }
 
         scale.animateTo(
