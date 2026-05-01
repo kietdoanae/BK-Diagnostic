@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Theme chính của app -->
-    <style name="Theme.BKDiagnostic" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Theme chính của app: explicit windowBackground để tránh transparent
+         trên API 35 + edge-to-edge -->
+    <style name="Theme.BKDiagnostic" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:colorBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
 
     <!-- Theme cho system splash screen (Android 12+) -->
     <style name="Theme.BKDiagnostic.Starting" parent="Theme.SplashScreen">

@@ -111,6 +111,10 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                androidx.compose.material3.Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.background
+                ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(
@@ -255,6 +259,7 @@ class MainActivity : ComponentActivity() {
                     onManage = { navController.navigate("lab_mode") }
                 )
                 }  // end Box
+                }  // end Surface
             }
         }
     }
