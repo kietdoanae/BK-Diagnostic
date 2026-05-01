@@ -27,7 +27,14 @@ private val LabAmber = Color(0xFFF59E0B)
 private val LabAmberLight = Color(0xFFFEF3C7)
 
 @Composable
-fun LabModeScreen(onBack: () -> Unit) {
+fun LabModeScreen(
+    onBack: () -> Unit,
+    @Suppress("UNUSED_PARAMETER") brandId: String? = null,
+    @Suppress("UNUSED_PARAMETER") modelId: String? = null
+) {
+    // brandId/modelId nhận từ flow Dashboard → Brand → Model → Lab.
+    // Hiện tại LabModeManager chưa cần brand/model context (gắn theo session
+    // code 6 chữ số), nhưng truyền sẵn để mở rộng sau (vd: filter steps theo xe).
     val state by LabModeManager.state.collectAsStateWithLifecycle()
 
     when (val s = state) {

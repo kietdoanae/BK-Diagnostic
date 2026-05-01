@@ -78,8 +78,7 @@ fun DiagnosticScreen(
     onBack: () -> Unit,
     application: android.app.Application,
     isAdmin: Boolean = false,
-    diagSettings: DiagnosticsSettings = DiagnosticsSettings(),
-    onLabModeClick: () -> Unit = {}
+    diagSettings: DiagnosticsSettings = DiagnosticsSettings()
 ) {
     val viewModel: DiagnosticViewModel = viewModel(
         factory = DiagnosticViewModel.Factory(application, brandId, modelId, diagSettings)
@@ -98,8 +97,7 @@ fun DiagnosticScreen(
                 viewModel      = viewModel,
                 onBack         = onBack,
                 onNavigate     = { currentView = it },
-                isAdmin        = isAdmin,
-                onLabModeClick = onLabModeClick
+                isAdmin        = isAdmin
             )
         DiagView.RAW_MONITOR ->
             RawMonitorScreen(
@@ -123,13 +121,10 @@ private fun DiagnosticHub(
     viewModel: DiagnosticViewModel,
     onBack: () -> Unit,
     onNavigate: (DiagView) -> Unit,
-    isAdmin: Boolean = false,
-    onLabModeClick: () -> Unit = {}
+    @Suppress("UNUSED_PARAMETER") isAdmin: Boolean = false
 ) {
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
-    val labModeState by LabModeManager.state.collectAsStateWithLifecycle()
-    val isLabActive  = labModeState is LabModeState.Active
 
     val snackbarHost = remember { SnackbarHostState() }
     LaunchedEffect(message) {
@@ -169,21 +164,19 @@ private fun DiagnosticHub(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Raw Frame Monitor — chỉ hiện với Admin
-                if (isAdmin) {
-                    DiagnosticFunctionCard(
-                        icon = Icons.Default.BugReport,
-                        title = stringResource(R.string.diagnostic_raw_monitor_title),
-                        description = stringResource(R.string.diagnostic_raw_monitor_desc),
-                        accentColor = Color(0xFF37474F),
-                        enabled = true,
-                        actionIcon = Icons.Default.BugReport,
-                        actionLabel = stringResource(R.string.diagnostic_btn_open),
-                        onClick = { onNavigate(DiagView.RAW_MONITOR) }
-                    )
-                }
+                // CAN Monitor — đọc/gửi raw frames, mở cho mọi user
+                DiagnosticFunctionCard(
+                    icon = Icons.Default.BugReport,
+                    title = stringResource(R.string.diagnostic_raw_monitor_title),
+                    description = stringResource(R.string.diagnostic_raw_monitor_desc),
+                    accentColor = Color(0xFF37474F),
+                    enabled = true,
+                    actionIcon = Icons.Default.BugReport,
+                    actionLabel = stringResource(R.string.diagnostic_btn_open),
+                    onClick = { onNavigate(DiagView.RAW_MONITOR) }
+                )
 
-                // 4. Active Test — Kích hoạt cơ cấu chấp hành
+                // Active Test — Kích hoạt cơ cấu chấp hành
                 DiagnosticFunctionCard(
                     icon = Icons.Default.DirectionsCar,
                     title = stringResource(R.string.diagnostic_active_test_title),
@@ -194,19 +187,8 @@ private fun DiagnosticHub(
                     actionLabel = stringResource(R.string.diagnostic_btn_open),
                     onClick = { onNavigate(DiagView.ACTIVE_TEST) }
                 )
-
-                // Lab Mode card
-                DiagnosticFunctionCard(
-                    icon        = Icons.Default.Science,
-                    title       = if (isLabActive) "Lab Mode — Active" else "Lab Mode",
-                    description = if (isLabActive) "Session in progress · Tap to manage"
-                                  else "Join a TR4021 lab session by entering a 6-digit code",
-                    accentColor = Color(0xFFF59E0B),
-                    enabled     = true,
-                    actionIcon  = Icons.Default.Science,
-                    actionLabel = if (isLabActive) "Manage" else "Enter",
-                    onClick     = onLabModeClick
-                )
+                // Lưu ý: Lab Mode đã được tách ra dashboard chính (top-level),
+                // không còn nằm trong Diagnostic Hub.
 
                 // 5–7. Placeholder (sắp có)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {

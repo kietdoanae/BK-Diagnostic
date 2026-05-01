@@ -189,6 +189,10 @@ class MainActivity : ComponentActivity() {
                                 onDiagnosticsClick = {
                                     navController.navigate("brand_selection")
                                 },
+                                onLabModeClick = {
+                                    // Lab Mode flow: chọn brand → chọn model → vào lab
+                                    navController.navigate("lab_brand_selection")
+                                },
                                 onWiringDiagramClick = {
                                     navController.navigate("wiring_diagram")
                                 },
@@ -240,17 +244,44 @@ class MainActivity : ComponentActivity() {
                             val diagSettings by settingsViewModel.diagnosticsSettings
                                 .collectAsStateWithLifecycle()
                             DiagnosticScreen(
-                                brandId        = brandId,
-                                modelId        = modelId,
-                                onBack         = { navController.popBackStack() },
-                                application    = application,
-                                isAdmin        = canViewRawFrame,
-                                diagSettings   = diagSettings,
-                                onLabModeClick = { navController.navigate("lab_mode") }
+                                brandId      = brandId,
+                                modelId      = modelId,
+                                onBack       = { navController.popBackStack() },
+                                application  = application,
+                                isAdmin      = canViewRawFrame,
+                                diagSettings = diagSettings
                             )
                         }
                         composable("lab_mode") {
                             LabModeScreen(onBack = { navController.popBackStack() })
+                        }
+                        // ── Lab Mode flow: brand → model → lab session ──────────
+                        composable("lab_brand_selection") {
+                            BrandSelectionScreen(
+                                onBrandSelected = { brand ->
+                                    navController.navigate("lab_model_selection/${brand.id}")
+                                },
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("lab_model_selection/{brandId}") { backStack ->
+                            val brandId = backStack.arguments?.getString("brandId") ?: "ford"
+                            ModelSelectionScreen(
+                                brandId = brandId,
+                                onModelSelected = { model ->
+                                    navController.navigate("lab_mode_session/$brandId/${model.id}")
+                                },
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("lab_mode_session/{brandId}/{modelId}") { backStack ->
+                            val brandId = backStack.arguments?.getString("brandId") ?: "ford"
+                            val modelId = backStack.arguments?.getString("modelId") ?: "ranger"
+                            LabModeScreen(
+                                brandId = brandId,
+                                modelId = modelId,
+                                onBack  = { navController.popBackStack() }
+                            )
                         }
                     }
                 }

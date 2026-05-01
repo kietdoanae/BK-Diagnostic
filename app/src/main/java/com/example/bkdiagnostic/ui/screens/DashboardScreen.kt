@@ -44,15 +44,20 @@ private data class DashboardFeature(
 fun DashboardScreen(
     onLogout: () -> Unit,
     onDiagnosticsClick: () -> Unit = {},
+    onLabModeClick: () -> Unit = {},
     onWiringDiagramClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     authViewModel: AuthViewModel = viewModel()
 ) {
+    // Lấy profile sớm để biết quyền truy cập Lab Mode khi build features list
+    val userProfile by authViewModel.userProfile.collectAsStateWithLifecycle()
+    val canAccessLab = userProfile?.canAccessLabMode ?: false
+
     // Đọc strings trong composable context (nhanh), sau đó remember list để
     // tránh tạo 8 DashboardFeature objects mới trên mỗi recomposition.
     // Language switch gọi recreate() nên không cần lo cache stale.
     val sDiagnostics   = stringResource(R.string.feature_diagnostics)
-    val sService       = stringResource(R.string.feature_service)
+    val sLabMode       = stringResource(R.string.feature_lab_mode)
     val sDataManager   = stringResource(R.string.feature_data_manager)
     val sSettings      = stringResource(R.string.feature_settings)
     val sUpdate        = stringResource(R.string.feature_update)
@@ -60,11 +65,11 @@ fun DashboardScreen(
     val sWiring        = stringResource(R.string.feature_wiring_diagram)
     val sSupport       = stringResource(R.string.feature_support)
 
-    val features = remember(sDiagnostics, sService, sDataManager, sSettings,
-                            sUpdate, sRemoteDesktop, sWiring, sSupport) {
+    val features = remember(sDiagnostics, sLabMode, sDataManager, sSettings,
+                            sUpdate, sRemoteDesktop, sWiring, sSupport, canAccessLab) {
         listOf(
             DashboardFeature("diagnostics",    sDiagnostics,   Icons.Filled.Build,          Color(0xFF1565C0), Color(0xFFBBDEFB), isEnabled = true),
-            DashboardFeature("service",        sService,       Icons.Filled.Construction,   Color(0xFF2E7D32), Color(0xFFC8E6C9)),
+            DashboardFeature("lab_mode",       sLabMode,       Icons.Filled.Science,        Color(0xFFF59E0B), Color(0xFFFEF3C7), isEnabled = canAccessLab),
             DashboardFeature("data_manager",   sDataManager,   Icons.Filled.Storage,        Color(0xFF6A1B9A), Color(0xFFE1BEE7)),
             DashboardFeature("settings",       sSettings,      Icons.Filled.Tune,           Color(0xFF00695C), Color(0xFFB2DFDB), isEnabled = true),
             DashboardFeature("update",         sUpdate,        Icons.Filled.SystemUpdate,   Color(0xFFE65100), Color(0xFFFFE0B2)),
@@ -85,14 +90,17 @@ fun DashboardScreen(
         }
     }
 
-    val userProfile by authViewModel.userProfile.collectAsStateWithLifecycle()
     val username    = userProfile?.username    ?: "User"
     val isAdmin     = userProfile?.isAdmin     ?: false
     val isModerator = userProfile?.isModerator ?: false
+    val isInstructor = userProfile?.isInstructor ?: false
+    val isStudent    = userProfile?.isStudent    ?: false
     val roleLabel   = when {
-        isAdmin     -> "Admin"
-        isModerator -> "Moderator"
-        else        -> "User"
+        isAdmin      -> "Admin"
+        isModerator  -> "Moderator"
+        isInstructor -> "Instructor"
+        isStudent    -> "Student"
+        else         -> "User"
     }
     val roleIcon = when {
         isAdmin     -> Icons.Filled.Security
@@ -296,6 +304,7 @@ fun DashboardScreen(
                                 ActivityLogger.featureOpen(feature.title)
                                 when (feature.id) {
                                     "diagnostics"    -> onDiagnosticsClick()
+                                    "lab_mode"       -> onLabModeClick()
                                     "wiring_diagram" -> onWiringDiagramClick()
                                     "settings"       -> onSettingsClick()
                                 }

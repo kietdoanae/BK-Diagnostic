@@ -15,7 +15,13 @@ data class UserProfile(
 ) {
     val isAdmin: Boolean       get() = role.equals("admin",     ignoreCase = true)
     val isModerator: Boolean   get() = role.equals("moderator", ignoreCase = true)
+    val isStudent: Boolean     get() = role.equals("student",   ignoreCase = true)
+    val isInstructor: Boolean  get() = role.equals("instructor", ignoreCase = true) ||
+                                       role.equals("teacher",    ignoreCase = true)
     val canViewRawFrame: Boolean get() = isAdmin || isModerator
+    /** Lab Mode chỉ mở cho sinh viên / giảng viên / moderator / admin.
+     *  Public user thường không truy cập được — phải nâng cấp role qua web. */
+    val canAccessLabMode: Boolean get() = isStudent || isInstructor || isModerator || isAdmin
     val isBlocked: Boolean     get() = status.lowercase() in setOf("banned", "suspended", "inactive", "pending")
     val blockedMessage: String get() = when (status.lowercase()) {
         "banned"    -> "Your account has been permanently banned. Contact support if you think this is a mistake."

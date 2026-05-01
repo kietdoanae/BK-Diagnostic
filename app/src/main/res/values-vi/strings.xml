@@ -66,6 +66,8 @@
     <string name="dashboard_status_active">Hoạt động</string>
     <string name="feature_diagnostics">Chẩn đoán</string>
     <string name="feature_service">Dịch vụ</string>
+    <string name="feature_lab_mode">Thực hành Lab</string>
+    <string name="feature_lab_mode_no_permission">Cần role sinh viên / giảng viên</string>
     <string name="feature_data_manager">Quản lý dữ liệu</string>
     <string name="feature_settings">Cài đặt</string>
     <string name="feature_update">Cập nhật</string>
