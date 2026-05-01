@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 220" fill="none">
+  <style>
+    .node-label  { font: 700 13px 'Be Vietnam Pro', sans-serif; fill: #003291; }
+    .node-icon   { font: 600 24px 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
+    .edge-label  { font: 500 11px 'JetBrains Mono', monospace; fill: #6B7280; }
+  </style>
+
+  <!-- 6 nodes -->
+  <g id="n1">
+    <circle cx="80" cy="100" r="44" fill="#EFF6FF" stroke="#1565C0" stroke-width="2"/>
+    <text x="80" y="92" text-anchor="middle" class="node-icon">🚗</text>
+    <text x="80" y="170" text-anchor="middle" class="node-label">Xe</text>
+  </g>
+
+  <g id="n2">
+    <circle cx="260" cy="100" r="44" fill="#FFF7ED" stroke="#EA580C" stroke-width="2"/>
+    <text x="260" y="92" text-anchor="middle" class="node-icon">🔌</text>
+    <text x="260" y="170" text-anchor="middle" class="node-label">MCP2515</text>
+  </g>
+
+  <g id="n3">
+    <circle cx="440" cy="100" r="44" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
+    <text x="440" y="92" text-anchor="middle" class="node-icon">⚙️</text>
+    <text x="440" y="170" text-anchor="middle" class="node-label">STM32</text>
+  </g>
+
+  <g id="n4">
+    <circle cx="620" cy="100" r="44" fill="#FAF5FF" stroke="#7C3AED" stroke-width="2"/>
+    <text x="620" y="92" text-anchor="middle" class="node-icon">🔗</text>
+    <text x="620" y="170" text-anchor="middle" class="node-label">CP2102</text>
+  </g>
+
+  <g id="n5">
+    <circle cx="800" cy="100" r="44" fill="#EFF6FF" stroke="#1565C0" stroke-width="2"/>
+    <text x="800" y="92" text-anchor="middle" class="node-icon">📱</text>
+    <text x="800" y="170" text-anchor="middle" class="node-label">App</text>
+  </g>
+
+  <g id="n6">
+    <circle cx="980" cy="100" r="44" fill="#DBEAFE" stroke="#0A1E6E" stroke-width="2"/>
+    <text x="980" y="92" text-anchor="middle" class="node-icon">☁️</text>
+    <text x="980" y="170" text-anchor="middle" class="node-label">Web</text>
+  </g>
+
+  <!-- Connectors -->
+  <path id="e1" d="M124 100 L216 100" stroke="#9CA3AF" stroke-width="2" stroke-dasharray="4 4"/>
+  <text x="170" y="92" text-anchor="middle" class="edge-label">CAN</text>
+
+  <path id="e2" d="M304 100 L396 100" stroke="#9CA3AF" stroke-width="2" stroke-dasharray="4 4"/>
+  <text x="350" y="92" text-anchor="middle" class="edge-label">SPI</text>
+
+  <path id="e3" d="M484 100 L576 100" stroke="#9CA3AF" stroke-width="2" stroke-dasharray="4 4"/>
+  <text x="530" y="92" text-anchor="middle" class="edge-label">UART</text>
+
+  <path id="e4" d="M664 100 L756 100" stroke="#9CA3AF" stroke-width="2" stroke-dasharray="4 4"/>
+  <text x="710" y="92" text-anchor="middle" class="edge-label">USB</text>
+
+  <path id="e5" d="M844 100 L936 100" stroke="#9CA3AF" stroke-width="2" stroke-dasharray="4 4"/>
+  <text x="890" y="92" text-anchor="middle" class="edge-label">HTTPS</text>
+</svg>

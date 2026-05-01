@@ -17,6 +17,11 @@ local.properties
 # Website Supabase credentials — use website/config.example.js as template
 website/config.js
 
+# Vite env files (web/) — contain Supabase secrets, never commit
+web/.env
+web/.env.local
+web/.env.*.local
+
 # STM32CubeIDE generated files (Drivers/ copied from firmware pack at build time)
 stm32/Drivers/
 stm32/*.elf

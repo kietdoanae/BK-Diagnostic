@@ -17,10 +17,12 @@
     "@supabase/supabase-js": "^2.101.1",
     "@uiw/react-md-editor": "^4.1.0",
     "antd": "^6.3.5",
+    "framer-motion": "^11.18.2",
     "html2pdf.js": "^0.10.3",
     "jszip": "^3.10.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-intersection-observer": "^9.16.0",
     "react-router-dom": "^7.14.0"
   },
   "devDependencies": {
