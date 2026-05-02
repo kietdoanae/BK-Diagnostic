@@ -110,7 +110,7 @@ CREATE TRIGGER trg_lab_group_members_unique_lab
 -- ── 6. lab_sessions ─────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.lab_sessions (
     id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-    group_id        uuid        NOT NULL REFERENCES public.lab_groups(id),
+    group_id        uuid        NOT NULL REFERENCES public.lab_groups(id) ON DELETE CASCADE,
     lab_id          uuid        NOT NULL REFERENCES public.labs(id),
     session_code    char(6)     NOT NULL,
     status          text        NOT NULL DEFAULT 'ACTIVE'
@@ -163,7 +163,7 @@ CREATE INDEX IF NOT EXISTS idx_pre_quiz_user_lab
 CREATE TABLE IF NOT EXISTS public.lab_post_submissions (
     id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id         uuid        NOT NULL REFERENCES auth.users(id),
-    session_id      uuid        NOT NULL REFERENCES public.lab_sessions(id),
+    session_id      uuid        NOT NULL REFERENCES public.lab_sessions(id) ON DELETE CASCADE,
     answers         jsonb       NOT NULL,
     uploaded_images jsonb       DEFAULT '[]',
     is_draft        boolean     NOT NULL DEFAULT true,
@@ -179,7 +179,7 @@ CREATE INDEX IF NOT EXISTS idx_post_submissions_session
 CREATE TABLE IF NOT EXISTS public.lab_reports (
     id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id          uuid        NOT NULL REFERENCES auth.users(id),
-    session_id       uuid        NOT NULL REFERENCES public.lab_sessions(id),
+    session_id       uuid        NOT NULL REFERENCES public.lab_sessions(id) ON DELETE CASCADE,
     pdf_storage_path text        NOT NULL,
     content_hash     text        NOT NULL,
     file_size_bytes  bigint,
