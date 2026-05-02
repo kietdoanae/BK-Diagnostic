@@ -6,8 +6,16 @@
 <title>BKDiagnostic – Wiring Diagram</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
 html{background:#070b10}
-body{background:#070b10;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;padding-top:44px}
+body{
+  background:#070b10;color:#c9d1d9;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  padding-top:44px;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
 #topbar{
   position:fixed;top:0;left:0;right:0;height:44px;z-index:300;
   background:linear-gradient(180deg,#0d1117,#0a1628);
@@ -21,8 +29,30 @@ body{background:#070b10;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFo
   font-family:inherit;transition:all .2s;white-space:nowrap;
 }
 .btn.on{background:#1565c0;border-color:#5bc8f5;color:#fff;box-shadow:0 0 10px #5bc8f540}
-#wrap{width:100%;overflow:auto;-webkit-overflow-scrolling:touch}
-svg#dia{display:block;width:1580px;height:510px}
+/* Responsive wrap: fill remaining viewport height và center SVG */
+#wrap{
+  flex:1;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:12px 12px 70px 12px; /* 70px bottom = chừa chỗ cho legend */
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+}
+/* SVG scale theo viewBox + preserveAspectRatio mặc định 'xMidYMid meet' (uniform fit) */
+svg#dia{
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:1900px; /* không cho phình quá lớn trên màn 4K */
+  max-height:100%;
+}
+/* Trên màn hình rất hẹp (mobile portrait) cho phép scroll ngang vì 1580x510 quá rộng */
+@media (max-aspect-ratio: 4/5){
+  #wrap{align-items:flex-start;padding:12px 12px 12px 12px}
+  svg#dia{width:1580px;min-width:1580px;height:auto}
+}
 .wire{fill:none;stroke-linecap:round;stroke-linejoin:round;cursor:pointer;transition:stroke-width .15s}
 .wire:hover{filter:drop-shadow(0 0 6px currentColor)}
 .wire.flow-on{stroke-dasharray:12 6;animation:dash .55s linear infinite}
