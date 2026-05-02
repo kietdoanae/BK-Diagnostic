@@ -14,6 +14,7 @@ import {
   UserOutlined,
   TeamOutlined,
   StarFilled,
+  HomeOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -73,10 +74,13 @@ export default function AppLayout({ children }) {
   ].filter(item => item.show).map(({ show, ...rest }) => rest)
 
   const userMenuItems = [
-    { key: 'logout', icon: <LogoutOutlined />, label: 'Sign Out', danger: true },
+    { key: 'home',   icon: <HomeOutlined />,   label: 'Về trang chủ' },
+    { type: 'divider' },
+    { key: 'logout', icon: <LogoutOutlined />, label: 'Đăng xuất', danger: true },
   ]
 
   async function handleUserMenu({ key }) {
+    if (key === 'home')   { navigate('/'); return }
     if (key === 'logout') { await logActivity('LOGOUT'); await logout(); navigate('/') }
   }
 
@@ -99,8 +103,23 @@ export default function AppLayout({ children }) {
         }}
         width={220}
       >
-        {/* Logo */}
-        <div style={{ padding: collapsed ? '18px 0' : '18px 16px', display: 'flex', alignItems: 'center', gap: 10, justifyContent: collapsed ? 'center' : 'flex-start', borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
+        {/* Logo — click để về trang chủ */}
+        <div
+          onClick={() => navigate('/')}
+          title="Về trang chủ"
+          style={{
+            padding: collapsed ? '18px 0' : '18px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            borderBottom: '1px solid rgba(255,255,255,0.10)',
+            cursor: 'pointer',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+        >
           <div
             style={{
               width: 38,
@@ -243,6 +262,15 @@ export default function AppLayout({ children }) {
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
           />
+          <Space size={8}>
+            <Button
+              type="text"
+              icon={<HomeOutlined />}
+              onClick={() => navigate('/')}
+              style={{ color: '#1565C0', fontWeight: 600 }}
+            >
+              <span className="ant-btn-home-label">Trang chủ</span>
+            </Button>
           <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenu }} placement="bottomRight">
             <Space size={10} style={{ cursor: 'pointer', padding: '4px 10px 4px 4px', borderRadius: 24, transition: 'background 0.15s' }}>
               <Avatar style={{ background: bg, fontWeight: 700 }}>{initial}</Avatar>
@@ -268,6 +296,7 @@ export default function AppLayout({ children }) {
               </div>
             </Space>
           </Dropdown>
+          </Space>
         </Header>
         <Content style={{ padding: 24, background: '#f5f7fa' }}>
           {children}
