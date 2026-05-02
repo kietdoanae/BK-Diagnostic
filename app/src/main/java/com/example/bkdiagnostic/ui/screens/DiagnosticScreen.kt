@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.FindReplace
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -61,15 +62,13 @@ import com.example.bkdiagnostic.DiagnosticsSettings
 import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
 import com.example.bkdiagnostic.ui.components.AppTopBar
 import androidx.compose.material.icons.filled.Science
-import com.example.bkdiagnostic.lab.LabModeManager
-import com.example.bkdiagnostic.lab.LabModeState
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Màn hình Hub Chẩn đoán — quản lý sub-screens bằng internal state
 //  DiagnosticViewModel được chia sẻ cho tất cả sub-views
 // ─────────────────────────────────────────────────────────────────────────────
 
-private enum class DiagView { HUB, RAW_MONITOR, ACTIVE_TEST }
+private enum class DiagView { HUB, RAW_MONITOR, ACTIVE_TEST, LIVE_DATA }
 
 @Composable
 fun DiagnosticScreen(
@@ -106,6 +105,11 @@ fun DiagnosticScreen(
             )
         DiagView.ACTIVE_TEST ->
             ActiveTestScreen(
+                viewModel = viewModel,
+                onBack = { currentView = DiagView.HUB }
+            )
+        DiagView.LIVE_DATA ->
+            LiveDataScreen(
                 viewModel = viewModel,
                 onBack = { currentView = DiagView.HUB }
             )
@@ -174,6 +178,18 @@ private fun DiagnosticHub(
                     actionIcon = Icons.Default.BugReport,
                     actionLabel = stringResource(R.string.diagnostic_btn_open),
                     onClick = { onNavigate(DiagView.RAW_MONITOR) }
+                )
+
+                // Live Data — RPM, speed, engine temp, load, ... (mọi user)
+                DiagnosticFunctionCard(
+                    icon = Icons.Default.Speed,
+                    title = stringResource(R.string.diagnostic_live_data_title),
+                    description = stringResource(R.string.diagnostic_live_data_desc),
+                    accentColor = Color(0xFF1E88E5),
+                    enabled = true,
+                    actionIcon = Icons.Default.Speed,
+                    actionLabel = stringResource(R.string.diagnostic_btn_open),
+                    onClick = { onNavigate(DiagView.LIVE_DATA) }
                 )
 
                 // Active Test — Kích hoạt cơ cấu chấp hành

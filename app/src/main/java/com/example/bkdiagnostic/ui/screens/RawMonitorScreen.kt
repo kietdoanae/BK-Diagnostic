@@ -27,11 +27,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cable
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -40,8 +46,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -90,19 +94,24 @@ import java.util.Date
 import java.util.Locale
 
 // ── Màu sắc ─────────────────────────────────────────────────────────────────
-private val BgTerminal  = Color(0xFF060D14)
+// Dark "engineering terminal" look — phù hợp với hex bytes và monospace.
+// Giữ tone đen-xanh đậm cho data area (đọc dễ trên ánh đèn workshop),
+// thêm tone xanh navy cho chrome (top bar / tabs / stats) cho hiện đại hơn.
+private val BgTerminal  = Color(0xFF060D14)   // background data area
 private val BgRow       = Color(0xFF0D1A26)
 private val BgRowAlt    = Color(0xFF091320)
-private val BgHeader    = Color(0xFF050F1C)
-private val BgBottomBar = Color(0xFF040C16)
+private val BgHeader    = Color(0xFF0E1E33)   // chrome chính (navy đậm)
+private val BgChrome    = Color(0xFF12243C)   // chrome thứ cấp (stats/tabs)
+private val BgBottomBar = Color(0xFF0A1626)   // action bar
 private val ColorGreen  = Color(0xFF00E676)
 private val ColorYellow = Color(0xFFFFD54F)
-private val ColorGray   = Color(0xFF546E7A)
+private val ColorGray   = Color(0xFF607D8B)
 private val ColorTeal   = Color(0xFF80CBC4)
 private val ColorRed    = Color(0xFFEF5350)
 private val ColorBlue   = Color(0xFF42A5F5)
 private val ColorOrange = Color(0xFFFF7043)
 private val ColorMuted  = Color(0xFF37474F)
+private val ColorAccent = Color(0xFF5BC8F5)   // accent cho selected tab + stat values
 
 // ── Column widths (chia sẻ giữa header và data rows) ────────────────────────
 private val W_SEQ     = 48.dp
@@ -124,7 +133,6 @@ fun RawMonitorScreen(
     )
 
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Monitor", "Gửi CAN")
 
     Column(
         modifier = Modifier
@@ -138,31 +146,73 @@ fun RawMonitorScreen(
             onBack = onBack
         )
 
-        // ── Tab row ──────────────────────────────────────────────────────────
-        TabRow(
-            selectedTabIndex = selectedTab,
-            containerColor = BgHeader,
-            contentColor = ColorBlue
-        ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = {
-                        Text(
-                            text = title,
-                            fontSize = 13.sp,
-                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                )
-            }
-        }
+        // ── Modern segmented tab row ────────────────────────────────────────
+        ModernTabRow(
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it }
+        )
 
         // ── Tab content ───────────────────────────────────────────────────────
         when (selectedTab) {
             0 -> MonitorTabContent(viewModel = viewModel)
             1 -> CanSendTab(vm = canSenderVm)
+        }
+    }
+}
+
+// ── Tab segmented control ───────────────────────────────────────────────────
+
+@Composable
+private fun ModernTabRow(
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit
+) {
+    val tabs = listOf(
+        Triple("Monitor",  Icons.Filled.Visibility, 0),
+        Triple("Gửi CAN",  Icons.AutoMirrored.Filled.Send, 1)
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(BgHeader)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        tabs.forEach { (label, icon, idx) ->
+            val selected = selectedTab == idx
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(40.dp)
+                    .clip(RoundedCornerShape(10.dp)),
+                color = if (selected) ColorAccent.copy(alpha = 0.18f) else BgChrome,
+                shape = RoundedCornerShape(10.dp),
+                border = if (selected)
+                    androidx.compose.foundation.BorderStroke(1.dp, ColorAccent.copy(alpha = 0.5f))
+                else null,
+                onClick = { onTabSelected(idx) }
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = if (selected) ColorAccent else ColorGray,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = label,
+                        color = if (selected) ColorAccent else ColorGray,
+                        fontSize = 13.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        letterSpacing = 0.4.sp
+                    )
+                }
+            }
         }
     }
 }
@@ -203,7 +253,26 @@ private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
         }
     }
 
+    // Tính frame rate trong 2 giây gần nhất
+    val nowMs = remember(displayLog) { System.currentTimeMillis() }
+    val recentRate = remember(displayLog, paused) {
+        if (displayLog.size < 2) 0
+        else {
+            val cutoff = nowMs - 2000
+            displayLog.count { it.timestampMs >= cutoff } / 2
+        }
+    }
+    val uniqueIds = remember(displayLog) { displayLog.distinctBy { it.canId }.size }
+
     Column(modifier = Modifier.fillMaxSize()) {
+        // ── Stats strip ──────────────────────────────────────────────────────
+        StatsStrip(
+            paused = paused,
+            frameCount = displayLog.size,
+            framesPerSec = recentRate,
+            uniqueIds = uniqueIds
+        )
+
         // ── Header cột cố định ───────────────────────────────────────────────
         FrameTableHeader()
 
@@ -325,17 +394,59 @@ fun CanSendTab(vm: CanSenderViewModel) {
             .fillMaxSize()
             .background(BgTerminal)
     ) {
+        // USB connection indicator (compact strip ngay sau tabs)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(BgChrome)
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.FiberManualRecord,
+                contentDescription = null,
+                tint = if (usbConnected) ColorGreen else ColorRed,
+                modifier = Modifier.size(10.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = if (usbConnected) "USB CONNECTED" else "USB DISCONNECTED",
+                color = if (usbConnected) ColorGreen else ColorRed,
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            )
+            Spacer(Modifier.weight(1f))
+            if (isRepeating) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = ColorOrange.copy(alpha = 0.18f)
+                ) {
+                    Text(
+                        text = "REPEATING @ ${intervalMs}ms",
+                        color = ColorOrange,
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+
         // ── Input fields section ──────────────────────────────────────────────
+        SectionLabel(text = "FRAME COMPOSER")
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(horizontal = 12.dp),
             colors = CardDefaults.cardColors(containerColor = BgRow),
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // CAN ID field
                 OutlinedTextField(
@@ -447,15 +558,36 @@ fun CanSendTab(vm: CanSenderViewModel) {
         }
 
         // ── Send log section ──────────────────────────────────────────────────
-        Text(
-            text = "Log gửi CAN",
-            color = ColorGray,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            letterSpacing = 1.2.sp,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-        )
+        Spacer(Modifier.height(6.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "SEND LOG",
+                color = ColorAccent,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 1.2.sp
+            )
+            Spacer(Modifier.width(8.dp))
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = ColorAccent.copy(alpha = 0.14f)
+            ) {
+                Text(
+                    text = sendLog.size.toString(),
+                    color = ColorAccent,
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
 
         Box(
             modifier = Modifier
@@ -479,6 +611,23 @@ fun CanSendTab(vm: CanSenderViewModel) {
             }
         }
     }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Section label
+// ════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        color = ColorAccent,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Monospace,
+        letterSpacing = 1.2.sp,
+        modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 6.dp)
+    )
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -562,6 +711,138 @@ fun CanSendEntryRow(entry: CanSendEntry) {
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+            }
+        }
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Stats strip — frame count / rate / unique IDs / status
+// ════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun StatsStrip(
+    paused: Boolean,
+    frameCount: Int,
+    framesPerSec: Int,
+    uniqueIds: Int
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(BgChrome)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        StatPill(
+            icon  = Icons.Filled.History,
+            label = "FRAMES",
+            value = frameCount.toString(),
+            color = ColorAccent,
+            modifier = Modifier.weight(1f)
+        )
+        StatPill(
+            icon  = Icons.Filled.Timeline,
+            label = "RATE",
+            value = if (paused) "—" else "$framesPerSec/s",
+            color = if (paused) ColorGray else ColorGreen,
+            modifier = Modifier.weight(1f)
+        )
+        StatPill(
+            icon  = Icons.Filled.Cable,
+            label = "IDs",
+            value = uniqueIds.toString(),
+            color = ColorTeal,
+            modifier = Modifier.weight(1f)
+        )
+        // Live/Paused indicator
+        Surface(
+            modifier = Modifier
+                .weight(0.9f)
+                .height(48.dp),
+            shape = RoundedCornerShape(8.dp),
+            color = if (paused) ColorOrange.copy(alpha = 0.16f) else ColorGreen.copy(alpha = 0.14f),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                (if (paused) ColorOrange else ColorGreen).copy(alpha = 0.4f)
+            )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.FiberManualRecord,
+                    contentDescription = null,
+                    tint = if (paused) ColorOrange else ColorGreen,
+                    modifier = Modifier.size(10.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = if (paused) "PAUSED" else "LIVE",
+                    color = if (paused) ColorOrange else ColorGreen,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatPill(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.height(48.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = BgRow
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(color.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(15.dp)
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Column {
+                Text(
+                    text = label,
+                    color = ColorGray,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.8.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+                Text(
+                    text = value,
+                    color = color,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
                 )
             }
         }
@@ -728,19 +1009,44 @@ private fun EmptyState() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(32.dp)
         ) {
-            Icon(
-                imageVector = Icons.Filled.TableChart,
-                contentDescription = null,
-                tint = ColorGray.copy(alpha = 0.30f),
-                modifier = Modifier.size(56.dp)
+            // Icon with subtle glow ring
+            Box(contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .size(96.dp)
+                        .clip(CircleShape)
+                        .background(ColorAccent.copy(alpha = 0.06f))
+                )
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(ColorAccent.copy(alpha = 0.10f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.TableChart,
+                        contentDescription = null,
+                        tint = ColorAccent.copy(alpha = 0.65f),
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            }
+            Text(
+                stringResource(R.string.raw_monitor_empty_title),
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
             )
-            Text(stringResource(R.string.raw_monitor_empty_title), color = ColorGray, fontSize = 15.sp, fontWeight = FontWeight.Medium)
             Text(
                 stringResource(R.string.raw_monitor_empty_message),
-                color = ColorGray.copy(alpha = 0.55f),
-                fontSize = 12.sp
+                color = ColorGray,
+                fontSize = 12.5.sp,
+                textAlign = TextAlign.Center,
+                lineHeight = 18.sp
             )
         }
     }
