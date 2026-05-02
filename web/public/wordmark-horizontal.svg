@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 160" width="600" height="160">
+  <defs>
+    <linearGradient id="wbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#003E7E"></stop>
+      <stop offset="1" stop-color="#0066B3"></stop>
+    </linearGradient>
+    <clipPath id="wclip"><rect width="140" height="140" x="10" y="10" rx="28"></rect></clipPath>
+  </defs>
+  <g clip-path="url(#wclip)">
+    <rect x="10" y="10" width="140" height="140" fill="url(#wbg)"></rect>
+    <polygon points="80.00,24.00 128.50,52.00 128.50,108.00 80.00,136.00 31.50,108.00 31.50,52.00" fill="none" stroke="#0094D9" stroke-width="6" stroke-linejoin="round"></polygon>
+    <path d="M 32 80 L 56 80 L 64 60 L 80 110 L 96 50 L 104 80 L 128 80" fill="none" stroke="#F5B700" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+    <circle cx="32" cy="80" r="3" fill="#F5B700"></circle>
+    <circle cx="128" cy="80" r="3" fill="#F5B700"></circle>
+  </g>
+  <text x="178" y="86" font-family="Sora, system-ui, sans-serif" font-weight="800" font-size="52" fill="#003E7E" letter-spacing="-1.5">BK Diagnostic</text>
+  <text x="178" y="118" font-family="JetBrains Mono, ui-monospace, monospace" font-weight="500" font-size="13" fill="#0066B3" letter-spacing="4">HCMUT · ĐỒ ÁN NGHIÊN CỨU</text>
+</svg>

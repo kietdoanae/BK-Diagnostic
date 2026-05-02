@@ -1,0 +1,13 @@
+{
+  "name": "BK Diagnostic",
+  "short_name": "BK Diag",
+  "description": "Hệ thống chẩn đoán — ĐH Bách Khoa TPHCM",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "theme_color": "#003E7E",
+  "background_color": "#001E3F",
+  "display": "standalone",
+  "start_url": "/"
+}
