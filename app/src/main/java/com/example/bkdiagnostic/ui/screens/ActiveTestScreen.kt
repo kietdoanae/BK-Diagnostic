@@ -356,60 +356,89 @@ fun ActiveTestScreen(
             ) {
                 IconButton(
                     onClick  = onBack,
-                    modifier = Modifier.background(Color.Black.copy(alpha = 0.45f), CircleShape),
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(Color.Black.copy(alpha = 0.55f), CircleShape),
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
 
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(10.dp))
 
-                Text(
-                    text       = "Active Test",
-                    color      = Color.White,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize   = 18.sp,
-                    modifier   = Modifier
-                        .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                )
+                // Title + subtitle pill
+                Row(
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(Color(0xFF7C3AED), CircleShape)
+                    )
+                    Text(
+                        text = "ACTIVE TEST",
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 13.sp,
+                        letterSpacing = 1.2.sp
+                    )
+                }
 
                 Spacer(Modifier.weight(1f))
 
                 // USB connection pill
                 val (dotColor, connLabel) = when (connectionState) {
                     is UsbSerialManager.ConnectionState.Connected ->
-                        Color(0xFF4CAF50) to "Đã kết nối"
+                        Color(0xFF4CAF50) to "ONLINE"
                     is UsbSerialManager.ConnectionState.Searching,
                     is UsbSerialManager.ConnectionState.AwaitingPermission ->
-                        Color(0xFFFFA726) to "Đang kết nối…"
+                        Color(0xFFFFA726) to "CONNECTING"
                     else ->
-                        Color(0xFFEF5350) to "Chưa kết nối"
+                        Color(0xFFEF5350) to "OFFLINE"
                 }
                 Row(
-                    modifier              = Modifier
-                        .background(Color.Black.copy(alpha = 0.50f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                    verticalAlignment     = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     Box(Modifier.size(8.dp).background(dotColor, CircleShape))
-                    Text(connLabel, color = Color.White, fontSize = 13.sp)
+                    Text(
+                        connLabel,
+                        color = dotColor,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
                 }
             }
 
             // ── Bottom hint — shown only when USB is disconnected ────────
             if (!isConnected) {
-                Box(
+                Row(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp)
-                        .background(Color.Black.copy(alpha = 0.60f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(bottom = 18.dp)
+                        .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(14.dp))
+                        .padding(horizontal = 18.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    Box(Modifier.size(8.dp).background(Color(0xFFEF5350), CircleShape))
                     Text(
                         text     = "Kết nối USB để kích hoạt cảnh báo",
-                        color    = Color.White.copy(alpha = 0.85f),
+                        color    = Color.White.copy(alpha = 0.92f),
                         fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
