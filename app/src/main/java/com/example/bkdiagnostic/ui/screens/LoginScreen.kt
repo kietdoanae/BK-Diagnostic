@@ -110,7 +110,7 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 singleLine = true,
                 isError = uiState is AuthUiState.Error
             )
@@ -136,19 +136,25 @@ fun LoginScreen(
                 },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 singleLine = true,
                 isError = uiState is AuthUiState.Error
             )
 
             if (uiState is AuthUiState.Error) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = (uiState as AuthUiState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Start),
-                    fontSize = 12.sp
-                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.10f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = (uiState as AuthUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
             }
 
             // ── Remember me + Forgot password ───────────────────────────
@@ -186,7 +192,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 enabled = emailOrUsername.isNotBlank() && password.isNotBlank() && uiState !is AuthUiState.Loading
             ) {
                 if (uiState is AuthUiState.Loading) {
@@ -196,7 +202,12 @@ fun LoginScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(stringResource(R.string.login_btn_sign_in), fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.login_btn_sign_in),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        letterSpacing = 0.4.sp
+                    )
                 }
             }
 
@@ -211,7 +222,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(14.dp)
             ) {
                 Text(stringResource(R.string.login_btn_create_account), fontWeight = FontWeight.Medium)
             }

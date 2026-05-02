@@ -4,58 +4,40 @@ import android.content.Context
 import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.bkdiagnostic.R
+import com.example.bkdiagnostic.ui.components.AppTopBar
+import com.example.bkdiagnostic.ui.theme.LocalAppColors
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WiringDiagramScreen(onBack: () -> Unit = {}) {
     val context = LocalContext.current
+    val appColors = LocalAppColors.current
     val lang = remember {
         context.getSharedPreferences("bk_settings", Context.MODE_PRIVATE)
             .getString("language", "en") ?: "en"
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.wiring_diagram_title), color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0D1117)
-                )
-            )
-        }
-    ) { innerPadding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(appColors.screenBackground)
+    ) {
+        AppTopBar(
+            title    = stringResource(R.string.wiring_diagram_title),
+            subtitle = "Sơ đồ điện · TR4021",
+            onBack   = onBack
+        )
         AndroidView(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
                 WebView(ctx).apply {
                     // Software rendering: required for complex SVG on all Android devices

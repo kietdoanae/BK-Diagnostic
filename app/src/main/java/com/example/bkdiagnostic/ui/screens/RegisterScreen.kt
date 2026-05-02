@@ -1,6 +1,7 @@
 package com.example.bkdiagnostic.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bkdiagnostic.AuthUiState
 import com.example.bkdiagnostic.AuthViewModel
 import com.example.bkdiagnostic.R
+import com.example.bkdiagnostic.ui.theme.LocalAppColors
 
 @Composable
 fun RegisterScreen(
@@ -46,6 +48,7 @@ fun RegisterScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val appColors = LocalAppColors.current
 
     LaunchedEffect(uiState) {
         when (uiState) {
@@ -80,6 +83,7 @@ fun RegisterScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
+                .background(appColors.screenBackground)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 48.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -115,7 +119,7 @@ fun RegisterScreen(
                 label = { Text(stringResource(R.string.register_hint_username)) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 singleLine = true,
                 isError = localError != null && username.isEmpty()
             )
@@ -130,7 +134,7 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 singleLine = true,
                 isError = localError != null && email.isEmpty()
             )
@@ -154,7 +158,7 @@ fun RegisterScreen(
                 },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 singleLine = true,
                 isError = localError != null && password.isEmpty()
             )
@@ -178,7 +182,7 @@ fun RegisterScreen(
                 },
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 singleLine = true,
                 isError = localError != null && confirmPassword.isEmpty()
             )
@@ -186,13 +190,19 @@ fun RegisterScreen(
             // Error messages
             val displayError = localError ?: (uiState as? AuthUiState.Error)?.message
             if (displayError != null) {
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = displayError,
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 12.sp,
-                    modifier = Modifier.align(Alignment.Start)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.10f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = displayError,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -213,7 +223,7 @@ fun RegisterScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 enabled = uiState !is AuthUiState.Loading
             ) {
                 if (uiState is AuthUiState.Loading) {
@@ -223,7 +233,12 @@ fun RegisterScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(stringResource(R.string.register_btn_sign_up), fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.register_btn_sign_up),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        letterSpacing = 0.4.sp
+                    )
                 }
             }
 
