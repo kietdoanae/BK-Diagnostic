@@ -258,70 +258,133 @@ export default function DashboardPage({ embedded = false }) {
 
       {/* Profile card */}
       <Card style={{ borderRadius: 24, marginBottom: 24, overflow: 'hidden', border: '1px solid #e8edf5' }} styles={{ body: { padding: 0 } }}>
-        <div style={{ height: 140, background: 'linear-gradient(180deg,#002a80 0%,#1565C0 45%,#5b9bd5 75%,#ffffff 100%)', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 16, right: 20 }}>
-            <Tag color={ROLE_COLOR[role] ?? 'default'} style={{ fontWeight: 700, borderRadius: 20 }}>{role?.charAt(0).toUpperCase() + role?.slice(1)}</Tag>
+        {/* ── HEADER: gradient xanh đậm, text trắng — không còn fade về trắng để tránh che chữ ── */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg,#001f6b 0%,#003291 40%,#1565C0 80%,#1E88E5 100%)',
+            padding: '32px 28px 28px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Decorative circles */}
+          <div style={{ position: 'absolute', top: -60, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+          <div style={{ position: 'absolute', bottom: -30, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+
+          {/* Role tag góc phải trên */}
+          <div style={{ position: 'absolute', top: 16, right: 20, zIndex: 2 }}>
+            <Tag color={ROLE_COLOR[role] ?? 'default'} style={{ fontWeight: 700, borderRadius: 20, fontSize: 12, padding: '2px 12px' }}>
+              {role?.charAt(0).toUpperCase() + role?.slice(1)}
+            </Tag>
+          </div>
+
+          {/* Avatar + tên + email — tất cả text TRẮNG trên nền xanh, không bị che */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, position: 'relative', zIndex: 1 }}>
+            <Avatar
+              size={88}
+              style={{
+                background: bg,
+                fontWeight: 900,
+                fontSize: 38,
+                border: '4px solid rgba(255,255,255,0.95)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                flexShrink: 0,
+              }}
+            >
+              {initial}
+            </Avatar>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <Title level={3} style={{ margin: 0, color: '#fff', fontWeight: 800 }}>
+                {displayFull ?? username}
+              </Title>
+              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14 }}>{email}</Text>
+              <div style={{ marginTop: 8 }}>
+                <Tag
+                  color={STATUS_COLOR[status]}
+                  style={{ fontWeight: 600, borderRadius: 20, padding: '2px 12px', fontSize: 12 }}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </Tag>
+              </div>
+            </div>
           </div>
         </div>
-        <div style={{ padding: '0 28px 28px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, marginTop: -48, marginBottom: 20 }}>
-            <Avatar size={96} style={{ background: bg, fontWeight: 900, fontSize: 40, border: '4px solid #fff', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', flexShrink: 0 }}>{initial}</Avatar>
-            <div style={{ marginBottom: 8 }}>
-              <Title level={4} style={{ margin: 0 }}>{displayFull ?? username}</Title>
-              <Text type="secondary">{email}</Text>
-            </div>
-            <div style={{ marginBottom: 8, marginLeft: 'auto' }}>
-              <Tag color={STATUS_COLOR[status]} style={{ fontWeight: 600, borderRadius: 20, padding: '4px 12px' }}>{status.charAt(0).toUpperCase() + status.slice(1)}</Tag>
-            </div>
+
+        {/* ── BODY: thông tin chia 2 hàng × 3 cột logic ── */}
+        <div style={{ padding: '24px 28px 28px' }}>
+          {/* Section 1: Định danh cá nhân */}
+          <div style={{ marginBottom: 20 }}>
+            <Text style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: '#9ca3af', display: 'block', marginBottom: 10 }}>
+              ĐỊNH DANH
+            </Text>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={8}>
+                <InfoTile
+                  icon={<ContactsOutlined style={{ color: '#059669' }} />}
+                  label="Họ và tên"
+                  value={displayFull}
+                  ibg="#f0fdf4"
+                  missing={!displayFull}
+                  missingText="Chưa cập nhật ⚠"
+                  missingColor="#059669"
+                  missingBorder="#6ee7b7"
+                />
+              </Col>
+              <Col xs={24} sm={8}>
+                <InfoTile
+                  icon={<IdcardOutlined style={{ color: '#d97706' }} />}
+                  label="Mã số sinh viên"
+                  value={displayMssv}
+                  ibg="#fff7ed"
+                  missing={!displayMssv}
+                  missingText="Chưa cập nhật ⚠"
+                  missingColor="#d97706"
+                  missingBorder="#fbbf24"
+                />
+              </Col>
+              <Col xs={24} sm={8}>
+                <InfoTile
+                  icon={<UserOutlined style={{ color: '#1565C0' }} />}
+                  label="Username"
+                  value={username}
+                  ibg="#eff6ff"
+                />
+              </Col>
+            </Row>
           </div>
 
-          <Row gutter={[16, 16]}>
-            {[
-              { icon: <UserOutlined style={{ color: '#1565C0' }} />, label: 'Username', value: username, ibg: '#eff6ff' },
-              { icon: <CalendarOutlined style={{ color: '#059669' }} />, label: 'Member Since', value: joined, ibg: '#f0fdf4' },
-              { icon: <SafetyOutlined style={{ color: '#7c3aed' }} />, label: 'Status', value: status.charAt(0).toUpperCase() + status.slice(1), ibg: '#f5f3ff' },
-            ].map(({ icon, label, value, ibg }) => (
-              <Col xs={24} sm={8} key={label}>
-                <InfoTile icon={icon} label={label} value={value} ibg={ibg} />
+          {/* Section 2: Tài khoản */}
+          <div>
+            <Text style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: '#9ca3af', display: 'block', marginBottom: 10 }}>
+              TÀI KHOẢN
+            </Text>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12}>
+                <InfoTile
+                  icon={<MailOutlined style={{ color: '#0284c7' }} />}
+                  label="Email"
+                  value={email}
+                  ibg="#f0f9ff"
+                />
               </Col>
-            ))}
-
-            {/* Email */}
-            <Col xs={24} sm={12}>
-              <InfoTile
-                icon={<MailOutlined style={{ color: '#0284c7' }} />}
-                label="Email Address" value={email} ibg="#f0f9ff"
-              />
-            </Col>
-
-            {/* Họ và tên */}
-            <Col xs={24} sm={12}>
-              <InfoTile
-                icon={<ContactsOutlined style={{ color: '#059669' }} />}
-                label="Họ và tên"
-                value={displayFull}
-                ibg="#f0fdf4"
-                missing={!displayFull}
-                missingText="Chưa cập nhật ⚠"
-                missingColor="#059669"
-                missingBorder="#6ee7b7"
-              />
-            </Col>
-
-            {/* MSSV */}
-            <Col xs={24} sm={12}>
-              <InfoTile
-                icon={<IdcardOutlined style={{ color: '#d97706' }} />}
-                label="Mã số sinh viên"
-                value={displayMssv}
-                ibg="#fff7ed"
-                missing={!displayMssv}
-                missingText="Chưa cập nhật ⚠"
-                missingColor="#d97706"
-                missingBorder="#fbbf24"
-              />
-            </Col>
-          </Row>
+              <Col xs={24} sm={6}>
+                <InfoTile
+                  icon={<CalendarOutlined style={{ color: '#059669' }} />}
+                  label="Tham gia"
+                  value={joined}
+                  ibg="#f0fdf4"
+                />
+              </Col>
+              <Col xs={24} sm={6}>
+                <InfoTile
+                  icon={<SafetyOutlined style={{ color: '#7c3aed' }} />}
+                  label="Trạng thái"
+                  value={status.charAt(0).toUpperCase() + status.slice(1)}
+                  ibg="#f5f3ff"
+                />
+              </Col>
+            </Row>
+          </div>
         </div>
       </Card>
 
