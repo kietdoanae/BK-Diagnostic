@@ -12,6 +12,7 @@ import {
   message,
 } from 'antd'
 import { SaveOutlined, DownloadOutlined } from '@ant-design/icons'
+import { CheckCircleFilled, CloseCircleFilled } from '@ant-design/icons'
 import {
   getPostSubmission,
   setTeacherComment,
@@ -32,6 +33,7 @@ function fmtTime(v) {
 export default function SubmissionDetail({ open, submission, onClose, onChanged }) {
   const [post, setPost] = useState(null)
   const [postQs, setPostQs] = useState([])
+  const [preQs, setPreQs] = useState([])
   const [report, setReport] = useState(null)
   const [preLatest, setPreLatest] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -43,19 +45,26 @@ export default function SubmissionDetail({ open, submission, onClose, onChanged 
     let cancelled = false
     ;(async () => {
       setLoading(true)
-      const [{ data: p }, { data: qs }, { data: rs }, { data: pre }] =
-        await Promise.all([
-          getPostSubmission(submission.user_id, submission.session_id),
-          listQuestions(submission.session?.lab_id, 'post_lab'),
-          listReports({ sessionId: submission.session_id }),
-          listPreQuizSubmissions({
-            labId: submission.session?.lab_id,
-            userId: submission.user_id,
-          }),
-        ])
+      const [
+        { data: p },
+        { data: postQRes },
+        { data: preQRes },
+        { data: rs },
+        { data: pre },
+      ] = await Promise.all([
+        getPostSubmission(submission.user_id, submission.session_id),
+        listQuestions(submission.session?.lab_id, 'post_lab'),
+        listQuestions(submission.session?.lab_id, 'pre_lab'),
+        listReports({ sessionId: submission.session_id }),
+        listPreQuizSubmissions({
+          labId: submission.session?.lab_id,
+          userId: submission.user_id,
+        }),
+      ])
       if (cancelled) return
       setPost(p || null)
-      setPostQs(qs || [])
+      setPostQs(postQRes || [])
+      setPreQs(preQRes || [])
       setReport((rs || []).find((r) => r.user_id === submission.user_id) || null)
       setPreLatest((pre || [])[0] || null)
       setComment(p?.teacher_comment || '')
@@ -102,7 +111,7 @@ export default function SubmissionDetail({ open, submission, onClose, onChanged 
           : ''
       }
       onClose={onClose}
-      width={780}
+      width="min(780px, 100vw)"
       destroyOnClose
       loading={loading}
     >
@@ -165,6 +174,89 @@ export default function SubmissionDetail({ open, submission, onClose, onChanged 
               )}
             </Descriptions.Item>
           </Descriptions>
+
+          {/* Pre-quiz answers detail */}
+          {preLatest && preQs.length > 0 && (
+            <>
+              <Divider>Câu trả lời pre-quiz</Divider>
+              {preQs.map((q) => {
+                const ans = preLatest.answers?.[q.id]
+                const correctKey = q.correct_answer
+                const isCorrect = ans != null && String(ans) === String(correctKey)
+                const opts = q.options || {}
+                const optEntries = Array.isArray(opts)
+                  ? opts.map((o) => [o.key ?? o, o.text ?? o])
+                  : Object.entries(opts)
+                return (
+                  <div
+                    key={q.id}
+                    style={{
+                      marginBottom: 14,
+                      padding: 12,
+                      background: isCorrect ? '#f6ffed' : '#fff1f0',
+                      border: `1px solid ${isCorrect ? '#b7eb8f' : '#ffa39e'}`,
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Space size={8} style={{ marginBottom: 8 }} align="start">
+                      {isCorrect ? (
+                        <CheckCircleFilled style={{ color: '#52c41a', fontSize: 16, marginTop: 3 }} />
+                      ) : (
+                        <CloseCircleFilled style={{ color: '#ff4d4f', fontSize: 16, marginTop: 3 }} />
+                      )}
+                      <div>
+                        <Text strong>
+                          #{q.question_order} — {q.question_text}
+                        </Text>
+                        <div style={{ fontSize: 11, color: '#9ca3af' }}>
+                          {q.points || 1} điểm · {q.question_type}
+                        </div>
+                      </div>
+                    </Space>
+                    {optEntries.length > 0 && (
+                      <ul style={{ listStyle: 'none', paddingLeft: 24, margin: 0 }}>
+                        {optEntries.map(([key, text]) => {
+                          const isStudent = String(ans) === String(key)
+                          const isRight = String(correctKey) === String(key)
+                          return (
+                            <li
+                              key={key}
+                              style={{
+                                padding: '4px 8px',
+                                margin: '2px 0',
+                                borderRadius: 4,
+                                background: isRight
+                                  ? '#d9f7be'
+                                  : isStudent
+                                    ? '#ffccc7'
+                                    : 'transparent',
+                                fontWeight: isStudent || isRight ? 600 : 400,
+                              }}
+                            >
+                              <Text code style={{ fontSize: 11, marginRight: 6 }}>
+                                {key}
+                              </Text>
+                              {text}
+                              {isStudent && (
+                                <Tag color={isCorrect ? 'success' : 'error'} style={{ marginLeft: 8, fontSize: 10 }}>
+                                  Sinh viên chọn
+                                </Tag>
+                              )}
+                              {isRight && !isStudent && (
+                                <Tag color="success" style={{ marginLeft: 8, fontSize: 10 }}>
+                                  Đáp án đúng
+                                </Tag>
+                              )}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                )
+              })}
+            </>
+          )}
 
           <Divider>Câu trả lời post-lab</Divider>
           {!post || !post.answers ? (

@@ -227,6 +227,7 @@ export default function SubmissionsAdminTab() {
         columns={columns}
         dataSource={submissions}
         pagination={{ pageSize: 20 }}
+        scroll={{ x: 'max-content' }}
       />
 
       <SubmissionDetail

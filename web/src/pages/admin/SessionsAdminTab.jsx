@@ -181,6 +181,7 @@ export default function SessionsAdminTab() {
         columns={columns}
         dataSource={sessions}
         pagination={{ pageSize: 20 }}
+        scroll={{ x: 'max-content' }}
       />
 
       <SessionDetail

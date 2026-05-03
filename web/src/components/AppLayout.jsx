@@ -110,6 +110,9 @@ export default function AppLayout({ children }) {
       <Sider
         collapsed={collapsed}
         trigger={null}
+        breakpoint="lg"
+        collapsedWidth={64}
+        onBreakpoint={(broken) => setCollapsed(broken)}
         style={{
           background: 'linear-gradient(180deg,#001f6b 0%,#003291 40%,#0a4db5 100%)',
           boxShadow: '4px 0 20px rgba(0,0,50,0.2)',
@@ -318,9 +321,16 @@ export default function AppLayout({ children }) {
               icon={<HomeOutlined />}
               onClick={() => navigate('/')}
               style={{ height: 40, fontWeight: 600, borderRadius: 10 }}
+              className="bk-home-btn"
             >
-              Trang chủ
+              <span className="bk-home-label">Trang chủ</span>
             </Button>
+            <style>{`
+              @media (max-width: 600px) {
+                .bk-home-label { display: none; }
+                .bk-home-btn { padding: 0 12px !important; }
+              }
+            `}</style>
             <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenu }} placement="bottomRight">
               <div>
                 <UserBadge profile={profile} role={role} size={36} onClick={() => {}} />

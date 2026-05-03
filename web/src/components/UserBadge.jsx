@@ -102,7 +102,7 @@ export default function UserBadge({
         )}
       </div>
       {!compact && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0, lineHeight: 1.2 }}>
+        <div className="bk-user-badge-text" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0, lineHeight: 1.2 }}>
           <Text
             strong
             style={{
@@ -135,6 +135,11 @@ export default function UserBadge({
           </Tag>
         </div>
       )}
+      <style>{`
+        @media (max-width: 600px) {
+          .bk-user-badge-text { display: none !important; }
+        }
+      `}</style>
     </div>
   )
 }

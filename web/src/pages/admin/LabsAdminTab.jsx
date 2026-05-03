@@ -187,6 +187,7 @@ export default function LabsAdminTab() {
         columns={columns}
         dataSource={filtered}
         pagination={{ pageSize: 20 }}
+        scroll={{ x: 'max-content' }}
       />
 
       <LabForm

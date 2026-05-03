@@ -218,6 +218,7 @@ export default function GroupsAdminTab() {
         columns={columns}
         dataSource={filtered}
         pagination={{ pageSize: 20 }}
+        scroll={{ x: 'max-content' }}
       />
 
       <GroupForm
