@@ -65,14 +65,34 @@ export default function AppLayout({ children }) {
   const TEACH_PLUS = ['instructor', 'moderator', 'admin']
   const ADMIN_PLUS = ['moderator', 'admin']
 
+  // Helper: chỉ tạo group nếu có item visible bên trong (collapsed mode chỉ hiện divider).
+  function makeGroup(label, items) {
+    const visibleItems = items.filter((it) => it.show).map(({ show, ...rest }) => rest)
+    if (visibleItems.length === 0) return null
+    if (collapsed) {
+      // Khi sidebar thu gọn: chỉ render items + 1 divider phân tách, không hiện label
+      return [{ type: 'divider', style: { margin: '6px 12px', borderColor: 'rgba(255,255,255,0.10)' } }, ...visibleItems]
+    }
+    return [{ type: 'group', label, children: visibleItems }]
+  }
+
   const menuItems = [
-    { key: '/dashboard',  icon: <DashboardOutlined />,  label: 'Dashboard',         show: true },
-    { key: '/labs',       icon: <ExperimentOutlined />, label: 'Labs',              show: STUDENT_PLUS.includes(role) },
-    { key: '/my-reports', icon: <HistoryOutlined />,    label: 'Báo cáo của tôi',   show: STUDENT_PLUS.includes(role) },
-    { key: '/wiring',     icon: <ApartmentOutlined />,  label: 'Wiring Diagram',    show: true },
-    { key: '/teach',      icon: <ReadOutlined />,       label: 'Giảng dạy',         show: TEACH_PLUS.includes(role) },
-    { key: '/admin',      icon: <CrownOutlined />,      label: 'Admin Panel',       show: ADMIN_PLUS.includes(role) },
-  ].filter(item => item.show).map(({ show, ...rest }) => rest)
+    // ── TỔNG QUAN ──
+    ...(makeGroup('TỔNG QUAN', [
+      { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard', show: true },
+    ]) ?? []),
+    // ── THỰC HÀNH ──
+    ...(makeGroup('THỰC HÀNH', [
+      { key: '/labs',       icon: <ExperimentOutlined />, label: 'Labs',            show: STUDENT_PLUS.includes(role) },
+      { key: '/my-reports', icon: <HistoryOutlined />,    label: 'Báo cáo của tôi', show: STUDENT_PLUS.includes(role) },
+      { key: '/wiring',     icon: <ApartmentOutlined />,  label: 'Wiring Diagram',  show: true },
+    ]) ?? []),
+    // ── QUẢN TRỊ (chỉ instructor/moderator/admin) ──
+    ...(makeGroup('QUẢN TRỊ', [
+      { key: '/teach', icon: <ReadOutlined />,  label: 'Giảng dạy',  show: TEACH_PLUS.includes(role) },
+      { key: '/admin', icon: <CrownOutlined />, label: 'Admin Panel', show: ADMIN_PLUS.includes(role) },
+    ]) ?? []),
+  ]
 
   const userMenuItems = [
     { key: 'home',   icon: <HomeOutlined />,   label: 'Về trang chủ' },
@@ -150,15 +170,44 @@ export default function AppLayout({ children }) {
           )}
         </div>
 
-        {/* Menu */}
+        {/* Menu — group sections + compact item style */}
         <Menu
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
           items={menuItems}
-          onClick={({ key }) => navigate(key)}
-          style={{ background: 'transparent', borderRight: 'none', flex: 1, marginTop: 8 }}
+          onClick={({ key }) => key && key.startsWith('/') && navigate(key)}
+          className="bk-sidebar-menu"
+          style={{ background: 'transparent', borderRight: 'none', flex: 1, marginTop: 4, overflowY: 'auto' }}
         />
+        <style>{`
+          /* Group section label: nhỏ, uppercase, màu mờ */
+          .bk-sidebar-menu .ant-menu-item-group-title {
+            color: rgba(255,255,255,0.40) !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            letter-spacing: 1.2px !important;
+            padding: 14px 24px 4px !important;
+            text-transform: uppercase;
+          }
+          /* Item: bớt padding, nhỏ hơn */
+          .bk-sidebar-menu .ant-menu-item {
+            height: 38px !important;
+            line-height: 38px !important;
+            margin: 2px 8px !important;
+            padding-left: 16px !important;
+            border-radius: 8px !important;
+            width: auto !important;
+          }
+          .bk-sidebar-menu .ant-menu-item .ant-menu-title-content {
+            font-size: 13.5px;
+            font-weight: 500;
+          }
+          .bk-sidebar-menu .ant-menu-item-selected {
+            background: linear-gradient(90deg, #1565C0 0%, #1E88E5 100%) !important;
+            box-shadow: 0 2px 8px rgba(21,101,192,0.4);
+          }
+        `}</style>
 
         {/* User info card at bottom — nổi bật, dễ thấy role */}
         <div style={{ padding: collapsed ? '10px 8px 14px' : '10px 12px 14px', borderTop: '1px solid rgba(255,255,255,0.10)' }}>
