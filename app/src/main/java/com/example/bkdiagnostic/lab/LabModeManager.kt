@@ -26,7 +26,7 @@ object LabModeManager {
     suspend fun activate(code: String): Result<Unit> {
         return runCatching {
             val response = supabaseClient.postgrest
-                .rpc("validate_lab_code", buildJsonObject { put("code", code) })
+                .rpc("validate_lab_code", buildJsonObject { put("p_code", code) })
                 .decodeAs<ValidateLabCodeResponse>()
 
             _state.value = LabModeState.Active(

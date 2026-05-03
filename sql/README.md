@@ -31,7 +31,7 @@ sql/schema/07-export-records.sql          # bảng export_records cho CAN raw ex
 
 ### 2. Storage
 ```
-sql/storage/01-lab-storage.sql            # bucket lab-evidence, lab-reports + policies
+sql/storage/01-lab-storage.sql            # bucket lab-reports (PDF) + lab-images (post-lab uploads) + policies
 sql/storage/02-exports-storage.sql        # bucket exports + policies
 ```
 

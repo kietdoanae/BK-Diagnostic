@@ -16,7 +16,7 @@ async function pathToDataUri(bucket, path) {
 }
 
 export default function PostLabSection({ questions, postSubmission }) {
-  const postQs = (questions || []).filter((q) => q.stage === 'post_lab')
+  const postQs = (questions || []).filter((q) => q.phase === 'post_lab')
   const answers = postSubmission?.answers || {}
   const uploads = postSubmission?.uploaded_images || []
   // Index uploaded images by question_id for O(1) lookup.

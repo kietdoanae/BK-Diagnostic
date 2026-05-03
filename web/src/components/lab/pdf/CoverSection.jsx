@@ -12,11 +12,9 @@ function formatVN(dt) {
 
 export default function CoverSection({ lab, student, group, session, postSubmission }) {
   const practiceDate = session?.started_at ? formatVN(session.started_at) : '—'
-  const submittedAt = postSubmission?.finalized_at
-    ? formatVN(postSubmission.finalized_at)
-    : postSubmission?.submitted_at
-      ? formatVN(postSubmission.submitted_at)
-      : '—'
+  const submittedAt = postSubmission?.submitted_at
+    ? formatVN(postSubmission.submitted_at)
+    : '—'
 
   return (
     <section className="page cover">

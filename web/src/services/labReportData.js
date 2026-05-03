@@ -51,20 +51,20 @@ export async function fetchLabReportData(userId, sessionId) {
         .maybeSingle(),
       supabase
         .from('lab_post_submissions')
-        .select('id, answers, uploaded_images, finalized_at, is_draft, submitted_at')
+        .select('id, answers, uploaded_images, is_draft, submitted_at')
         .eq('user_id', userId)
         .eq('session_id', sessionId)
         .maybeSingle(),
       supabase
         .from('lab_questions')
-        .select('id, question_order, question_type, question_text, options, correct_answer, stage, points')
+        .select('id, question_order, question_type, question_text, options, correct_answer, phase, points')
         .eq('lab_id', session.lab_id)
         .order('question_order', { ascending: true }),
       supabase
         .from('lab_evidence')
-        .select('id, step_id, evidence_type, payload, captured_at')
+        .select('id, step_id, evidence_type, payload, created_at')
         .eq('session_id', sessionId)
-        .order('captured_at', { ascending: true }),
+        .order('created_at', { ascending: true }),
     ])
 
   for (const r of [stepsRes, preQuizRes, postRes, questionsRes, evidenceRes]) {

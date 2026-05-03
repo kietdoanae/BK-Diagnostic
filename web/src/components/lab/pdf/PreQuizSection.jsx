@@ -10,7 +10,7 @@ function answerLabel(question, key) {
 }
 
 export default function PreQuizSection({ preQuiz, questions, lab }) {
-  const preQs = (questions || []).filter((q) => q.stage === 'pre_lab')
+  const preQs = (questions || []).filter((q) => q.phase === 'pre_lab')
 
   if (!preQuiz) {
     return (

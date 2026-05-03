@@ -61,17 +61,17 @@ export default function LabSessionPage() {
 
   const allStepsSatisfied = useMemo(() => {
     if (steps.length === 0) return false
+    // session.completed_step_ids — uuid[] track steps đã end_current_step() ít nhất 1 lần.
+    // Cần migration 2026-05-03-track-completed-steps để có column này.
+    const completed = new Set(session?.completed_step_ids ?? [])
     return steps.every((s) => {
       if (s.evidence_type === 'none') {
-        // "none" steps are satisfied only if they were at some point the current step
-        // AND subsequently ended. We approximate by requiring required_count=0 AND
-        // that the step is not currently active. Leader-advanced workflow means this
-        // holds once the leader clicks "Đánh dấu hoàn tất".
-        return s.id !== session?.current_step_id
+        // none-step thực sự "satisfied" khi leader đã activate + end nó (trong completed_step_ids).
+        return completed.has(s.id)
       }
       return (countsByStep[s.id] || 0) >= s.required_count
     })
-  }, [steps, countsByStep, session?.current_step_id])
+  }, [steps, countsByStep, session?.completed_step_ids])
 
   async function handleStart(step) {
     const { ok, error: err } = await startStep(step.id)
