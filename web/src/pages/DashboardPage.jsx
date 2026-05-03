@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Card, Avatar, Typography, Tag, Row, Col, Form, Input, Button, Alert, Table, Space, Tooltip } from 'antd'
 import { UserOutlined, CalendarOutlined, SafetyOutlined, MailOutlined, LockOutlined, DownloadOutlined, FileTextOutlined, ReloadOutlined, IdcardOutlined, CheckCircleOutlined, ContactsOutlined } from '@ant-design/icons'
-import { Link } from 'react-router-dom'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../services/supabase'
@@ -388,56 +387,57 @@ export default function DashboardPage({ embedded = false }) {
         </div>
       </Card>
 
-      <Row gutter={24}>
-        <Col xs={24} md={12}>
-          <Card style={{ borderRadius: 24, border: '1px solid #e8edf5', height: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 14, background: 'linear-gradient(135deg,#003291,#1E88E5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <LockOutlined style={{ color: '#fff', fontSize: 18 }} />
-              </div>
-              <div>
-                <Text strong style={{ display: 'block', fontSize: 15 }}>Đổi mật khẩu</Text>
-                <Text type="secondary" style={{ fontSize: 12 }}>Cập nhật mật khẩu tài khoản</Text>
-              </div>
-            </div>
-            {pwMsg && <Alert message={pwMsg.text} type={pwMsg.type} showIcon style={{ marginBottom: 16 }} />}
-            <Form form={form} layout="vertical" onFinish={handleChangePassword}>
+      {/* Đổi mật khẩu — full width, form chia 3 cột để tận dụng không gian */}
+      <Card style={{ borderRadius: 24, border: '1px solid #e8edf5' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 14, background: 'linear-gradient(135deg,#003291,#1E88E5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LockOutlined style={{ color: '#fff', fontSize: 18 }} />
+          </div>
+          <div>
+            <Text strong style={{ display: 'block', fontSize: 15 }}>Đổi mật khẩu</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>Cập nhật mật khẩu tài khoản — tối thiểu 6 ký tự</Text>
+          </div>
+        </div>
+        {pwMsg && <Alert message={pwMsg.text} type={pwMsg.type} showIcon style={{ marginBottom: 16 }} />}
+        <Form form={form} layout="vertical" onFinish={handleChangePassword}>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
               <Form.Item label="Mật khẩu hiện tại" name="current" rules={[{ required: true, message: 'Bắt buộc' }]}>
                 <Input.Password placeholder="Nhập mật khẩu hiện tại" />
               </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
               <Form.Item label="Mật khẩu mới" name="newPw" rules={[{ required: true, min: 6, message: 'Tối thiểu 6 ký tự' }]}>
                 <Input.Password placeholder="Tối thiểu 6 ký tự" />
               </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
               <Form.Item label="Xác nhận mật khẩu mới" name="confirmPw"
                 rules={[{ required: true, message: 'Bắt buộc' },
                   ({ getFieldValue }) => ({ validator(_, v) { return !v || getFieldValue('newPw') === v ? Promise.resolve() : Promise.reject('Mật khẩu không khớp') } })]}>
                 <Input.Password placeholder="Nhập lại mật khẩu mới" />
               </Form.Item>
-              <Button type="primary" htmlType="submit" block loading={pwLoading} style={{ background: 'linear-gradient(135deg,#003291,#1E88E5)', border: 'none', fontWeight: 600 }}>
-                Cập nhật mật khẩu
-              </Button>
-            </Form>
-          </Card>
-        </Col>
-
-        <Col xs={24} md={12}>
-          <Card style={{ borderRadius: 20, height: '100%' }}>
-            <Title level={5} style={{ marginBottom: 4 }}>About BK Diagnostic</Title>
-            <Text type="secondary" style={{ fontSize: 13 }}>HCMUT · Automotive Engineering</Text>
-            <ul style={{ listStyle: 'none', padding: 0, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {['Vehicle diagnostics via OBD2 port', 'Supports Ford, Toyota, Hyundai & more', 'MCP2515 → STM32 → CP2102 → USB', 'Real-time CAN bus data monitoring'].map(t => (
-                <li key={t} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#f0fdf4', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, flexShrink: 0, marginTop: 1 }}>✓</span>
-                  <Text style={{ fontSize: 13 }}>{t}</Text>
-                </li>
-              ))}
-            </ul>
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
-              <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, fontSize: 13 }}>← Back to Homepage</Link>
-            </div>
-          </Card>
-        </Col>
-      </Row>
+            </Col>
+          </Row>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={pwLoading}
+              style={{
+                background: 'linear-gradient(135deg,#003291,#1E88E5)',
+                border: 'none',
+                fontWeight: 600,
+                height: 44,
+                minWidth: 200,
+                borderRadius: 10,
+              }}
+            >
+              Cập nhật mật khẩu
+            </Button>
+          </div>
+        </Form>
+      </Card>
 
       <ExportHistoryCard session={session} />
     </div>
