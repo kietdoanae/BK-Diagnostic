@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { motion, useScroll } from 'framer-motion'
-import { Button, Avatar, Drawer } from 'antd'
-import { MenuOutlined } from '@ant-design/icons'
+import { Button, Drawer } from 'antd'
+import { MenuOutlined, DashboardOutlined, LoginOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../hooks/useAuth'
+import UserBadge from '../../../components/UserBadge'
 import logoSvg from '../../../assets/svg/bk-diagnostic-logo.svg'
 
 const NAV_ITEMS = [
@@ -15,20 +16,11 @@ const NAV_ITEMS = [
   { href: '#team',       label: 'Team' },
 ]
 
-const AVATAR_COLORS = ['#1565C0','#0097A7','#2E7D32','#6A1B9A','#AD1457','#E65100']
-function avatarColor(u = '') {
-  let h = 0; for (const c of u) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff
-  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length]
-}
-
 export default function Navbar() {
-  const { session, profile } = useAuth()
+  const { session, profile, role } = useAuth()
   const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { scrollYProgress } = useScroll()
-
-  const username = profile?.username ?? session?.user?.email?.split('@')[0] ?? 'User'
-  const initial = username[0]?.toUpperCase() ?? 'U'
 
   return (
     <>
@@ -57,18 +49,33 @@ export default function Navbar() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {session ? (
             <>
-              <Avatar
-                size={32}
-                style={{ background: avatarColor(username), fontWeight: 700, cursor: 'pointer' }}
+              <UserBadge
+                profile={profile}
+                role={role}
                 onClick={() => navigate('/dashboard')}
-              >{initial}</Avatar>
-              <Button type="primary" onClick={() => navigate('/dashboard')}>Bảng điều khiển</Button>
+                size={36}
+              />
+              <Button
+                type="primary"
+                icon={<DashboardOutlined />}
+                onClick={() => navigate('/dashboard')}
+                style={{ height: 40, fontWeight: 600, borderRadius: 10 }}
+              >
+                Bảng điều khiển
+              </Button>
             </>
           ) : (
-            <Button type="primary" onClick={() => navigate('/login')}>Đăng nhập</Button>
+            <Button
+              type="primary"
+              icon={<LoginOutlined />}
+              onClick={() => navigate('/login')}
+              style={{ height: 40, fontWeight: 600, borderRadius: 10 }}
+            >
+              Đăng nhập
+            </Button>
           )}
           <Button
             className="nav-mobile-btn"

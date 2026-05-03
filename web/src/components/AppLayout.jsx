@@ -19,6 +19,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { logActivity } from '../services/api'
+import UserBadge from './UserBadge'
 
 const { Sider, Header, Content } = Layout
 const { Text } = Typography
@@ -262,40 +263,20 @@ export default function AppLayout({ children }) {
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
           />
-          <Space size={8}>
+          <Space size={12}>
             <Button
-              type="text"
+              type="primary"
               icon={<HomeOutlined />}
               onClick={() => navigate('/')}
-              style={{ color: '#1565C0', fontWeight: 600 }}
+              style={{ height: 40, fontWeight: 600, borderRadius: 10 }}
             >
-              <span className="ant-btn-home-label">Trang chủ</span>
+              Trang chủ
             </Button>
-          <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenu }} placement="bottomRight">
-            <Space size={10} style={{ cursor: 'pointer', padding: '4px 10px 4px 4px', borderRadius: 24, transition: 'background 0.15s' }}>
-              <Avatar style={{ background: bg, fontWeight: 700 }}>{initial}</Avatar>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.2 }}>
-                <Text style={{ fontWeight: 600, fontSize: 13 }}>{fullName}</Text>
-                <Tag
-                  bordered={false}
-                  style={{
-                    margin: 0,
-                    marginTop: 2,
-                    background: `${badge.color}1A`,
-                    color: badge.color,
-                    fontWeight: 700,
-                    fontSize: 10,
-                    padding: '0 6px',
-                    lineHeight: '16px',
-                    borderRadius: 4,
-                  }}
-                  icon={badge.icon}
-                >
-                  {badge.label}
-                </Tag>
+            <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenu }} placement="bottomRight">
+              <div>
+                <UserBadge profile={profile} role={role} size={36} onClick={() => {}} />
               </div>
-            </Space>
-          </Dropdown>
+            </Dropdown>
           </Space>
         </Header>
         <Content style={{ padding: 24, background: '#f5f7fa' }}>
