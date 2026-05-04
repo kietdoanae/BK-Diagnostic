@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.security.crypto)
 
     // USB Serial (CP2102 / CH340 / FTDI)
     implementation(libs.usb.serial.android)

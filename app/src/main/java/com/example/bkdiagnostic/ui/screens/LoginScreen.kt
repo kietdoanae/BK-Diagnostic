@@ -1,6 +1,9 @@
 package com.example.bkdiagnostic.ui.screens
 
 import android.content.Context
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -39,7 +42,7 @@ fun LoginScreen(
     viewModel: AuthViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("bk_login_prefs", Context.MODE_PRIVATE) }
+    val prefs = remember { createEncryptedPrefs(context) }
 
     var emailOrUsername by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -242,5 +245,29 @@ fun LoginScreen(
                 contentScale = ContentScale.Crop
             )
         }
+    }
+}
+
+/**
+ * Tạo EncryptedSharedPreferences để lưu credentials an toàn.
+ * Dùng AES256_GCM encryption do Android Keystore quản lý.
+ * Nếu device không hỗ trợ (rất hiếm), fallback về SharedPreferences thường
+ * để app không crash.
+ */
+private fun createEncryptedPrefs(context: Context): SharedPreferences {
+    return try {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        EncryptedSharedPreferences.create(
+            context,
+            "bk_login_prefs_encrypted",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    } catch (e: Exception) {
+        // Fallback cho edge case (device không hỗ trợ Keystore, v.v.)
+        context.getSharedPreferences("bk_login_prefs", Context.MODE_PRIVATE)
     }
 }
