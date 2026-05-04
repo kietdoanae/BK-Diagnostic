@@ -357,8 +357,12 @@ private fun ArcGauge(
         ) {
             val strokeW = size.minDimension * 0.09f
             val pad = strokeW / 2 + 4f
-            val arcTopLeft = Offset(pad, pad)
-            val arcSize = Size(size.width - 2 * pad, size.height - 2 * pad)
+            val diameter = size.minDimension - 2 * pad
+            val arcTopLeft = Offset(
+                (size.width - diameter) / 2f,
+                (size.height - diameter) / 2f
+            )
+            val arcSize = Size(diameter, diameter)
 
             // Zone arcs (subtle background)
             val zoneColors = listOf(
@@ -392,7 +396,7 @@ private fun ArcGauge(
                 val endAngleRad = Math.toRadians((135f + 270f * animFraction).toDouble())
                 val cx = size.width / 2
                 val cy = size.height / 2
-                val r = (size.minDimension - 2 * pad) / 2
+                val r = diameter / 2
                 val dotX = (cx + r * Math.cos(endAngleRad)).toFloat()
                 val dotY = (cy + r * Math.sin(endAngleRad)).toFloat()
                 drawCircle(Color.White.copy(alpha = 0.9f), strokeW * 0.45f, Offset(dotX, dotY))
