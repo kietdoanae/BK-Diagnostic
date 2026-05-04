@@ -60,11 +60,14 @@ fun SettingsScreen(
     val connSettingsError by settingsViewModel.error.collectAsStateWithLifecycle()
 
     val username    = userProfile?.username    ?: "User"
-    val isAdmin     = userProfile?.isAdmin     ?: false
-    val isModerator = userProfile?.isModerator ?: false
-    val isLoading   = uiState is AuthUiState.Loading
-    val mssv        = userProfile?.mssv
-    val fullName    = userProfile?.fullName
+    val isAdmin      = userProfile?.isAdmin      ?: false
+    val isModerator  = userProfile?.isModerator  ?: false
+    val isStudent    = userProfile?.isStudent     ?: false
+    val isInstructor = userProfile?.isInstructor  ?: false
+    val isLoading    = uiState is AuthUiState.Loading
+    val mssv         = userProfile?.mssv
+    val fullName     = userProfile?.fullName
+    val role         = userProfile?.role ?: "user"
 
     var userEmail by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
@@ -121,6 +124,7 @@ fun SettingsScreen(
     val strFullNameNotSet   = stringResource(R.string.settings_full_name_not_set)
     val strMssv             = stringResource(R.string.settings_label_mssv)
     val strMssvNotSet       = stringResource(R.string.settings_mssv_not_set)
+    val strRole             = stringResource(R.string.settings_label_role)
     val strSecurity         = stringResource(R.string.settings_section_security)
     val strChangePassword   = stringResource(R.string.settings_label_change_password)
     val strConnection       = stringResource(R.string.settings_section_connection)
@@ -200,10 +204,12 @@ fun SettingsScreen(
             // ── Profile header ───────────────────────────────────────────────
             item {
                 ProfileHeaderCard(
-                    username    = username,
-                    email       = userEmail,
-                    isAdmin     = isAdmin,
-                    isModerator = isModerator
+                    username     = username,
+                    email        = userEmail,
+                    isAdmin      = isAdmin,
+                    isModerator  = isModerator,
+                    isStudent    = isStudent,
+                    isInstructor = isInstructor
                 )
                 Spacer(Modifier.height(28.dp))
             }
@@ -245,6 +251,21 @@ fun SettingsScreen(
                         iconBg       = Color(0xFFE65100),
                         label        = strMssv,
                         trailingText = mssv ?: strMssvNotSet,
+                        showChevron  = false,
+                        onClick      = null
+                    )
+                    SettingsDivider()
+                    SettingsRow(
+                        icon         = Icons.Filled.Security,
+                        iconBg       = when {
+                            isAdmin      -> Color(0xFFC62828)
+                            isModerator  -> Color(0xFFFFA000)
+                            isStudent    -> Color(0xFF1565C0)
+                            isInstructor -> Color(0xFF2E7D32)
+                            else         -> Color(0xFF37474F)
+                        },
+                        label        = strRole,
+                        trailingText = role.replaceFirstChar { it.uppercase() },
                         showChevron  = false,
                         onClick      = null
                     )
@@ -545,7 +566,9 @@ private fun ProfileHeaderCard(
     username: String,
     email: String,
     isAdmin: Boolean,
-    isModerator: Boolean
+    isModerator: Boolean,
+    isStudent: Boolean,
+    isInstructor: Boolean
 ) {
     val appColors = LocalAppColors.current
     val initials = username.take(2).uppercase()
@@ -562,9 +585,11 @@ private fun ProfileHeaderCard(
         palette[username.hashCode().and(0x7FFFFFFF) % palette.size]
     }
     val (badgeColor, badgeText) = when {
-        isAdmin     -> Color(0xFFE53935) to "Admin"
-        isModerator -> Color(0xFFFFA000) to "Moderator"
-        else        -> Color(0xFF43A047) to "User"
+        isAdmin      -> Color(0xFFE53935) to "Admin"
+        isModerator  -> Color(0xFFFFA000) to "Moderator"
+        isStudent    -> Color(0xFF1565C0) to "Student"
+        isInstructor -> Color(0xFF2E7D32) to "Instructor"
+        else         -> Color(0xFF43A047) to "User"
     }
     Card(
         modifier = Modifier.fillMaxWidth(),
