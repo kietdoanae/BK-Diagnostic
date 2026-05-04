@@ -252,9 +252,6 @@ class MainActivity : ComponentActivity() {
                                 diagSettings = diagSettings
                             )
                         }
-                        composable("lab_mode") {
-                            LabModeScreen(onBack = { navController.popBackStack() })
-                        }
                         // ── Lab Mode flow: brand → model → lab session ──────────
                         composable("lab_brand_selection") {
                             BrandSelectionScreen(
@@ -287,7 +284,7 @@ class MainActivity : ComponentActivity() {
                 }
                 LabModeBanner(
                     state    = labModeState,
-                    onManage = { navController.navigate("lab_mode") }
+                    onManage = { navController.navigate("lab_brand_selection") }
                 )
                 }  // end Box
                 }  // end Surface
