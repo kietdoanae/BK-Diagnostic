@@ -59,9 +59,11 @@ object LabEvidenceRepository {
     fun onSessionDeactivated(sessionId: String) {
         flushJob?.cancel()
         flushJob = null
-        // Final flush — fire-and-forget on IO
-        scope.launch { flushQueue(sessionId) }
-        scope.launch { mutex.withLock { frameQueue.clear() } }
+        // Final flush then clear — sequential to avoid losing queued frames
+        scope.launch {
+            flushQueue(sessionId)
+            mutex.withLock { frameQueue.clear() }
+        }
     }
 
     // ── Real-time streaming path (called per-frame from DiagnosticViewModel) ──
