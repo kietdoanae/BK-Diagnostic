@@ -8,6 +8,7 @@ import {
   PlayCircleOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import AppLayout from '../components/AppLayout'
 import LabsAdminTab from './admin/LabsAdminTab'
 import GroupsAdminTab from './admin/GroupsAdminTab'
@@ -28,6 +29,7 @@ const { Title, Text } = Typography
  * Mục đích: cho giảng viên thấy ngay quy mô đang quản lý.
  */
 function TeachStatsHero({ profile }) {
+  const { t } = useTranslation()
   const [stats, setStats] = useState({
     labs: null,
     groups: null,
@@ -57,10 +59,10 @@ function TeachStatsHero({ profile }) {
   }, [])
 
   const items = [
-    { label: 'Bài Lab',        value: stats.labs,           icon: <ExperimentOutlined />, color: '#1565C0' },
-    { label: 'Nhóm thực hành', value: stats.groups,         icon: <TeamOutlined />,       color: '#0097A7' },
-    { label: 'Phiên đang chạy',value: stats.activeSessions, icon: <PlayCircleOutlined />, color: '#2E7D32' },
-    { label: 'Bài nộp',        value: stats.submissions,    icon: <CheckCircleOutlined />, color: '#6A1B9A' },
+    { label: t('teach.stats.labs'),           value: stats.labs,           icon: <ExperimentOutlined />, color: '#1565C0' },
+    { label: t('teach.stats.groups'),         value: stats.groups,         icon: <TeamOutlined />,       color: '#0097A7' },
+    { label: t('teach.stats.activeSessions'), value: stats.activeSessions, icon: <PlayCircleOutlined />, color: '#2E7D32' },
+    { label: t('teach.stats.submissions'),    value: stats.submissions,    icon: <CheckCircleOutlined />, color: '#6A1B9A' },
   ]
 
   return (
@@ -75,16 +77,16 @@ function TeachStatsHero({ profile }) {
     >
       <Space direction="vertical" size={4} style={{ marginBottom: 18 }}>
         <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12, letterSpacing: 1 }}>
-          GIẢNG VIÊN ·{' '}
+          {t('teach.instructorRole')} ·{' '}
           <span style={{ fontWeight: 600 }}>
             {profile?.full_name || profile?.username || 'Instructor'}
           </span>
         </Text>
         <Title level={2} style={{ color: 'white', margin: 0, fontWeight: 800 }}>
-          Phần giảng dạy
+          {t('teach.title')}
         </Title>
         <Text style={{ color: 'rgba(255,255,255,0.78)' }}>
-          Tạo và quản lý nội dung Lab · xem báo cáo sinh viên · quản lý nhóm thực hành
+          {t('teach.subtitle')}
         </Text>
       </Space>
 
@@ -135,13 +137,14 @@ function TeachStatsHero({ profile }) {
 
 export default function TeachPage() {
   const { profile } = useAuth()
+  const { t } = useTranslation()
 
   const items = [
     {
       key: 'labs',
       label: (
         <Space>
-          <ReadOutlined /> Quản lý Lab
+          <ReadOutlined /> {t('teach.tab.labs')}
         </Space>
       ),
       children: <LabsAdminTab />,
@@ -150,7 +153,7 @@ export default function TeachPage() {
       key: 'groups',
       label: (
         <Space>
-          <TeamOutlined /> Quản lý nhóm
+          <TeamOutlined /> {t('teach.tab.groups')}
         </Space>
       ),
       children: <GroupsAdminTab />,
@@ -159,7 +162,7 @@ export default function TeachPage() {
       key: 'sessions',
       label: (
         <Space>
-          <PlayCircleOutlined /> Phiên thực hành
+          <PlayCircleOutlined /> {t('teach.tab.sessions')}
         </Space>
       ),
       children: <SessionsAdminTab />,
@@ -168,7 +171,7 @@ export default function TeachPage() {
       key: 'reports',
       label: (
         <Space>
-          <FileTextOutlined /> Báo cáo sinh viên
+          <FileTextOutlined /> {t('teach.tab.reports')}
         </Space>
       ),
       children: <SubmissionsAdminTab />,

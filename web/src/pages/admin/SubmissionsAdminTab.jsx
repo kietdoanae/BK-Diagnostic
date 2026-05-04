@@ -11,6 +11,7 @@ import {
   Progress,
 } from 'antd'
 import { ReloadOutlined, FileZipOutlined, DownloadOutlined } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import JSZip from 'jszip'
 import {
   listPostSubmissions,
@@ -29,6 +30,7 @@ function fmtTime(v) {
 }
 
 export default function SubmissionsAdminTab() {
+  const { t } = useTranslation()
   const [labs, setLabs] = useState([])
   const [filterLab, setFilterLab] = useState(null)
   const [submissions, setSubmissions] = useState([])
@@ -67,7 +69,7 @@ export default function SubmissionsAdminTab() {
    */
   async function handleBulkZip() {
     if (!filterLab) {
-      message.warning('Chọn lab trước khi tải ZIP')
+      message.warning(t('admin.submissionsTab.pickLabFirst'))
       return
     }
     const lab = labs.find((l) => l.id === filterLab)
@@ -81,7 +83,7 @@ export default function SubmissionsAdminTab() {
     }
     if (!reports || reports.length === 0) {
       setZipping(false)
-      message.info('Không có PDF nào cho lab này')
+      message.info(t('admin.submissionsTab.noPdfForLab'))
       return
     }
     setZipProgress({ done: 0, total: reports.length })
@@ -107,18 +109,18 @@ export default function SubmissionsAdminTab() {
     a.click()
     URL.revokeObjectURL(url)
     setZipping(false)
-    message.success(`Đã đóng gói ${done} PDF`)
+    message.success(t('admin.submissionsTab.zippedFmt', { count: done }))
   }
 
   const columns = [
     {
-      title: 'MSSV',
+      title: t('admin.submission.mssvCol'),
       dataIndex: ['profile', 'mssv'],
       width: 110,
       render: (v) => <Text code>{v || '—'}</Text>,
     },
     {
-      title: 'Sinh viên',
+      title: t('admin.submission.studentCol'),
       dataIndex: ['profile', 'full_name'],
       render: (v, r) => (
         <div>
@@ -128,33 +130,33 @@ export default function SubmissionsAdminTab() {
       ),
     },
     {
-      title: 'Lab',
+      title: t('admin.submission.labCol'),
       dataIndex: ['session', 'lab', 'code'],
       render: (v) => <Text code>{v}</Text>,
     },
     {
-      title: 'Nhóm',
+      title: t('admin.session.group'),
       dataIndex: ['session', 'group', 'name'],
     },
     {
-      title: 'Trạng thái',
+      title: t('common.status'),
       dataIndex: 'is_draft',
       width: 110,
       render: (v) =>
-        v ? <Tag color="warning">DRAFT</Tag> : <Tag color="success">SUBMITTED</Tag>,
+        v ? <Tag color="warning">{t('admin.submission.draft')}</Tag> : <Tag color="success">{t('admin.submission.submitted')}</Tag>,
     },
     {
-      title: 'Cập nhật',
+      title: t('common.updatedAt'),
       dataIndex: 'updated_at',
       width: 170,
       render: fmtTime,
     },
     {
-      title: 'Nhận xét',
+      title: t('admin.submissionsTab.commentCol'),
       dataIndex: 'teacher_comment',
       render: (v) =>
         v ? (
-          <Tag color="blue">Có</Tag>
+          <Tag color="blue">{t('common.yes')}</Tag>
         ) : (
           <Text type="secondary" style={{ fontSize: 11 }}>
             —
@@ -167,7 +169,7 @@ export default function SubmissionsAdminTab() {
       align: 'right',
       render: (_, r) => (
         <Button size="small" icon={<DownloadOutlined />} onClick={() => setOpenSubmission(r)}>
-          Mở
+          {t('common.open')}
         </Button>
       ),
     },
@@ -186,7 +188,7 @@ export default function SubmissionsAdminTab() {
         }}
       >
         <Select
-          placeholder="Lọc theo lab"
+          placeholder={t('admin.submission.filterLab')}
           value={filterLab || undefined}
           onChange={(v) => setFilterLab(v ?? null)}
           allowClear
@@ -197,7 +199,7 @@ export default function SubmissionsAdminTab() {
           }))}
         />
         <Button icon={<ReloadOutlined />} onClick={reload}>
-          Làm mới
+          {t('common.refresh')}
         </Button>
         <Button
           type="primary"
@@ -207,7 +209,7 @@ export default function SubmissionsAdminTab() {
           style={{ marginLeft: 'auto' }}
           onClick={handleBulkZip}
         >
-          Tải ZIP toàn bộ PDF (theo lab)
+          {t('admin.submissionsTab.btnZipAll')}
         </Button>
       </div>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Form, Input, Button, Alert, Typography, Grid } from 'antd'
 import { Link, Navigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { register } from '../services/auth'
 import { logActivity } from '../services/api'
 import { useAuth } from '../hooks/useAuth'
@@ -10,6 +11,7 @@ const { useBreakpoint } = Grid
 const { Text, Title } = Typography
 
 export default function RegisterPage() {
+  const { t } = useTranslation()
   const [formLoading, setFormLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -32,9 +34,9 @@ export default function RegisterPage() {
     if (err) {
       setFormLoading(false)
       const msg = err.message.includes('User already registered')
-        ? 'An account with this email already exists.'
+        ? t('registerPage.errEmailExists')
         : err.message.includes('Password should be')
-        ? 'Password must be at least 8 characters.'
+        ? t('registerPage.errPasswordMin8')
         : err.message
       setError(msg)
       return
@@ -54,18 +56,18 @@ export default function RegisterPage() {
           <div>
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40, opacity: 0.9 }}>
               <img src="https://i.ibb.co/Z0Xc41Z/logo.png" style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.1)', padding: 4 }} alt="logo" />
-              <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>BK Diagnostic</span>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>{t('app.name')}</span>
             </Link>
-            <Title level={3} style={{ color: '#fff', margin: 0, lineHeight: 1.3 }}>Create your<br />account</Title>
+            <Title level={3} style={{ color: '#fff', margin: 0, lineHeight: 1.3 }}>{t('registerPage.heroTitle')}</Title>
             <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 12, display: 'block', lineHeight: 1.6 }}>
-              Join BK Diagnostic to access your dashboard, view diagnostic history, and manage your vehicle.
+              {t('registerPage.heroDesc')}
             </Text>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              { icon: '📈', text: 'Real-time live data' },
-              { icon: '⚠️', text: 'Read & clear fault codes (DTC)' },
-              { icon: '💻', text: 'ECU & VIN information' },
+              { icon: '📈', text: t('loginPage.feat1') },
+              { icon: '⚠️', text: t('loginPage.feat2') },
+              { icon: '💻', text: t('loginPage.feat3') },
             ].map(({ icon, text }) => (
               <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>
                 <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>{icon}</div>
@@ -73,68 +75,68 @@ export default function RegisterPage() {
               </div>
             ))}
           </div>
-          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>© 2026 BK Diagnostic · HCMUT</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>{t('loginPage.copyright')}</Text>
         </div>}
 
         {/* Right panel */}
         <div style={{ flex: 1, background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: isMobile ? '32px 24px' : '40px 48px' }}>
-          <Title level={3} style={{ marginBottom: 4 }}>Create Account</Title>
-          <Text type="secondary" style={{ marginBottom: 28, display: 'block' }}>Fill in the details below to get started</Text>
+          <Title level={3} style={{ marginBottom: 4 }}>{t('auth.registerTitle')}</Title>
+          <Text type="secondary" style={{ marginBottom: 28, display: 'block' }}>{t('registerPage.fillDetails')}</Text>
 
           {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 20 }} />}
 
           {success ? (
             <Alert
               type="success"
-              message="Account created!"
-              description="Please check your email to confirm your account before signing in."
+              message={t('auth.registerSuccess')}
+              description={t('auth.registerSuccessMsg')}
               showIcon
             />
           ) : (
             <Form form={form} layout="vertical" onFinish={handleSubmit} size="large">
               <Form.Item
-                label="Username"
+                label={t('auth.username')}
                 name="username"
                 rules={[
-                  { required: true, message: 'Please enter a username' },
-                  { min: 3, message: 'Username must be at least 3 characters' },
-                  { max: 20, message: 'Username must be at most 20 characters' },
-                  { pattern: /^[a-zA-Z0-9_]+$/, message: 'Only letters, numbers, and underscores allowed' },
+                  { required: true, message: t('registerPage.errUsernameRequired') },
+                  { min: 3, message: t('registerPage.errUsernameMin') },
+                  { max: 20, message: t('registerPage.errUsernameMax') },
+                  { pattern: /^[a-zA-Z0-9_]+$/, message: t('registerPage.errUsernamePattern') },
                 ]}
               >
-                <Input placeholder="Enter your username" autoComplete="username" />
+                <Input placeholder={t('registerPage.placeholderUsername')} autoComplete="username" />
               </Form.Item>
               <Form.Item
-                label="Email"
+                label={t('auth.email')}
                 name="email"
                 rules={[
-                  { required: true, message: 'Please enter your email' },
-                  { type: 'email', message: 'Please enter a valid email' },
+                  { required: true, message: t('registerPage.errEmailRequired') },
+                  { type: 'email', message: t('registerPage.errEmailInvalid') },
                 ]}
               >
-                <Input placeholder="Enter your email" autoComplete="email" />
+                <Input placeholder={t('registerPage.placeholderEmail')} autoComplete="email" />
               </Form.Item>
               <Form.Item
-                label="Password"
+                label={t('auth.password')}
                 name="password"
                 rules={[
-                  { required: true, message: 'Please enter a password' },
-                  { min: 8, message: 'Password must be at least 8 characters' },
+                  { required: true, message: t('registerPage.errPasswordRequired') },
+                  { min: 8, message: t('registerPage.errPasswordMin8') },
                 ]}
               >
                 <Input.Password placeholder="••••••••" autoComplete="new-password" />
               </Form.Item>
               <Form.Item
-                label="Confirm Password"
+                label={t('auth.confirmPassword')}
                 name="confirmPassword"
                 rules={[
-                  { required: true, message: 'Please confirm your password' },
+                  { required: true, message: t('registerPage.errConfirmRequired') },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
                       if (!value || getFieldValue('password') === value) {
                         return Promise.resolve()
                       }
-                      return Promise.reject(new Error('Passwords do not match'))
+                      return Promise.reject(new Error(t('auth.errMismatch')))
                     },
                   }),
                 ]}
@@ -146,32 +148,32 @@ export default function RegisterPage() {
                   <Alert
                     type="info"
                     showIcon
-                    message="Bạn sẽ được gán role Sinh viên"
-                    description="Email .edu.vn được nhận diện là tài khoản sinh viên. Bạn có thể nhập MSSV ngay hoặc cập nhật sau."
+                    message={t('registerPage.eduVnRoleTitle')}
+                    description={t('registerPage.eduVnRoleDesc')}
                     style={{ marginBottom: 16 }}
                   />
                   <Form.Item
-                    label="Mã số sinh viên (tùy chọn)"
+                    label={t('registerPage.mssvOptionalLabel')}
                     name="mssv"
                     rules={[
-                      { pattern: /^\d{7,8}$/, message: 'MSSV phải là 7-8 chữ số' },
+                      { pattern: /^\d{7,8}$/, message: t('registerPage.errMssvPattern') },
                     ]}
                   >
-                    <Input placeholder="VD: 2052345" maxLength={8} />
+                    <Input placeholder={t('registerPage.mssvPlaceholder')} maxLength={8} />
                   </Form.Item>
                 </>
               )}
               <Button type="primary" htmlType="submit" block loading={formLoading} style={{ height: 44, fontWeight: 600, background: 'linear-gradient(135deg, #1565C0, #1E88E5)', border: 'none' }}>
-                Create Account
+                {t('auth.btnSignUp')}
               </Button>
             </Form>
           )}
 
           <Text style={{ marginTop: 24, display: 'block', textAlign: 'center', color: '#6b7280' }}>
-            Already have an account? <Link to="/login" style={{ fontWeight: 600 }}>Sign In</Link>
+            {t('auth.haveAccount')} <Link to="/login" style={{ fontWeight: 600 }}>{t('auth.btnSignIn')}</Link>
           </Text>
           <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <Link to="/" style={{ fontSize: 12, color: '#9ca3af' }}>← Back to home</Link>
+            <Link to="/" style={{ fontSize: 12, color: '#9ca3af' }}>{t('loginPage.backHome')}</Link>
           </div>
         </div>
       </div>

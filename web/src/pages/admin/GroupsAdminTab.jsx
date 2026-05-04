@@ -19,6 +19,7 @@ import {
   ImportOutlined,
   SearchOutlined,
 } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import {
   listGroups,
   deleteGroup,
@@ -31,6 +32,7 @@ import GroupBulkImport from '../../components/admin/GroupBulkImport'
 const { Text } = Typography
 
 export default function GroupsAdminTab() {
+  const { t } = useTranslation()
   const [labs, setLabs] = useState([])
   const [groups, setGroups] = useState([])
   const [memberCache, setMemberCache] = useState({})
@@ -72,7 +74,7 @@ export default function GroupsAdminTab() {
     const { error } = await deleteGroup(g.id)
     if (error) message.error(error.message)
     else {
-      message.success('Đã xóa nhóm')
+      message.success(t('admin.group.deleted'))
       reload()
     }
   }
@@ -89,7 +91,7 @@ export default function GroupsAdminTab() {
 
   const columns = [
     {
-      title: 'Lab',
+      title: t('admin.group.lab'),
       dataIndex: ['lab', 'code'],
       width: 200,
       render: (v, r) => (
@@ -99,14 +101,14 @@ export default function GroupsAdminTab() {
         </div>
       ),
     },
-    { title: 'Tên nhóm', dataIndex: 'name' },
-    { title: 'Học kỳ', dataIndex: 'semester', width: 140 },
+    { title: t('admin.group.name'), dataIndex: 'name' },
+    { title: t('admin.group.semester'), dataIndex: 'semester', width: 140 },
     {
-      title: 'Thành viên',
+      title: t('admin.group.members'),
       key: 'members',
       render: (_, g) => {
         const ms = memberCache[g.id] || []
-        if (ms.length === 0) return <Text type="secondary">— chưa có —</Text>
+        if (ms.length === 0) return <Text type="secondary">{t('admin.group.membersEmpty')}</Text>
         return (
           <Space direction="vertical" size={2}>
             {ms.map((m) => {
@@ -115,7 +117,7 @@ export default function GroupsAdminTab() {
               const isLeader = m.role === 'leader'
               return (
                 <span key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {isLeader && <Tag color="gold" style={{ margin: 0 }}>👑 Leader</Tag>}
+                  {isLeader && <Tag color="gold" style={{ margin: 0 }}>👑 {t('labSession.leaderLabel')}</Tag>}
                   <Text>{name}</Text>
                   {mssv && (
                     <Text type="secondary" style={{ fontSize: 12 }}>[{mssv}]</Text>
@@ -128,7 +130,7 @@ export default function GroupsAdminTab() {
       },
     },
     {
-      title: 'Hành động',
+      title: t('common.actions'),
       key: 'actions',
       align: 'right',
       width: 180,
@@ -142,12 +144,12 @@ export default function GroupsAdminTab() {
               setFormOpen(true)
             }}
           >
-            Sửa
+            {t('common.edit')}
           </Button>
           <Popconfirm
-            title="Xóa nhóm này (và tất cả thành viên + sessions của nó)?"
-            okText="Xóa"
-            cancelText="Hủy"
+            title={t('admin.group.deleteConfirm')}
+            okText={t('common.delete')}
+            cancelText={t('common.cancel')}
             okButtonProps={{ danger: true }}
             onConfirm={() => handleDelete(g)}
           >
@@ -171,7 +173,7 @@ export default function GroupsAdminTab() {
         }}
       >
         <Select
-          placeholder="Lọc theo lab"
+          placeholder={t('admin.group.filterLab')}
           value={filterLab || undefined}
           onChange={(v) => setFilterLab(v ?? null)}
           allowClear
@@ -183,21 +185,21 @@ export default function GroupsAdminTab() {
         />
         <Input
           prefix={<SearchOutlined />}
-          placeholder="Tìm theo tên / học kỳ / mã lab…"
+          placeholder={t('admin.group.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: 260 }}
           allowClear
         />
         <Button icon={<ReloadOutlined />} onClick={reload}>
-          Làm mới
+          {t('common.refresh')}
         </Button>
         <Button
           icon={<ImportOutlined />}
           onClick={() => setBulkOpen(true)}
           style={{ marginLeft: 'auto' }}
         >
-          Bulk import CSV
+          {t('admin.group.bulkImport')}
         </Button>
         <Button
           type="primary"
@@ -207,7 +209,7 @@ export default function GroupsAdminTab() {
             setFormOpen(true)
           }}
         >
-          Tạo nhóm
+          {t('admin.group.createBtn')}
         </Button>
       </div>
 

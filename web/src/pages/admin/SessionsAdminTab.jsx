@@ -11,6 +11,7 @@ import {
   message,
 } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import { listSessions, listLabs } from '../../services/labApi'
 import SessionDetail from '../../components/admin/SessionDetail'
 
@@ -31,6 +32,7 @@ function fmtTime(v) {
 }
 
 export default function SessionsAdminTab() {
+  const { t } = useTranslation()
   const [labs, setLabs] = useState([])
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -66,13 +68,13 @@ export default function SessionsAdminTab() {
 
   const columns = [
     {
-      title: 'Mã code',
+      title: t('admin.session.code'),
       dataIndex: 'session_code',
       width: 110,
       render: (v) => <Text code>{v}</Text>,
     },
     {
-      title: 'Lab',
+      title: t('admin.session.lab'),
       dataIndex: ['lab', 'code'],
       render: (v, r) => (
         <div>
@@ -82,7 +84,7 @@ export default function SessionsAdminTab() {
       ),
     },
     {
-      title: 'Nhóm',
+      title: t('admin.session.group'),
       dataIndex: ['group', 'name'],
       render: (v, r) => (
         <div>
@@ -92,7 +94,7 @@ export default function SessionsAdminTab() {
       ),
     },
     {
-      title: 'Khởi tạo bởi',
+      title: t('admin.session.startedBy'),
       dataIndex: 'started_by_profile',
       render: (p) =>
         p ? (
@@ -107,20 +109,20 @@ export default function SessionsAdminTab() {
         ),
     },
     {
-      title: 'Trạng thái',
+      title: t('common.status'),
       dataIndex: 'status',
       width: 110,
       render: (v) => <Tag color={STATUS_COLOR[v] || 'default'}>{v}</Tag>,
     },
-    { title: 'Bắt đầu', dataIndex: 'started_at', render: fmtTime },
-    { title: 'Kết thúc', dataIndex: 'ended_at', render: fmtTime },
+    { title: t('admin.session.started'), dataIndex: 'started_at', render: fmtTime },
+    { title: t('admin.session.ended'), dataIndex: 'ended_at', render: fmtTime },
     {
       title: '',
       key: 'actions',
       align: 'right',
       render: (_, r) => (
         <Button size="small" onClick={() => setOpenSessionId(r.id)}>
-          Chi tiết
+          {t('common.details')}
         </Button>
       ),
     },
@@ -139,7 +141,7 @@ export default function SessionsAdminTab() {
         }}
       >
         <Select
-          placeholder="Lọc theo lab"
+          placeholder={t('admin.submission.filterLab')}
           value={filterLab || undefined}
           onChange={(v) => setFilterLab(v ?? null)}
           allowClear
@@ -150,7 +152,7 @@ export default function SessionsAdminTab() {
           }))}
         />
         <Select
-          placeholder="Trạng thái"
+          placeholder={t('common.status')}
           value={filterStatus || undefined}
           onChange={(v) => setFilterStatus(v ?? null)}
           allowClear
@@ -167,10 +169,10 @@ export default function SessionsAdminTab() {
           style={{ width: 360 }}
         />
         <Button icon={<ReloadOutlined />} onClick={reload}>
-          Làm mới
+          {t('common.refresh')}
         </Button>
         <Text strong style={{ marginLeft: 'auto' }}>
-          Tổng: {sessions.length}
+          {t('admin.session.totalLabel', { count: sessions.length })}
         </Text>
       </div>
 

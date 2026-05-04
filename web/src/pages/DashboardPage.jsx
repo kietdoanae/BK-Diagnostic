@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, Avatar, Typography, Tag, Row, Col, Form, Input, Button, Alert, Table, Space, Tooltip } from 'antd'
 import { UserOutlined, CalendarOutlined, SafetyOutlined, MailOutlined, LockOutlined, DownloadOutlined, FileTextOutlined, ReloadOutlined, IdcardOutlined, CheckCircleOutlined, ContactsOutlined } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../services/supabase'
@@ -26,6 +27,7 @@ function formatBytes(bytes) {
 
 // ── Shared one-time update card ───────────────────────────────────────────────
 function OnceUpdateCard({ icon, accentColor, title, subtitle, fieldName, inputPlaceholder, inputRules, currentValue, onSave }) {
+  const { t } = useTranslation()
   const [msg, setMsg] = useState(null)
   const [loading, setLoading] = useState(false)
   const [form] = Form.useForm()
@@ -38,7 +40,7 @@ function OnceUpdateCard({ icon, accentColor, title, subtitle, fieldName, inputPl
     if (err) {
       setMsg({ type: 'error', text: err })
     } else {
-      setMsg({ type: 'success', text: 'Cập nhật thành công!' })
+      setMsg({ type: 'success', text: t('dashboardPage.updateSuccess') })
       form.resetFields()
     }
   }
@@ -69,7 +71,7 @@ function OnceUpdateCard({ icon, accentColor, title, subtitle, fieldName, inputPl
             style={{ background: `linear-gradient(135deg,${accentColor},${accentColor}cc)`, border: 'none', fontWeight: 600 }}
             icon={<CheckCircleOutlined />}
           >
-            Xác nhận
+            {t('common.confirm')}
           </Button>
         </Form.Item>
       </Form>
@@ -79,6 +81,7 @@ function OnceUpdateCard({ icon, accentColor, title, subtitle, fieldName, inputPl
 
 // ── Export history ────────────────────────────────────────────────────────────
 function ExportHistoryCard({ session }) {
+  const { t } = useTranslation()
   const userId = session?.user?.id
   const { records, loading, error, reload, getDownloadUrl } = useMyExports(userId)
   const [downloading, setDownloading] = useState({})
@@ -97,7 +100,7 @@ function ExportHistoryCard({ session }) {
 
   const columns = [
     {
-      title: 'Hãng / Model',
+      title: t('dashboardPage.export.brandModel'),
       dataIndex: 'display_name',
       key: 'display_name',
       render: v => (
@@ -108,7 +111,7 @@ function ExportHistoryCard({ session }) {
       )
     },
     {
-      title: 'Tên file',
+      title: t('dashboardPage.export.filename'),
       dataIndex: 'filename',
       key: 'filename',
       render: v => (
@@ -118,10 +121,10 @@ function ExportHistoryCard({ session }) {
         </Space>
       )
     },
-    { title: 'Frames', dataIndex: 'frame_count', key: 'frame_count', render: v => v != null ? v.toLocaleString() : '—' },
-    { title: 'Dung lượng', dataIndex: 'file_size_bytes', key: 'file_size_bytes', render: v => formatBytes(v) },
+    { title: t('dashboardPage.export.frames'), dataIndex: 'frame_count', key: 'frame_count', render: v => v != null ? v.toLocaleString() : '—' },
+    { title: t('dashboardPage.export.size'), dataIndex: 'file_size_bytes', key: 'file_size_bytes', render: v => formatBytes(v) },
     {
-      title: 'Thời gian',
+      title: t('dashboardPage.export.time'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: v => v ? new Date(v).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'
@@ -134,7 +137,7 @@ function ExportHistoryCard({ session }) {
         <Button type="primary" size="small" icon={<DownloadOutlined />}
           loading={downloading[row.storage_path]}
           onClick={() => handleDownload(row.storage_path, row.filename)}>
-          Tải xuống
+          {t('common.download')}
         </Button>
       )
     }
@@ -146,22 +149,23 @@ function ExportHistoryCard({ session }) {
       title={
         <Space>
           <FileTextOutlined style={{ color: '#1565C0' }} />
-          <span style={{ fontWeight: 700 }}>Lịch sử xuất file CAN</span>
-          <Text type="secondary" style={{ fontSize: 13 }}>({records.length} file)</Text>
+          <span style={{ fontWeight: 700 }}>{t('dashboardPage.export.title')}</span>
+          <Text type="secondary" style={{ fontSize: 13 }}>{t('dashboardPage.export.fileCount', { count: records.length })}</Text>
         </Space>
       }
-      extra={<Button icon={<ReloadOutlined />} size="small" onClick={reload} loading={loading}>Làm mới</Button>}
+      extra={<Button icon={<ReloadOutlined />} size="small" onClick={reload} loading={loading}>{t('common.refresh')}</Button>}
     >
       {error && <Alert type="error" message={error} style={{ marginBottom: 12 }} />}
       <Table dataSource={records} columns={columns} rowKey="id" loading={loading} size="small"
-        pagination={{ pageSize: 10, showTotal: (t) => `${t} file` }}
-        locale={{ emptyText: 'Chưa có file xuất nào' }} />
+        pagination={{ pageSize: 10, showTotal: (n) => t('dashboardPage.export.totalFmt', { count: n }) }}
+        locale={{ emptyText: t('dashboardPage.export.empty') }} />
     </Card>
   )
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function DashboardPage({ embedded = false }) {
+  const { t } = useTranslation()
   const { session, profile, role } = useAuth()
   const [pwMsg, setPwMsg] = useState(null)
   const [pwLoading, setPwLoading] = useState(false)
@@ -194,14 +198,14 @@ export default function DashboardPage({ embedded = false }) {
   // Call SECURITY DEFINER RPC — bypasses RLS
   async function saveMssv(value) {
     const { error } = await supabase.rpc('update_profile_fields', { p_mssv: value })
-    if (error) return error.message.includes('MSSV cannot be changed') ? 'MSSV đã được thiết lập, không thể thay đổi.' : error.message
+    if (error) return error.message.includes('MSSV cannot be changed') ? t('dashboardPage.errMssvLocked') : error.message
     await reloadField('mssv', setMssv)
     return null
   }
 
   async function saveFullName(value) {
     const { error } = await supabase.rpc('update_profile_fields', { p_full_name: value })
-    if (error) return error.message.includes('Full name cannot be changed') ? 'Họ tên đã được thiết lập, không thể thay đổi.' : error.message
+    if (error) return error.message.includes('Full name cannot be changed') ? t('dashboardPage.errFullNameLocked') : error.message
     await reloadField('full_name', setFullName)
     return null
   }
@@ -210,11 +214,11 @@ export default function DashboardPage({ embedded = false }) {
     setPwMsg(null)
     setPwLoading(true)
     const { error: reAuthErr } = await supabase.auth.signInWithPassword({ email, password: current })
-    if (reAuthErr) { setPwLoading(false); setPwMsg({ type: 'error', text: 'Mật khẩu hiện tại không đúng.' }); return }
+    if (reAuthErr) { setPwLoading(false); setPwMsg({ type: 'error', text: t('dashboard.errCurrentPassword') }); return }
     const { error } = await supabase.auth.updateUser({ password: newPw })
     setPwLoading(false)
     if (error) setPwMsg({ type: 'error', text: error.message })
-    else { setPwMsg({ type: 'success', text: 'Cập nhật mật khẩu thành công.' }); form.resetFields() }
+    else { setPwMsg({ type: 'success', text: t('dashboard.passwordChanged') }); form.resetFields() }
   }
 
   const content = (
@@ -224,15 +228,15 @@ export default function DashboardPage({ embedded = false }) {
       <OnceUpdateCard
         icon={<ContactsOutlined style={{ color: '#fff', fontSize: 18 }} />}
         accentColor="#059669"
-        title="Cập nhật Họ và tên"
-        subtitle="Chỉ cập nhật được 1 lần — không thể thay đổi sau khi xác nhận"
+        title={t('dashboard.fullNameUpdate')}
+        subtitle={t('dashboard.fullNameSubtitle')}
         fieldName="full_name"
         inputPlaceholder={
-          <Input prefix={<ContactsOutlined style={{ color: '#059669' }} />} placeholder="Nhập họ và tên đầy đủ" />
+          <Input prefix={<ContactsOutlined style={{ color: '#059669' }} />} placeholder={t('dashboard.fullNamePlaceholder')} />
         }
         inputRules={[
-          { required: true, message: 'Vui lòng nhập họ và tên' },
-          { min: 3, message: 'Họ tên phải có ít nhất 3 ký tự' }
+          { required: true, message: t('dashboardPage.errFullNameRequired') },
+          { min: 3, message: t('dashboardPage.errFullNameMin') }
         ]}
         currentValue={displayFull}
         onSave={saveFullName}
@@ -241,15 +245,15 @@ export default function DashboardPage({ embedded = false }) {
       <OnceUpdateCard
         icon={<IdcardOutlined style={{ color: '#fff', fontSize: 18 }} />}
         accentColor="#d97706"
-        title="Cập nhật Mã số sinh viên"
-        subtitle="Chỉ cập nhật được 1 lần — không thể thay đổi sau khi xác nhận"
+        title={t('dashboard.updateMssv')}
+        subtitle={t('dashboard.updateMssvSubtitle')}
         fieldName="mssv"
         inputPlaceholder={
-          <Input prefix={<IdcardOutlined style={{ color: '#d97706' }} />} placeholder="Nhập MSSV (7 chữ số)" maxLength={7} />
+          <Input prefix={<IdcardOutlined style={{ color: '#d97706' }} />} placeholder={t('dashboard.mssvPlaceholder')} maxLength={7} />
         }
         inputRules={[
-          { required: true, message: 'Vui lòng nhập MSSV' },
-          { pattern: /^\d{7}$/, message: 'MSSV phải gồm đúng 7 chữ số' }
+          { required: true, message: t('dashboard.mssvErrRequired') },
+          { pattern: /^\d{7}$/, message: t('dashboard.mssvErrPattern') }
         ]}
         currentValue={displayMssv}
         onSave={saveMssv}
@@ -314,17 +318,17 @@ export default function DashboardPage({ embedded = false }) {
           {/* Section 1: Định danh cá nhân */}
           <div style={{ marginBottom: 20 }}>
             <Text style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: '#9ca3af', display: 'block', marginBottom: 10 }}>
-              ĐỊNH DANH
+              {t('dashboard.section.identity')}
             </Text>
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={8}>
                 <InfoTile
                   icon={<ContactsOutlined style={{ color: '#059669' }} />}
-                  label="Họ và tên"
+                  label={t('dashboard.field.fullName')}
                   value={displayFull}
                   ibg="#f0fdf4"
                   missing={!displayFull}
-                  missingText="Chưa cập nhật ⚠"
+                  missingText={`${t('dashboard.missing')} ⚠`}
                   missingColor="#059669"
                   missingBorder="#6ee7b7"
                 />
@@ -332,11 +336,11 @@ export default function DashboardPage({ embedded = false }) {
               <Col xs={24} sm={8}>
                 <InfoTile
                   icon={<IdcardOutlined style={{ color: '#d97706' }} />}
-                  label="Mã số sinh viên"
+                  label={t('dashboard.field.mssv')}
                   value={displayMssv}
                   ibg="#fff7ed"
                   missing={!displayMssv}
-                  missingText="Chưa cập nhật ⚠"
+                  missingText={`${t('dashboard.missing')} ⚠`}
                   missingColor="#d97706"
                   missingBorder="#fbbf24"
                 />
@@ -344,7 +348,7 @@ export default function DashboardPage({ embedded = false }) {
               <Col xs={24} sm={8}>
                 <InfoTile
                   icon={<UserOutlined style={{ color: '#1565C0' }} />}
-                  label="Username"
+                  label={t('dashboard.field.username')}
                   value={username}
                   ibg="#eff6ff"
                 />
@@ -355,13 +359,13 @@ export default function DashboardPage({ embedded = false }) {
           {/* Section 2: Tài khoản */}
           <div>
             <Text style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: '#9ca3af', display: 'block', marginBottom: 10 }}>
-              TÀI KHOẢN
+              {t('dashboard.section.account')}
             </Text>
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12}>
                 <InfoTile
                   icon={<MailOutlined style={{ color: '#0284c7' }} />}
-                  label="Email"
+                  label={t('dashboard.field.email')}
                   value={email}
                   ibg="#f0f9ff"
                 />
@@ -369,7 +373,7 @@ export default function DashboardPage({ embedded = false }) {
               <Col xs={24} sm={6}>
                 <InfoTile
                   icon={<CalendarOutlined style={{ color: '#059669' }} />}
-                  label="Tham gia"
+                  label={t('dashboard.field.joined')}
                   value={joined}
                   ibg="#f0fdf4"
                 />
@@ -377,7 +381,7 @@ export default function DashboardPage({ embedded = false }) {
               <Col xs={24} sm={6}>
                 <InfoTile
                   icon={<SafetyOutlined style={{ color: '#7c3aed' }} />}
-                  label="Trạng thái"
+                  label={t('dashboard.field.status')}
                   value={status.charAt(0).toUpperCase() + status.slice(1)}
                   ibg="#f5f3ff"
                 />
@@ -394,28 +398,28 @@ export default function DashboardPage({ embedded = false }) {
             <LockOutlined style={{ color: '#fff', fontSize: 18 }} />
           </div>
           <div>
-            <Text strong style={{ display: 'block', fontSize: 15 }}>Đổi mật khẩu</Text>
-            <Text type="secondary" style={{ fontSize: 12 }}>Cập nhật mật khẩu tài khoản — tối thiểu 6 ký tự</Text>
+            <Text strong style={{ display: 'block', fontSize: 15 }}>{t('dashboard.changePassword')}</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>{t('dashboard.changePasswordDesc')}</Text>
           </div>
         </div>
         {pwMsg && <Alert message={pwMsg.text} type={pwMsg.type} showIcon style={{ marginBottom: 16 }} />}
         <Form form={form} layout="vertical" onFinish={handleChangePassword}>
           <Row gutter={16}>
             <Col xs={24} md={8}>
-              <Form.Item label="Mật khẩu hiện tại" name="current" rules={[{ required: true, message: 'Bắt buộc' }]}>
-                <Input.Password placeholder="Nhập mật khẩu hiện tại" />
+              <Form.Item label={t('auth.currentPassword')} name="current" rules={[{ required: true, message: t('common.required') }]}>
+                <Input.Password placeholder={t('dashboardPage.currentPwPlaceholder')} />
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item label="Mật khẩu mới" name="newPw" rules={[{ required: true, min: 6, message: 'Tối thiểu 6 ký tự' }]}>
-                <Input.Password placeholder="Tối thiểu 6 ký tự" />
+              <Form.Item label={t('auth.newPassword')} name="newPw" rules={[{ required: true, min: 6, message: t('auth.errShort') }]}>
+                <Input.Password placeholder={t('dashboardPage.newPwPlaceholder')} />
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item label="Xác nhận mật khẩu mới" name="confirmPw"
-                rules={[{ required: true, message: 'Bắt buộc' },
-                  ({ getFieldValue }) => ({ validator(_, v) { return !v || getFieldValue('newPw') === v ? Promise.resolve() : Promise.reject('Mật khẩu không khớp') } })]}>
-                <Input.Password placeholder="Nhập lại mật khẩu mới" />
+              <Form.Item label={t('auth.confirmNewPassword')} name="confirmPw"
+                rules={[{ required: true, message: t('common.required') },
+                  ({ getFieldValue }) => ({ validator(_, v) { return !v || getFieldValue('newPw') === v ? Promise.resolve() : Promise.reject(t('auth.errMismatch')) } })]}>
+                <Input.Password placeholder={t('dashboardPage.confirmPwPlaceholder')} />
               </Form.Item>
             </Col>
           </Row>
@@ -433,7 +437,7 @@ export default function DashboardPage({ embedded = false }) {
                 borderRadius: 10,
               }}
             >
-              Cập nhật mật khẩu
+              {t('dashboard.btnUpdate')}
             </Button>
           </div>
         </Form>
@@ -449,6 +453,7 @@ export default function DashboardPage({ embedded = false }) {
 
 // ── Reusable info tile ────────────────────────────────────────────────────────
 function InfoTile({ icon, label, value, ibg, missing = false, missingText = '—', missingColor, missingBorder }) {
+  const { t } = useTranslation()
   return (
     <div style={{
       background: '#fafafa',
@@ -460,7 +465,7 @@ function InfoTile({ icon, label, value, ibg, missing = false, missingText = '—
         <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</Text>
         <div style={{ fontWeight: 700, fontSize: 14, marginTop: 2, color: missing && missingColor ? missingColor : 'inherit' }}>
           {missing
-            ? <Tooltip title="Cuộn lên để cập nhật"><span style={{ cursor: 'pointer' }}>{missingText}</span></Tooltip>
+            ? <Tooltip title={t('dashboardPage.scrollUpToUpdate')}><span style={{ cursor: 'pointer' }}>{missingText}</span></Tooltip>
             : value}
         </div>
       </div>

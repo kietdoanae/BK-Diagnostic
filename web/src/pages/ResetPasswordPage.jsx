@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Form, Input, Button, Alert, Typography, Spin } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
 import { resetPassword, logout } from '../services/auth'
 
 const { Title, Text } = Typography
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   // status: 'loading' | 'ready' | 'error' | 'success'
   const [status, setStatus] = useState('loading')
@@ -18,7 +20,7 @@ export default function ResetPasswordPage() {
     const hash = window.location.hash.slice(1)
     if (hash.includes('error=')) {
       const params = new URLSearchParams(hash)
-      const desc = params.get('error_description') ?? 'Link không hợp lệ hoặc đã hết hạn.'
+      const desc = params.get('error_description') ?? t('resetPage.errLinkInvalidDefault')
       setErrorMsg(decodeURIComponent(desc.replace(/\+/g, ' ')))
       setStatus('error')
       return
@@ -39,6 +41,7 @@ export default function ResetPasswordPage() {
     }
 
     return () => subscription.unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleSubmit({ password }) {
@@ -67,7 +70,7 @@ export default function ResetPasswordPage() {
         {status === 'loading' && (
           <div style={{ textAlign: 'center', padding: '32px 0' }}>
             <Spin size="large" />
-            <Text type="secondary" style={{ display: 'block', marginTop: 16 }}>Đang xác thực liên kết...</Text>
+            <Text type="secondary" style={{ display: 'block', marginTop: 16 }}>{t('resetPage.verifyingLink')}</Text>
           </div>
         )}
 
@@ -75,7 +78,7 @@ export default function ResetPasswordPage() {
           <>
             <Alert
               type="error"
-              message="Liên kết không hợp lệ"
+              message={t('resetPage.linkInvalidTitle')}
               description={errorMsg}
               showIcon
               style={{ marginBottom: 24 }}
@@ -85,33 +88,33 @@ export default function ResetPasswordPage() {
               style={{ height: 44 }}
               onClick={() => navigate('/forgot-password')}
             >
-              Gửi lại email đặt lại mật khẩu
+              {t('resetPage.resendEmail')}
             </Button>
           </>
         )}
 
         {status === 'ready' && (
           <>
-            <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>Đặt mật khẩu mới</Title>
+            <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>{t('auth.resetTitle')}</Title>
             <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginBottom: 32 }}>
-              Nhập mật khẩu mới của bạn bên dưới.
+              {t('auth.resetSubtitle')}
             </Text>
 
             {errorMsg && <Alert type="error" message={errorMsg} showIcon style={{ marginBottom: 16 }} />}
             <Form layout="vertical" size="large" onFinish={handleSubmit}>
-              <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, min: 8, message: 'Mật khẩu phải có ít nhất 8 ký tự' }]}>
+              <Form.Item name="password" label={t('auth.password')} rules={[{ required: true, min: 8, message: t('registerPage.errPasswordMin8') }]}>
                 <Input.Password placeholder="••••••••" />
               </Form.Item>
               <Form.Item
                 name="confirmPassword"
-                label="Xác nhận mật khẩu"
+                label={t('auth.confirmPassword')}
                 dependencies={['password']}
                 rules={[
-                  { required: true, message: 'Vui lòng xác nhận mật khẩu' },
+                  { required: true, message: t('registerPage.errConfirmRequired') },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
                       if (!value || getFieldValue('password') === value) return Promise.resolve()
-                      return Promise.reject(new Error('Mật khẩu không khớp'))
+                      return Promise.reject(new Error(t('auth.errMismatch')))
                     },
                   }),
                 ]}
@@ -126,7 +129,7 @@ export default function ResetPasswordPage() {
                   loading={submitting}
                   style={{ height: 44, background: 'linear-gradient(135deg, #1565C0, #1E88E5)', border: 'none' }}
                 >
-                  Cập nhật mật khẩu
+                  {t('auth.btnUpdate')}
                 </Button>
               </Form.Item>
             </Form>
@@ -137,8 +140,8 @@ export default function ResetPasswordPage() {
           <>
             <Alert
               type="success"
-              message="Mật khẩu đã được cập nhật!"
-              description="Đang chuyển hướng về trang đăng nhập..."
+              message={t('resetPage.successTitle')}
+              description={t('resetPage.successDesc')}
               showIcon
               style={{ marginBottom: 24 }}
             />

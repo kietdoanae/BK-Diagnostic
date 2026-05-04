@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Card, List, Tag, Button, Space, Typography, Alert, Empty } from 'antd'
 import { ExperimentOutlined, ArrowRightOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
 import {
@@ -22,6 +23,7 @@ import {
 const { Title, Text } = Typography
 
 export default function LabsListPage() {
+  const { t } = useTranslation()
   const { session } = useAuth()
   const userId = session?.user?.id
   const navigate = useNavigate()
@@ -85,34 +87,34 @@ export default function LabsListPage() {
       case LAB_STATES.PRE_LAB_FAILED:
         return (
           <Button type="primary" onClick={() => navigate(`/labs/${labId}`)}>
-            Làm pre-lab
+            {t('lab.btn.doPreQuiz')}
           </Button>
         )
       case LAB_STATES.PRE_LAB_PASSED:
         return (
           <Button type="primary" onClick={() => navigate(`/labs/${labId}`)}>
-            {row.role === 'leader' ? 'Bắt đầu thực hành' : 'Chờ leader'}
+            {row.role === 'leader' ? t('lab.btn.startPractice') : t('lab.btn.waitLeader')}
           </Button>
         )
       case LAB_STATES.PRACTICE_ACTIVE:
         return (
           <Button type="primary" onClick={() =>
             navigate(`/labs/${labId}/session/${row.activeSession.id}`)}>
-            Vào dashboard thực hành
+            {t('lab.btn.joinDashboard')}
           </Button>
         )
       case LAB_STATES.PRACTICE_DONE_POST_PENDING:
         return (
           <Button type="primary" onClick={() =>
             navigate(`/labs/${labId}/session/${row.lastSession.id}/post`)}>
-            Làm post-lab
+            {t('lab.btn.doPostLab')}
           </Button>
         )
       case LAB_STATES.COMPLETED:
         return (
           <Button onClick={() =>
             navigate(`/labs/${labId}/session/${row.lastSession.id}/report`)}>
-            Xem báo cáo
+            {t('lab.btn.viewReport')}
           </Button>
         )
       default:
@@ -125,14 +127,14 @@ export default function LabsListPage() {
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <Space style={{ marginBottom: 16 }} align="center">
           <ExperimentOutlined style={{ fontSize: 22, color: '#1565C0' }} />
-          <Title level={3} style={{ margin: 0 }}>Thực hành (Labs)</Title>
+          <Title level={3} style={{ margin: 0 }}>{t('labsList.title')}</Title>
         </Space>
 
         {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
 
         <Card loading={loading}>
           {(!loading && rows.length === 0) && (
-            <Empty description="Bạn chưa được gán vào nhóm lab nào. Liên hệ giảng viên." />
+            <Empty description={t('labsList.empty')} />
           )}
           <List
             itemLayout="horizontal"
@@ -145,14 +147,14 @@ export default function LabsListPage() {
                       <Text strong>{row.lab.code}</Text>
                       <Text>— {row.lab.title}</Text>
                       <Tag color={labStateTagColor(row.state)}>
-                        {labStateLabel(row.state)}
+                        {t(labStateLabel(row.state))}
                       </Tag>
-                      {row.role === 'leader' && <Tag color="gold">Leader</Tag>}
+                      {row.role === 'leader' && <Tag color="gold">{t('labSession.leaderLabel')}</Tag>}
                     </Space>
                   }
                   description={
                     <Text type="secondary">
-                      Nhóm: {row.group.name} · Học kỳ: {row.group.semester || '—'}
+                      {t('labsList.groupLabel')}: {row.group.name} · {t('labsList.semesterLabel')}: {row.group.semester || '—'}
                     </Text>
                   }
                 />
@@ -163,7 +165,7 @@ export default function LabsListPage() {
 
         <div style={{ marginTop: 16, textAlign: 'right' }}>
           <Button type="link" onClick={() => navigate('/my-reports')}>
-            Lịch sử báo cáo của tôi <ArrowRightOutlined />
+            {t('labsList.historyLink')} <ArrowRightOutlined />
           </Button>
         </div>
       </div>

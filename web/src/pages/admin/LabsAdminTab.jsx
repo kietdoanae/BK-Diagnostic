@@ -19,6 +19,7 @@ import {
   SearchOutlined,
   ReloadOutlined,
 } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import {
   listLabs,
   deleteLab,
@@ -32,6 +33,7 @@ import QuestionList from '../../components/admin/QuestionList'
 const { Text, Title } = Typography
 
 export default function LabsAdminTab() {
+  const { t } = useTranslation()
   const [labs, setLabs] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -75,7 +77,7 @@ export default function LabsAdminTab() {
     const { error } = await deleteLab(lab.id)
     if (error) message.error(error.message)
     else {
-      message.success('Đã xóa lab')
+      message.success(t('admin.lab.deleted'))
       reload()
     }
   }
@@ -90,36 +92,36 @@ export default function LabsAdminTab() {
 
   const columns = [
     {
-      title: 'Code',
+      title: t('common.code'),
       dataIndex: 'code',
       render: (v) => <Text code>{v}</Text>,
     },
-    { title: 'Tiêu đề', dataIndex: 'title' },
+    { title: t('common.title'), dataIndex: 'title' },
     {
-      title: 'Order',
+      title: t('admin.labsTab.orderCol'),
       dataIndex: 'order_index',
       width: 80,
     },
     {
-      title: 'Pass %',
+      title: t('admin.labsTab.passPct'),
       dataIndex: 'pre_quiz_pass_threshold',
       width: 90,
     },
     {
-      title: 'Trạng thái',
+      title: t('common.status'),
       dataIndex: 'is_published',
       width: 110,
       render: (v) =>
-        v ? <Tag color="success">Published</Tag> : <Tag>Draft</Tag>,
+        v ? <Tag color="success">{t('admin.labsTab.published')}</Tag> : <Tag>{t('admin.labsTab.draft')}</Tag>,
     },
     {
-      title: 'Hành động',
+      title: t('common.actions'),
       key: 'actions',
       align: 'right',
       render: (_, lab) => (
         <Space>
           <Button size="small" onClick={() => openDrawer(lab)}>
-            Quản lý nội dung
+            {t('admin.labsTab.manageContent')}
           </Button>
           <Button
             size="small"
@@ -129,12 +131,12 @@ export default function LabsAdminTab() {
               setLabFormOpen(true)
             }}
           >
-            Sửa
+            {t('common.edit')}
           </Button>
           <Popconfirm
-            title="Xóa lab và toàn bộ steps/questions/groups/sessions của nó?"
-            okText="Xóa"
-            cancelText="Hủy"
+            title={t('admin.lab.deleteConfirm')}
+            okText={t('common.delete')}
+            cancelText={t('common.cancel')}
             okButtonProps={{ danger: true }}
             onConfirm={() => handleDelete(lab)}
           >
@@ -158,14 +160,14 @@ export default function LabsAdminTab() {
       >
         <Input
           prefix={<SearchOutlined />}
-          placeholder="Tìm theo code hoặc tiêu đề…"
+          placeholder={t('admin.labsTab.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: 280 }}
           allowClear
         />
         <Button icon={<ReloadOutlined />} onClick={reload}>
-          Làm mới
+          {t('common.refresh')}
         </Button>
         <Button
           type="primary"
@@ -176,7 +178,7 @@ export default function LabsAdminTab() {
             setLabFormOpen(true)
           }}
         >
-          Tạo lab
+          {t('admin.lab.createBtn')}
         </Button>
       </div>
 
@@ -205,7 +207,7 @@ export default function LabsAdminTab() {
         onClose={() => setDrawerLab(null)}
         title={
           drawerLab
-            ? `Quản lý nội dung: ${drawerLab.code} — ${drawerLab.title}`
+            ? t('admin.labsTab.drawerTitle', { code: drawerLab.code, title: drawerLab.title })
             : ''
         }
         width={960}
@@ -216,7 +218,7 @@ export default function LabsAdminTab() {
             items={[
               {
                 key: 'steps',
-                label: `Steps (${steps.length})`,
+                label: `${t('admin.lab.stepsTab')} (${steps.length})`,
                 children: (
                   <StepList
                     labId={drawerLab.id}
@@ -227,7 +229,7 @@ export default function LabsAdminTab() {
               },
               {
                 key: 'pre',
-                label: `Pre-lab (${preQs.length})`,
+                label: `${t('admin.lab.preTab')} (${preQs.length})`,
                 children: (
                   <QuestionList
                     labId={drawerLab.id}
@@ -239,7 +241,7 @@ export default function LabsAdminTab() {
               },
               {
                 key: 'post',
-                label: `Post-lab (${postQs.length})`,
+                label: `${t('admin.lab.postTab')} (${postQs.length})`,
                 children: (
                   <QuestionList
                     labId={drawerLab.id}

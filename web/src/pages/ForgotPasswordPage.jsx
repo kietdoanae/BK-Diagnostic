@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Navigate, Link } from 'react-router-dom'
 import { Form, Input, Button, Alert, Typography } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { forgotPassword } from '../services/auth'
 
 const { Title, Text } = Typography
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation()
   const { session, loading } = useAuth()
   const [error, setError] = useState(null)
   const [sent, setSent] = useState(false)
@@ -36,23 +38,23 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
 
-        <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>Reset Password</Title>
+        <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>{t('auth.resetTitle')}</Title>
         <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginBottom: 32 }}>
-          Enter your email address and we'll send you a link to reset your password.
+          {t('auth.forgotSubtitle')}
         </Text>
 
         {sent ? (
           <Alert
             type="success"
-            message="Email sent!"
-            description="Check your inbox for the password reset link. It may take a few minutes."
+            message={t('auth.forgotSuccessTitle')}
+            description={t('forgotPage.checkInbox')}
             showIcon
           />
         ) : (
           <>
             {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
             <Form layout="vertical" size="large" onFinish={handleSubmit}>
-              <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email', message: 'Please enter a valid email' }]}>
+              <Form.Item name="email" label={t('auth.email')} rules={[{ required: true, type: 'email', message: t('registerPage.errEmailInvalid') }]}>
                 <Input placeholder="you@example.com" />
               </Form.Item>
               <Form.Item>
@@ -62,7 +64,7 @@ export default function ForgotPasswordPage() {
                   block
                   style={{ height: 44, background: 'linear-gradient(135deg, #1565C0, #1E88E5)', border: 'none' }}
                 >
-                  Send Reset Link
+                  {t('auth.btnSendReset')}
                 </Button>
               </Form.Item>
             </Form>
@@ -70,8 +72,8 @@ export default function ForgotPasswordPage() {
         )}
 
         <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <Text type="secondary">Remember your password? </Text>
-          <Link to="/login">Sign In</Link>
+          <Text type="secondary">{t('forgotPage.rememberPassword')} </Text>
+          <Link to="/login">{t('auth.btnSignIn')}</Link>
         </div>
       </div>
     </div>
