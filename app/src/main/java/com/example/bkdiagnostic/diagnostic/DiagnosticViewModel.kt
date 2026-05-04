@@ -298,6 +298,7 @@ class DiagnosticViewModel(
     private fun dispatchFrame(frame: CanFrame) {
         val config = protocolConfig ?: return
         if (frame.id != config.responseCanId) return
+        if (frame.data.size < 3) return  // Need at least [len][mode][data]
 
         val byte1 = frame.data[1].toUByte().toInt()
         when (byte1) {

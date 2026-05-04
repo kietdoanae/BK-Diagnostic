@@ -141,6 +141,7 @@ object OBD2Protocol {
     fun decodeDtcResponse(frame: CanFrame, expectedCanId: Int): List<DtcCode>? {
         if (frame.id != expectedCanId) return null
         val d = frame.data
+        if (d.size < 3) return null  // Need at least [len][mode][numDTCs]
         if (d[1].toUByte().toInt() != 0x43) return null  // Mode 03 response = 0x43
 
         val numDtcs = d[2].toUByte().toInt()
@@ -161,6 +162,7 @@ object OBD2Protocol {
      */
     fun isClearDtcAck(frame: CanFrame, expectedCanId: Int): Boolean {
         if (frame.id != expectedCanId) return false
+        if (frame.data.size < 2) return false
         return frame.data[1].toUByte().toInt() == 0x44  // Mode 04 response = 0x44
     }
 }
