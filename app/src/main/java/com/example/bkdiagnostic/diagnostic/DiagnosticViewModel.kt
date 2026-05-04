@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -150,7 +151,7 @@ class DiagnosticViewModel(
                     if (!isActive) break
                     val reading = requestPid(pid, config)
                     if (reading != null) {
-                        _liveData.value = _liveData.value + (pid to reading)
+                        _liveData.update { it + (pid to reading) }
                     }
                     delay(pollMs)
                 }
@@ -264,9 +265,9 @@ class DiagnosticViewModel(
             rawBytes = frame.effectiveData(),
             decoded = decoded
         )
-        val current = _rawFrameLog.value
-        _rawFrameLog.value =
+        _rawFrameLog.update { current ->
             if (current.size >= 5000) current.drop(1) + entry else current + entry
+        }
     }
 
     /** Cố giải mã frame thành chuỗi mô tả, trả về "—" nếu không nhận dạng được */

@@ -295,15 +295,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** Tự động đăng xuất khi user tắt app (isFinishing = true).
-     *  Không sign out khi xoay màn hình / thay đổi cấu hình (isFinishing = false). */
+    // onDestroy: Supabase SDK auto-persists the session. No sign-out on
+    // Activity destroy so the user stays logged in across app restarts.
     override fun onDestroy() {
         super.onDestroy()
-        if (isFinishing) {
-            lifecycleScope.launch {
-                runCatching { supabaseClient.auth.signOut() }
-            }
-        }
     }
 
     override fun onNewIntent(intent: Intent) {
