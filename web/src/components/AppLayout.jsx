@@ -17,9 +17,11 @@ import {
   HomeOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { logActivity } from '../services/api'
 import UserBadge from './UserBadge'
+import LanguageSwitcher from './LanguageSwitcher'
 
 const { Sider, Header, Content } = Layout
 const { Text } = Typography
@@ -32,20 +34,20 @@ function avatarColor(username = '') {
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length]
 }
 
-/** Role badge styling — màu nổi bật cho từng vai trò để user nhận ra ngay. */
+/** Role badge styling — labels dùng i18n key, gọi trong component bằng t(badge.labelKey). */
 function roleBadge(role) {
   switch (role) {
     case 'admin':
-      return { label: 'Admin',      color: '#F5B700', bg: 'rgba(245,183,0,0.18)',  textColor: '#FFD54F', icon: <StarFilled /> }
+      return { labelKey: 'role.admin',      color: '#F5B700', bg: 'rgba(245,183,0,0.18)',  textColor: '#FFD54F', icon: <StarFilled /> }
     case 'moderator':
-      return { label: 'Moderator',  color: '#42A5F5', bg: 'rgba(66,165,245,0.20)', textColor: '#90CAF9', icon: <SafetyCertificateOutlined /> }
+      return { labelKey: 'role.moderator',  color: '#42A5F5', bg: 'rgba(66,165,245,0.20)', textColor: '#90CAF9', icon: <SafetyCertificateOutlined /> }
     case 'instructor':
     case 'teacher':
-      return { label: 'Giảng viên', color: '#26A69A', bg: 'rgba(38,166,154,0.20)', textColor: '#80CBC4', icon: <ReadOutlined /> }
+      return { labelKey: 'role.instructor', color: '#26A69A', bg: 'rgba(38,166,154,0.20)', textColor: '#80CBC4', icon: <ReadOutlined /> }
     case 'student':
-      return { label: 'Sinh viên',  color: '#5BC8F5', bg: 'rgba(91,200,245,0.20)', textColor: '#81D4FA', icon: <ExperimentOutlined /> }
+      return { labelKey: 'role.student',    color: '#5BC8F5', bg: 'rgba(91,200,245,0.20)', textColor: '#81D4FA', icon: <ExperimentOutlined /> }
     default:
-      return { label: 'User',       color: '#B0BEC5', bg: 'rgba(255,255,255,0.10)', textColor: '#CFD8DC', icon: <UserOutlined /> }
+      return { labelKey: 'role.user',       color: '#B0BEC5', bg: 'rgba(255,255,255,0.10)', textColor: '#CFD8DC', icon: <UserOutlined /> }
   }
 }
 
@@ -54,6 +56,7 @@ export default function AppLayout({ children }) {
   const { profile, role, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
 
   const username = profile?.username ?? '…'
   const fullName = profile?.full_name || profile?.username || '…'
@@ -77,27 +80,24 @@ export default function AppLayout({ children }) {
   }
 
   const menuItems = [
-    // ── TỔNG QUAN ──
-    ...(makeGroup('TỔNG QUAN', [
-      { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard', show: true },
+    ...(makeGroup(t('nav.section.overview'), [
+      { key: '/dashboard', icon: <DashboardOutlined />, label: t('nav.dashboard'), show: true },
     ]) ?? []),
-    // ── THỰC HÀNH ──
-    ...(makeGroup('THỰC HÀNH', [
-      { key: '/labs',       icon: <ExperimentOutlined />, label: 'Labs',            show: STUDENT_PLUS.includes(role) },
-      { key: '/my-reports', icon: <HistoryOutlined />,    label: 'Báo cáo của tôi', show: STUDENT_PLUS.includes(role) },
-      { key: '/wiring',     icon: <ApartmentOutlined />,  label: 'Wiring Diagram',  show: true },
+    ...(makeGroup(t('nav.section.practice'), [
+      { key: '/labs',       icon: <ExperimentOutlined />, label: t('nav.labs'),          show: STUDENT_PLUS.includes(role) },
+      { key: '/my-reports', icon: <HistoryOutlined />,    label: t('nav.myReports'),     show: STUDENT_PLUS.includes(role) },
+      { key: '/wiring',     icon: <ApartmentOutlined />,  label: t('nav.wiringDiagram'), show: true },
     ]) ?? []),
-    // ── QUẢN TRỊ (chỉ instructor/moderator/admin) ──
-    ...(makeGroup('QUẢN TRỊ', [
-      { key: '/teach', icon: <ReadOutlined />,  label: 'Giảng dạy',  show: TEACH_PLUS.includes(role) },
-      { key: '/admin', icon: <CrownOutlined />, label: 'Admin Panel', show: ADMIN_PLUS.includes(role) },
+    ...(makeGroup(t('nav.section.admin'), [
+      { key: '/teach', icon: <ReadOutlined />,  label: t('nav.teach'),       show: TEACH_PLUS.includes(role) },
+      { key: '/admin', icon: <CrownOutlined />, label: t('nav.adminPanel'),  show: ADMIN_PLUS.includes(role) },
     ]) ?? []),
   ]
 
   const userMenuItems = [
-    { key: 'home',   icon: <HomeOutlined />,   label: 'Về trang chủ' },
+    { key: 'home',   icon: <HomeOutlined />,   label: t('nav.home') },
     { type: 'divider' },
-    { key: 'logout', icon: <LogoutOutlined />, label: 'Đăng xuất', danger: true },
+    { key: 'logout', icon: <LogoutOutlined />, label: t('nav.logout'), danger: true },
   ]
 
   async function handleUserMenu({ key }) {
@@ -167,8 +167,8 @@ export default function AppLayout({ children }) {
           </div>
           {!collapsed && (
             <div style={{ minWidth: 0 }}>
-              <Text strong style={{ color: '#fff', fontSize: 15, whiteSpace: 'nowrap', letterSpacing: 0.3, display: 'block' }}>BK Diagnostic</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10.5, letterSpacing: 0.6 }}>HCMUT · TR4021</Text>
+              <Text strong style={{ color: '#fff', fontSize: 15, whiteSpace: 'nowrap', letterSpacing: 0.3, display: 'block' }}>{t('app.name')}</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10.5, letterSpacing: 0.6 }}>{t('app.tagline')}</Text>
             </div>
           )}
         </div>
@@ -300,7 +300,7 @@ export default function AppLayout({ children }) {
                   }}
                   icon={badge.icon}
                 >
-                  {badge.label}
+                  {t(badge.labelKey)}
                 </Tag>
               </div>
             )}
@@ -316,6 +316,7 @@ export default function AppLayout({ children }) {
             onClick={() => setCollapsed(!collapsed)}
           />
           <Space size={12}>
+            <LanguageSwitcher compact />
             <Button
               type="primary"
               icon={<HomeOutlined />}
@@ -323,7 +324,7 @@ export default function AppLayout({ children }) {
               style={{ height: 40, fontWeight: 600, borderRadius: 10 }}
               className="bk-home-btn"
             >
-              <span className="bk-home-label">Trang chủ</span>
+              <span className="bk-home-label">{t('nav.home')}</span>
             </Button>
             <style>{`
               @media (max-width: 600px) {

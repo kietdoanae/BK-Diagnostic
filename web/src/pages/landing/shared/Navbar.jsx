@@ -3,8 +3,10 @@ import { motion, useScroll } from 'framer-motion'
 import { Button, Drawer } from 'antd'
 import { MenuOutlined, DashboardOutlined, LoginOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../../hooks/useAuth'
 import UserBadge from '../../../components/UserBadge'
+import LanguageSwitcher from '../../../components/LanguageSwitcher'
 import logoSvg from '../../../assets/svg/bk-diagnostic-logo.svg'
 
 const NAV_ITEMS = [
@@ -21,6 +23,7 @@ export default function Navbar() {
   const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { scrollYProgress } = useScroll()
+  const { t } = useTranslation()
 
   return (
     <>
@@ -50,6 +53,7 @@ export default function Navbar() {
         </div>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <LanguageSwitcher compact />
           {session ? (
             <>
               <UserBadge
@@ -64,7 +68,7 @@ export default function Navbar() {
                 onClick={() => navigate('/dashboard')}
                 style={{ height: 40, fontWeight: 600, borderRadius: 10 }}
               >
-                Bảng điều khiển
+                {t('nav.dashboard')}
               </Button>
             </>
           ) : (
@@ -74,7 +78,7 @@ export default function Navbar() {
               onClick={() => navigate('/login')}
               style={{ height: 40, fontWeight: 600, borderRadius: 10 }}
             >
-              Đăng nhập
+              {t('auth.btnSignIn')}
             </Button>
           )}
           <Button

@@ -6,6 +6,7 @@ import {
   ExperimentOutlined,
   UserOutlined,
 } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 
 const { Text } = Typography
 
@@ -17,20 +18,20 @@ export function avatarColor(username = '') {
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length]
 }
 
-/** Role badge styling — đồng bộ giữa landing navbar, app sidebar, app header. */
+/** Role badge styling — labels dùng i18n key, gọi trong component bằng t(badge.labelKey). */
 export function roleBadge(role) {
   switch (role) {
     case 'admin':
-      return { label: 'Admin',      color: '#F5B700', icon: <StarFilled /> }
+      return { labelKey: 'role.admin',      color: '#F5B700', icon: <StarFilled /> }
     case 'moderator':
-      return { label: 'Moderator',  color: '#42A5F5', icon: <SafetyCertificateOutlined /> }
+      return { labelKey: 'role.moderator',  color: '#42A5F5', icon: <SafetyCertificateOutlined /> }
     case 'instructor':
     case 'teacher':
-      return { label: 'Giảng viên', color: '#26A69A', icon: <ReadOutlined /> }
+      return { labelKey: 'role.instructor', color: '#26A69A', icon: <ReadOutlined /> }
     case 'student':
-      return { label: 'Sinh viên',  color: '#0288D1', icon: <ExperimentOutlined /> }
+      return { labelKey: 'role.student',    color: '#0288D1', icon: <ExperimentOutlined /> }
     default:
-      return { label: 'User',       color: '#78909C', icon: <UserOutlined /> }
+      return { labelKey: 'role.user',       color: '#78909C', icon: <UserOutlined /> }
   }
 }
 
@@ -52,6 +53,7 @@ export default function UserBadge({
   size = 36,
   showOnlineDot = false,
 }) {
+  const { t } = useTranslation()
   const username = profile?.username ?? '…'
   const fullName = profile?.full_name || profile?.username || '…'
   const initial = (fullName[0] || username[0] || 'U').toUpperCase()
@@ -131,7 +133,7 @@ export default function UserBadge({
             }}
             icon={badge.icon}
           >
-            {badge.label}
+            {t(badge.labelKey)}
           </Tag>
         </div>
       )}

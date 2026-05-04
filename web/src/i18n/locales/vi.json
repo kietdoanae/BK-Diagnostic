@@ -1,0 +1,147 @@
+{
+  "app": {
+    "name": "BK Diagnostic",
+    "tagline": "HCMUT · TR4021"
+  },
+  "common": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "create": "Tạo",
+    "close": "Đóng",
+    "confirm": "Xác nhận",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "loading": "Đang tải...",
+    "search": "Tìm kiếm",
+    "refresh": "Làm mới",
+    "download": "Tải xuống",
+    "upload": "Tải lên",
+    "submit": "Nộp",
+    "yes": "Có",
+    "no": "Không"
+  },
+  "nav": {
+    "dashboard": "Bảng điều khiển",
+    "labs": "Labs",
+    "myReports": "Báo cáo của tôi",
+    "wiringDiagram": "Sơ đồ điện",
+    "teach": "Giảng dạy",
+    "adminPanel": "Admin Panel",
+    "home": "Trang chủ",
+    "logout": "Đăng xuất",
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "settings": "Cài đặt",
+    "section": {
+      "overview": "TỔNG QUAN",
+      "practice": "THỰC HÀNH",
+      "admin": "QUẢN TRỊ"
+    }
+  },
+  "role": {
+    "admin": "Admin",
+    "moderator": "Moderator",
+    "instructor": "Giảng viên",
+    "student": "Sinh viên",
+    "user": "User"
+  },
+  "auth": {
+    "loginTitle": "Đăng nhập",
+    "registerTitle": "Đăng ký tài khoản",
+    "forgotTitle": "Quên mật khẩu",
+    "resetTitle": "Đặt lại mật khẩu",
+    "emailOrUsername": "Email hoặc tên đăng nhập",
+    "username": "Tên đăng nhập",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "newPassword": "Mật khẩu mới",
+    "currentPassword": "Mật khẩu hiện tại",
+    "rememberMe": "Ghi nhớ đăng nhập",
+    "forgotLink": "Quên mật khẩu?",
+    "noAccount": "Chưa có tài khoản?",
+    "haveAccount": "Đã có tài khoản?",
+    "signupHere": "Đăng ký ngay",
+    "signinHere": "Đăng nhập ngay",
+    "btnSignIn": "Đăng nhập",
+    "btnSignUp": "Đăng ký",
+    "btnSendReset": "Gửi link đặt lại",
+    "btnUpdate": "Cập nhật mật khẩu",
+    "errAllFields": "Vui lòng điền đầy đủ thông tin",
+    "errMismatch": "Mật khẩu không khớp",
+    "errShort": "Mật khẩu tối thiểu 6 ký tự"
+  },
+  "dashboard": {
+    "title": "Bảng điều khiển",
+    "greetingMorning": "Chào buổi sáng",
+    "greetingAfternoon": "Chào buổi chiều",
+    "greetingEvening": "Chào buổi tối",
+    "section": {
+      "identity": "ĐỊNH DANH",
+      "account": "TÀI KHOẢN"
+    },
+    "field": {
+      "fullName": "Họ và tên",
+      "mssv": "Mã số sinh viên",
+      "username": "Username",
+      "email": "Email",
+      "joined": "Tham gia",
+      "status": "Trạng thái"
+    },
+    "missing": "Chưa cập nhật",
+    "changePassword": "Đổi mật khẩu",
+    "changePasswordDesc": "Cập nhật mật khẩu tài khoản — tối thiểu 6 ký tự"
+  },
+  "lab": {
+    "listTitle": "Danh sách Lab",
+    "labCode": "Mã lab",
+    "labTitle": "Tiêu đề",
+    "preQuiz": "Pre-quiz",
+    "postLab": "Post-lab",
+    "session": "Phiên",
+    "evidence": "Bằng chứng",
+    "report": "Báo cáo PDF",
+    "state": {
+      "notAssigned": "Chưa được gán nhóm",
+      "preLabPending": "Chưa làm pre-lab",
+      "preLabFailed": "Pre-lab chưa đạt",
+      "preLabPassed": "Sẵn sàng thực hành",
+      "practiceActive": "Đang thực hành",
+      "practiceExpired": "Phiên đã hết hạn",
+      "postPending": "Cần làm post-lab",
+      "completed": "Đã hoàn thành"
+    },
+    "btn": {
+      "doPreQuiz": "Làm pre-lab",
+      "startPractice": "Bắt đầu thực hành",
+      "waitLeader": "Chờ leader",
+      "joinDashboard": "Vào dashboard thực hành",
+      "doPostLab": "Làm post-lab",
+      "viewReport": "Xem báo cáo"
+    }
+  },
+  "teach": {
+    "title": "Phần giảng dạy",
+    "subtitle": "Tạo và quản lý nội dung Lab · xem báo cáo sinh viên · quản lý nhóm thực hành",
+    "instructorRole": "GIẢNG VIÊN",
+    "stats": {
+      "labs": "BÀI LAB",
+      "groups": "NHÓM THỰC HÀNH",
+      "activeSessions": "PHIÊN ĐANG CHẠY",
+      "submissions": "BÀI NỘP"
+    },
+    "tab": {
+      "labs": "Quản lý Lab",
+      "groups": "Quản lý nhóm",
+      "sessions": "Phiên thực hành",
+      "reports": "Báo cáo sinh viên"
+    }
+  },
+  "lang": {
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "switch": "Ngôn ngữ"
+  }
+}

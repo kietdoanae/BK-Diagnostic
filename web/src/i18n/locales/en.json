@@ -1,0 +1,147 @@
+{
+  "app": {
+    "name": "BK Diagnostic",
+    "tagline": "HCMUT · TR4021"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "loading": "Loading...",
+    "search": "Search",
+    "refresh": "Refresh",
+    "download": "Download",
+    "upload": "Upload",
+    "submit": "Submit",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "labs": "Labs",
+    "myReports": "My Reports",
+    "wiringDiagram": "Wiring Diagram",
+    "teach": "Teaching",
+    "adminPanel": "Admin Panel",
+    "home": "Home",
+    "logout": "Sign Out",
+    "login": "Sign In",
+    "register": "Sign Up",
+    "settings": "Settings",
+    "section": {
+      "overview": "OVERVIEW",
+      "practice": "PRACTICE",
+      "admin": "ADMINISTRATION"
+    }
+  },
+  "role": {
+    "admin": "Admin",
+    "moderator": "Moderator",
+    "instructor": "Instructor",
+    "student": "Student",
+    "user": "User"
+  },
+  "auth": {
+    "loginTitle": "Sign In",
+    "registerTitle": "Create Account",
+    "forgotTitle": "Forgot Password",
+    "resetTitle": "Reset Password",
+    "emailOrUsername": "Email or username",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "newPassword": "New password",
+    "currentPassword": "Current password",
+    "rememberMe": "Remember me",
+    "forgotLink": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "signupHere": "Sign up",
+    "signinHere": "Sign in",
+    "btnSignIn": "Sign In",
+    "btnSignUp": "Sign Up",
+    "btnSendReset": "Send reset link",
+    "btnUpdate": "Update password",
+    "errAllFields": "Please fill in all fields",
+    "errMismatch": "Passwords do not match",
+    "errShort": "Password must be at least 6 characters"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening",
+    "section": {
+      "identity": "IDENTITY",
+      "account": "ACCOUNT"
+    },
+    "field": {
+      "fullName": "Full name",
+      "mssv": "Student ID",
+      "username": "Username",
+      "email": "Email",
+      "joined": "Joined",
+      "status": "Status"
+    },
+    "missing": "Not set",
+    "changePassword": "Change password",
+    "changePasswordDesc": "Update your account password — minimum 6 characters"
+  },
+  "lab": {
+    "listTitle": "Lab List",
+    "labCode": "Lab code",
+    "labTitle": "Title",
+    "preQuiz": "Pre-quiz",
+    "postLab": "Post-lab",
+    "session": "Session",
+    "evidence": "Evidence",
+    "report": "PDF Report",
+    "state": {
+      "notAssigned": "Not assigned to a group",
+      "preLabPending": "Pre-lab not done",
+      "preLabFailed": "Pre-lab not passed",
+      "preLabPassed": "Ready for practice",
+      "practiceActive": "Practice active",
+      "practiceExpired": "Session expired",
+      "postPending": "Post-lab pending",
+      "completed": "Completed"
+    },
+    "btn": {
+      "doPreQuiz": "Take pre-lab",
+      "startPractice": "Start practice",
+      "waitLeader": "Wait for leader",
+      "joinDashboard": "Open practice dashboard",
+      "doPostLab": "Take post-lab",
+      "viewReport": "View report"
+    }
+  },
+  "teach": {
+    "title": "Teaching",
+    "subtitle": "Create lab content · review student reports · manage practice groups",
+    "instructorRole": "INSTRUCTOR",
+    "stats": {
+      "labs": "LABS",
+      "groups": "GROUPS",
+      "activeSessions": "ACTIVE SESSIONS",
+      "submissions": "SUBMISSIONS"
+    },
+    "tab": {
+      "labs": "Lab Management",
+      "groups": "Group Management",
+      "sessions": "Sessions",
+      "reports": "Student Reports"
+    }
+  },
+  "lang": {
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "switch": "Language"
+  }
+}
