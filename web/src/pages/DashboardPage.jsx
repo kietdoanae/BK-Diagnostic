@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, Avatar, Typography, Tag, Row, Col, Form, Input, Button, Alert, Table, Space, Tooltip } from 'antd'
 import { UserOutlined, CalendarOutlined, SafetyOutlined, MailOutlined, LockOutlined, DownloadOutlined, FileTextOutlined, ReloadOutlined, IdcardOutlined, CheckCircleOutlined, ContactsOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
@@ -175,10 +175,9 @@ export default function DashboardPage({ embedded = false }) {
   const [mssv, setMssv] = useState(null)
   const [fullName, setFullName] = useState(null)
 
-  useEffect(() => {
-    if (profile?.mssv)      setMssv(profile.mssv)
-    if (profile?.full_name) setFullName(profile.full_name)
-  }, [profile?.mssv, profile?.full_name])
+  // Keep local state in sync with profile — derived directly, no useEffect needed
+  const displayMssv = mssv ?? profile?.mssv ?? null
+  const displayFull = fullName ?? profile?.full_name ?? null
 
   const username    = profile?.username ?? session?.user?.email?.split('@')[0] ?? 'User'
   const email       = session?.user?.email ?? '—'
@@ -186,8 +185,6 @@ export default function DashboardPage({ embedded = false }) {
   const status      = profile?.status ?? 'active'
   const bg          = avatarColor(username)
   const initial     = username[0]?.toUpperCase() ?? 'U'
-  const displayMssv = mssv ?? profile?.mssv ?? null
-  const displayFull = fullName ?? profile?.full_name ?? null
 
   // Reload a specific field from DB after RPC save
   async function reloadField(field, setter) {

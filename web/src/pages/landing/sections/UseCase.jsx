@@ -37,7 +37,7 @@ export default function UseCase() {
             gap: 16,
           }}
         >
-          {STEPS.map((s, i) => (
+          {STEPS.map((s) => (
             <motion.div key={s.num} variants={fadeUpItem} style={{
               background: 'var(--paper)',
               borderRadius: 'var(--radius-card)',

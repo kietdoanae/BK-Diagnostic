@@ -21,7 +21,7 @@ export default function UpdateMSSVModal({ open, onSuccess }) {
       message.success('Đã cập nhật MSSV')
       form.resetFields()
       onSuccess?.()
-    } catch (err) {
+    } catch (_err) {
       // form validation error
     } finally {
       setLoading(false)

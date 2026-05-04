@@ -21,7 +21,13 @@ export function useUsers() {
     else setUsers(data ?? [])
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (!cancelled) await load()
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   const filtered = useMemo(() => {
     let result = [...users]

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { Spin } from 'antd'
 import { useAuth } from '../hooks/useAuth'
@@ -9,16 +9,12 @@ const STUDENT_ROLES = ['student', 'instructor', 'moderator', 'admin']
 export default function StudentRoute({ children }) {
   const { session, profile, loading } = useAuth()
   const location = useLocation()
-  const [modalOpen, setModalOpen] = useState(false)
 
-  // Check student missing MSSV
-  useEffect(() => {
-    if (profile?.role === 'student' && !profile?.mssv) {
-      setModalOpen(true)
-    } else {
-      setModalOpen(false)
-    }
-  }, [profile?.role, profile?.mssv])
+  // Derive modal state from profile — no useEffect needed
+  const modalOpen = useMemo(
+    () => profile?.role === 'student' && !profile?.mssv,
+    [profile?.role, profile?.mssv]
+  )
 
   if (loading) {
     return (

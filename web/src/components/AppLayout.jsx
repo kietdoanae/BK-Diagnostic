@@ -70,7 +70,9 @@ export default function AppLayout({ children }) {
 
   // Helper: chỉ tạo group nếu có item visible bên trong (collapsed mode chỉ hiện divider).
   function makeGroup(label, items) {
-    const visibleItems = items.filter((it) => it.show).map(({ show, ...rest }) => rest)
+    const visibleItems = items.filter((it) => it.show).map((it) => {
+      const { show: _show, ...rest } = it; void _show; return rest
+    })
     if (visibleItems.length === 0) return null
     if (collapsed) {
       // Khi sidebar thu gọn: chỉ render items + 1 divider phân tách, không hiện label

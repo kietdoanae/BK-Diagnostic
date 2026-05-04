@@ -27,21 +27,27 @@ export function useLogs() {
   }, [filterAction, filterPlatform])
 
   // Initial load & re-load when filters change
-  useEffect(() => { load(true) }, [load])
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (!cancelled) await load(true)
+    })()
+    return () => { cancelled = true }
+  }, [load])
 
   // Realtime: fires when Supabase Replication is enabled for activity_logs table
   useEffect(() => {
     const channel = supabase
       .channel('activity_logs_changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_logs' },
-        () => load(false))
+        () => { load(false) })
       .subscribe(status => setIsLive(status === 'SUBSCRIBED'))
     return () => { supabase.removeChannel(channel) }
   }, [load])
 
   // Polling fallback: refresh every 10s silently in case Realtime misses events
   useEffect(() => {
-    const id = setInterval(() => load(false), 10000)
+    const id = setInterval(() => { load(false) }, 10000)
     return () => clearInterval(id)
   }, [load])
 

@@ -1,7 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getProfile, onAuthStateChange, logout as authLogout } from '../services/auth'
-
-const AuthContext = createContext(null)
+import { AuthContext } from './auth-context'
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined) // undefined = loading
@@ -56,10 +55,3 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export function useAuthContext() {
-  const ctx = useContext(AuthContext)
-  if (ctx === null) {
-    throw new Error('useAuth must be used inside <AuthProvider>')
-  }
-  return ctx
-}

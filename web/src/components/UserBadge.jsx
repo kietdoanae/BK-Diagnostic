@@ -12,14 +12,14 @@ const { Text } = Typography
 
 const AVATAR_COLORS = ['#1565C0','#0097A7','#2E7D32','#6A1B9A','#AD1457','#E65100','#4527A0','#00695C']
 
-export function avatarColor(username = '') {
+function avatarColor(username = '') {
   let h = 0
   for (const c of username) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length]
 }
 
 /** Role badge styling — labels dùng i18n key, gọi trong component bằng t(badge.labelKey). */
-export function roleBadge(role) {
+function roleBadge(role) {
   switch (role) {
     case 'admin':
       return { labelKey: 'role.admin',      color: '#F5B700', icon: <StarFilled /> }
@@ -61,7 +61,6 @@ export default function UserBadge({
   const badge = roleBadge(role)
 
   const nameColor = dark ? '#fff' : '#1A1A2E'
-  const subColor  = dark ? 'rgba(255,255,255,0.55)' : '#6B7280'
 
   return (
     <div
