@@ -134,7 +134,7 @@
     <string name="live_data_status_searching">Đang tìm kiếm…</string>
     <string name="live_data_status_awaiting">Chờ cấp quyền</string>
     <string name="live_data_status_disconnected">Mất kết nối</string>
-    <string name="live_data_running">Đang đọc dữ liệu...</string>
+    <string name="live_data_running">Đang đọc dữ liệu…</string>
     <string name="live_data_stopped">Đã dừng</string>
     <string name="live_data_btn_stop">Dừng</string>
     <string name="live_data_btn_start">Bắt đầu</string>
@@ -227,4 +227,7 @@
     <string name="raw_monitor_btn_export">XUẤT .CSV</string>
     <string name="raw_monitor_export_success">✓  Đã lưu vào Downloads:</string>
     <string name="raw_monitor_export_error">✗  Xuất thất bại — kiểm tra quyền bộ nhớ</string>
+
+    <!-- Wiring Diagram -->
+    <string name="wiring_diagram_title">Sơ đồ đấu nối</string>
 </resources>

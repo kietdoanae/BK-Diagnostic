@@ -134,7 +134,7 @@
     <string name="live_data_status_searching">Searching…</string>
     <string name="live_data_status_awaiting">Awaiting permission</string>
     <string name="live_data_status_disconnected">Disconnected</string>
-    <string name="live_data_running">Reading data...</string>
+    <string name="live_data_running">Reading data…</string>
     <string name="live_data_stopped">Stopped</string>
     <string name="live_data_btn_stop">Stop</string>
     <string name="live_data_btn_start">Start</string>
