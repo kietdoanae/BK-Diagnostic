@@ -1,12 +1,24 @@
 // Pre-quiz table: question, chosen answer, correct/incorrect, score + verdict.
 // `preQuiz.answers` is stored as { [questionId]: answerKey } (see submit_pre_quiz RPC).
-// `questions` is the full question bank filtered to the pre-lab stage.
+// `questions` is the full question bank filtered to the pre-lab phase.
 
 function answerLabel(question, key) {
   if (!question?.options || key == null) return '—'
-  // options is jsonb: [{ key: 'A', text: '…' }, …]
-  const found = question.options.find((o) => o.key === key)
-  return found ? `${found.key}. ${found.text}` : String(key)
+  const opts = question.options
+
+  // Object form (actual schema, used by PreQuizRunner): { A: 'text', B: 'text' }
+  if (!Array.isArray(opts) && typeof opts === 'object') {
+    const text = opts[key]
+    return text ? `${key}. ${text}` : String(key)
+  }
+
+  // Array form fallback (legacy/alternate shape): [{ key: 'A', text: '…' }]
+  if (Array.isArray(opts)) {
+    const found = opts.find((o) => o?.key === key)
+    return found ? `${found.key}. ${found.text}` : String(key)
+  }
+
+  return String(key)
 }
 
 export default function PreQuizSection({ preQuiz, questions, lab }) {

@@ -9,6 +9,7 @@ import { supabase } from '../services/supabase'
 import { fetchLabReportData } from '../services/labReportData'
 import { generateAndUploadReport } from '../services/labReportGenerator'
 import LabReportPdfTemplate from '../components/lab/pdf/LabReportPdfTemplate'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 const { Title, Text } = Typography
 
@@ -184,18 +185,22 @@ export default function LabReportPage() {
 
         {/* Off-screen template — html2pdf reads from this DOM. We position it
             off-screen rather than display:none, because html2canvas cannot
-            rasterize a node inside a display:none ancestor. */}
-        <div
-          style={{
-            position: 'fixed',
-            left: '-10000px',
-            top: 0,
-            width: '210mm',
-          }}
-          aria-hidden="true"
-        >
-          <LabReportPdfTemplate ref={templateRef} data={data} hashPreview={(lastHash || '').slice(0, 16)} />
-        </div>
+            rasterize a node inside a display:none ancestor.
+            Wrapped in ErrorBoundary so any throw inside a section (eg. schema
+            mismatch) surfaces as visible error instead of blanking the page. */}
+        <ErrorBoundary label="Lỗi render template báo cáo PDF">
+          <div
+            style={{
+              position: 'fixed',
+              left: '-10000px',
+              top: 0,
+              width: '210mm',
+            }}
+            aria-hidden="true"
+          >
+            <LabReportPdfTemplate ref={templateRef} data={data} hashPreview={(lastHash || '').slice(0, 16)} />
+          </div>
+        </ErrorBoundary>
       </div>
     </AppLayout>
   )

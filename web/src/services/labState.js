@@ -23,8 +23,19 @@ export const LAB_STATES = {
   PRE_LAB_FAILED: 'PRE_LAB_FAILED',
   PRE_LAB_PASSED: 'PRE_LAB_PASSED',
   PRACTICE_ACTIVE: 'PRACTICE_ACTIVE',
+  PRACTICE_EXPIRED: 'PRACTICE_EXPIRED',
   PRACTICE_DONE_POST_PENDING: 'PRACTICE_DONE_POST_PENDING',
   COMPLETED: 'COMPLETED',
+}
+
+// Helper: check session ACTIVE row đã quá hạn theo client clock.
+// Server vẫn là source of truth (cron expire_old_sessions + RPC enforce),
+// hàm này chỉ dùng cho UI gating khi DB chưa kịp flip status.
+function isSessionExpired(session) {
+  if (!session) return false
+  if (session.status !== 'ACTIVE') return false
+  if (!session.expires_at) return false
+  return new Date(session.expires_at).getTime() <= Date.now()
 }
 
 /**
@@ -56,7 +67,13 @@ export function computeLabState({
   if (!latestPreQuiz) return LAB_STATES.PRE_LAB_PENDING
   if (!latestPreQuiz.passed) return LAB_STATES.PRE_LAB_FAILED
 
-  if (activeSession) return LAB_STATES.PRACTICE_ACTIVE
+  if (activeSession) {
+    // Defense vs server cron lag: nếu activeSession nhưng expires_at đã qua,
+    // hiển thị PRACTICE_EXPIRED → student vẫn vào "Xem lại phiên" được nhưng
+    // không thao tác (UI hide buttons + server reject mutations).
+    if (isSessionExpired(activeSession)) return LAB_STATES.PRACTICE_EXPIRED
+    return LAB_STATES.PRACTICE_ACTIVE
+  }
 
   if (lastSession && ['COMPLETED', 'EXPIRED'].includes(lastSession.status)) {
     if (myReport) return LAB_STATES.COMPLETED
@@ -74,6 +91,7 @@ export function labStateLabel(state) {
     case LAB_STATES.PRE_LAB_FAILED: return 'Pre-lab chưa đạt'
     case LAB_STATES.PRE_LAB_PASSED: return 'Sẵn sàng thực hành'
     case LAB_STATES.PRACTICE_ACTIVE: return 'Đang thực hành'
+    case LAB_STATES.PRACTICE_EXPIRED: return 'Phiên đã hết hạn'
     case LAB_STATES.PRACTICE_DONE_POST_PENDING: return 'Cần làm post-lab'
     case LAB_STATES.COMPLETED: return 'Đã hoàn thành'
     default: return state
@@ -88,6 +106,7 @@ export function labStateTagColor(state) {
     case LAB_STATES.PRE_LAB_FAILED: return 'error'
     case LAB_STATES.PRE_LAB_PASSED: return 'processing'
     case LAB_STATES.PRACTICE_ACTIVE: return 'processing'
+    case LAB_STATES.PRACTICE_EXPIRED: return 'error'
     case LAB_STATES.PRACTICE_DONE_POST_PENDING: return 'warning'
     case LAB_STATES.COMPLETED: return 'success'
     default: return 'default'
