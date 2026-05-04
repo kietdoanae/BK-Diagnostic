@@ -1,14 +1,17 @@
+import { useTranslation } from 'react-i18next'
 import AnimatedNumber from '../shared/AnimatedNumber'
 
-const METRICS = [
-  { value: '8+',  label: 'Hãng xe\nhỗ trợ' },
-  { value: '50+', label: 'Thông số\ncảm biến' },
-  { value: '6',   label: 'Buổi học\nthực hành' },
-  { value: '3',   label: 'Thành phần\ntích hợp' },
-  { value: '5',   label: 'Giao thức\nchuẩn đoán' },
-]
-
 export default function MetricStrip() {
+  const { t } = useTranslation()
+
+  const METRICS = [
+    { value: '8+',  label: t('landing.metrics.brands') },
+    { value: '50+', label: t('landing.metrics.sensors') },
+    { value: '6',   label: t('landing.metrics.sessions') },
+    { value: '3',   label: t('landing.metrics.components') },
+    { value: '5',   label: t('landing.metrics.protocols') },
+  ]
+
   return (
     <section style={{
       background: 'var(--bk-navy-700)',

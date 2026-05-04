@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card, Button, Space, Typography, Alert, Tag, message } from 'antd'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import MDEditor from '@uiw/react-md-editor'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
@@ -25,6 +26,7 @@ import PreQuizRunner from '../components/lab/PreQuizRunner'
 const { Title, Text, Paragraph } = Typography
 
 export default function LabOverviewPage() {
+  const { t } = useTranslation()
   const { labId } = useParams()
   const navigate = useNavigate()
   const { session } = useAuth()
@@ -63,7 +65,7 @@ export default function LabOverviewPage() {
 
       const assignment = (assignmentsRes.data || []).find((a) => a.lab.id === labId)
       if (!assignment) {
-        setError('Bạn chưa được gán vào nhóm cho lab này.')
+        setError(t('labsList.empty'))
         setLoading(false)
         return
       }
@@ -98,7 +100,7 @@ export default function LabOverviewPage() {
     }
     load()
     return () => { cancelled = true }
-  }, [userId, labId, reloadCounter])
+  }, [userId, labId, reloadCounter, t])
 
   async function handleStartPractice() {
     setStarting(true)
@@ -117,7 +119,7 @@ export default function LabOverviewPage() {
     return (
       <AppLayout>
         <Alert type="error" message={error} showIcon />
-        <Button style={{ marginTop: 12 }} onClick={() => navigate('/labs')}>← Quay lại</Button>
+        <Button style={{ marginTop: 12 }} onClick={() => navigate('/labs')}>← {t('common.back')}</Button>
       </AppLayout>
     )
   }
@@ -131,13 +133,13 @@ export default function LabOverviewPage() {
           <Alert
             type="info"
             showIcon
-            message="Nhóm của bạn đang có session thực hành đang chạy."
+            message={t('labOverview.leaderHint')}
             style={{ marginBottom: 16 }}
           />
           <Button type="primary" onClick={() =>
             navigate(`/labs/${labId}/session/${activeSession.id}`)
           }>
-            Vào dashboard thực hành
+            {t('lab.btn.joinDashboard')}
           </Button>
         </Card>
       </AppLayout>
@@ -150,7 +152,7 @@ export default function LabOverviewPage() {
       <AppLayout>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <Button onClick={() => { setShowQuiz(false); reload() }} style={{ marginBottom: 12 }}>
-            ← Quay về tổng quan
+            ← {t('common.back')}
           </Button>
           <PreQuizRunner
             labId={labId}
@@ -165,54 +167,54 @@ export default function LabOverviewPage() {
   return (
     <AppLayout>
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
-        <Button onClick={() => navigate('/labs')} style={{ marginBottom: 12 }}>← Danh sách lab</Button>
+        <Button onClick={() => navigate('/labs')} style={{ marginBottom: 12 }}>← {t('labReport.labListBack')}</Button>
         <Card>
           <Space direction="vertical" style={{ width: '100%' }}>
             <Space>
               <Title level={3} style={{ margin: 0 }}>{lab.code} · {lab.title}</Title>
-              <Tag color={labStateTagColor(state)}>{labStateLabel(state)}</Tag>
-              {membership?.role === 'leader' && <Tag color="gold">Leader</Tag>}
+              <Tag color={labStateTagColor(state)}>{t(labStateLabel(state))}</Tag>
+              {membership?.role === 'leader' && <Tag color="gold">{t('labSession.leaderLabel')}</Tag>}
             </Space>
-            <Text type="secondary">Nhóm: {group?.name} · Học kỳ: {group?.semester || '—'}</Text>
+            <Text type="secondary">{t('labsList.groupLabel')}: {group?.name} · {t('labsList.semesterLabel')}: {group?.semester || '—'}</Text>
             <Paragraph>
-              <Text strong>Ngưỡng đậu pre-quiz:</Text> {lab.pre_quiz_pass_threshold}%
+              <Text strong>{t('labOverview.passScore', { score: lab.pre_quiz_pass_threshold })}</Text>
             </Paragraph>
 
             <div data-color-mode="light">
-              <MDEditor.Markdown source={lab.description || '*Chưa có mô tả.*'} />
+              <MDEditor.Markdown source={lab.description || `*${t('common.noData')}*`} />
             </div>
 
             <Space wrap style={{ marginTop: 12 }}>
               {state === LAB_STATES.PRE_LAB_PENDING && (
-                <Button type="primary" onClick={() => setShowQuiz(true)}>Làm pre-lab</Button>
+                <Button type="primary" onClick={() => setShowQuiz(true)}>{t('labOverview.btnStart')}</Button>
               )}
               {state === LAB_STATES.PRE_LAB_FAILED && (
-                <Button type="primary" onClick={() => setShowQuiz(true)}>Làm lại pre-lab</Button>
+                <Button type="primary" onClick={() => setShowQuiz(true)}>{t('labOverview.btnRetry')}</Button>
               )}
               {state === LAB_STATES.PRE_LAB_PASSED && membership?.role === 'leader' && (
                 <Button type="primary" loading={starting} onClick={handleStartPractice}>
-                  Tạo session & bắt đầu thực hành
+                  {t('lab.btn.startPractice')}
                 </Button>
               )}
               {state === LAB_STATES.PRE_LAB_PASSED && membership?.role !== 'leader' && (
                 <Alert
                   type="info"
                   showIcon
-                  message="Chờ leader của nhóm tạo session để bắt đầu."
+                  message={t('labOverview.memberHint')}
                 />
               )}
               {state === LAB_STATES.PRACTICE_DONE_POST_PENDING && lastSession && (
                 <Button type="primary" onClick={() =>
                   navigate(`/labs/${labId}/session/${lastSession.id}/post`)
                 }>
-                  Làm post-lab
+                  {t('lab.btn.doPostLab')}
                 </Button>
               )}
               {state === LAB_STATES.COMPLETED && lastSession && (
                 <Button onClick={() =>
                   navigate(`/labs/${labId}/session/${lastSession.id}/report`)
                 }>
-                  Xem báo cáo
+                  {t('lab.btn.viewReport')}
                 </Button>
               )}
             </Space>

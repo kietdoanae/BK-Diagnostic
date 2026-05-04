@@ -553,5 +553,234 @@
     "vi": "Tiếng Việt",
     "en": "English",
     "switch": "Language"
+  },
+  "landing": {
+    "nav": {
+      "overview": "Overview",
+      "architecture": "Architecture",
+      "mobile": "Mobile App",
+      "web": "Web Platform",
+      "lab": "Lab",
+      "team": "Team"
+    },
+    "hero": {
+      "badge": "GRADUATION PROJECT · HCMUT · 2026",
+      "title": "Vehicle Diagnostics System\n& CAN bus Training",
+      "desc": "An integrated platform with three components — embedded hardware, Android app, and web platform —\nserving CAN bus protocol teaching and automotive diagnostics procedures for\nAutomotive Engineering students.",
+      "btnExplore": "Explore Architecture →",
+      "btnLab": "View Lab System",
+      "imgAlt": "CAN bus practice workbench at the Automotive Engineering lab",
+      "imgCaption": "Figure 1 — CAN bus practice workbench at the Automotive Engineering lab, Faculty of Transportation Engineering, HCMUT."
+    },
+    "metrics": {
+      "brands": "Car brands\nsupported",
+      "sensors": "Sensor\nparameters",
+      "sessions": "Practice\nsessions",
+      "components": "Integrated\ncomponents",
+      "protocols": "Diagnostic\nprotocols"
+    },
+    "context": {
+      "eyebrow": "CONTEXT",
+      "title": "Why is this project needed?",
+      "p1": "Commercial vehicle diagnostic devices (Autel, Launch, Bosch ESI…) are expensive\nand closed-source. Automotive Engineering students have limited access to the low-level\nCAN protocol, unable to observe raw data frames or modify\ndecoding algorithms.",
+      "p2": "This project builds an open system for the laboratory: self-designed hardware using\nreadily available components, fully provided source code, accompanied by practice documentation\nfor 6 sessions from basic to advanced.",
+      "p3": "The implementation scope includes a Ford Ranger 2.0L Bi-Turbo (2018–2024) as the\ntest subject, supporting OBD-II standard and extending to UDS Mode 22 with Ford-specific\nDIDs.",
+      "imgAlt": "Context diagram: Problem → Solution → Goal",
+      "imgCaption": "Figure 2 — Context diagram: Problem → Solution → Goal."
+    },
+    "architecture": {
+      "eyebrow": "ARCHITECTURE",
+      "title": "Three Integrated Pillars",
+      "sub": "Hardware for measurement, mobile app for display, web platform for administration — connected via CAN, USB, and HTTPS.",
+      "pillars": {
+        "hardware": {
+          "title": "HARDWARE",
+          "tech": "STM32F103 + MCP2515 + CP2102",
+          "desc": "Read & decode CAN frames from ECU"
+        },
+        "mobile": {
+          "title": "MOBILE APP",
+          "tech": "Android Kotlin · Jetpack Compose",
+          "desc": "Display live data, log, Lab mode"
+        },
+        "web": {
+          "title": "WEB PLATFORM",
+          "tech": "React + Supabase · Ant Design 5",
+          "desc": "User management and Lab system for instructors"
+        }
+      }
+    },
+    "hardware": {
+      "eyebrow": "PILLAR 1 · HARDWARE",
+      "title": "Custom CAN bus Interface Board",
+      "sub": "CAN ↔ USB converter with binary data frames, checksum validation, and auto-detect baudrate.",
+      "componentsTitle": "Components",
+      "components": [
+        "STM32F103C8T6 — Cortex-M3 MCU, 72 MHz, 64 KB Flash",
+        "MCP2515 — CAN 2.0B Controller, SPI interface",
+        "TJA1050 — ISO 11898 CAN transceiver, up to 1 Mbps",
+        "CP2102 — Silicon Labs USB-UART bridge, Android drivers included",
+        "Power supply — 12 V DC → 5 V (LM7805) → 3.3 V (AMS1117)"
+      ],
+      "specsTitle": "Technical Specifications",
+      "specs": {
+        "canBaudrate": "CAN baudrate",
+        "canBaudrateVal": "250 / 500 kbps (auto-detect)",
+        "uartBaud": "UART baud",
+        "uartBaudVal": "115200 8N1",
+        "frameProtocol": "Frame protocol",
+        "frameProtocolVal": "[0xAA][TYPE][LEN][PAYLOAD][XOR][0x55]",
+        "powerIn": "Power input",
+        "powerInVal": "12 V DC (cigarette lighter / OBD-II pin 16)",
+        "currentDraw": "Current draw",
+        "currentDrawVal": "~120 mA active, ~25 mA idle",
+        "pcbSize": "PCB dimensions",
+        "pcbSizeVal": "50 × 40 × 18 mm (with 3D-printed case)"
+      },
+      "uartTitle": "UART Data Frame",
+      "uartCode": "[0xAA] [TYPE] [LEN]\n[PAYLOAD…] [XOR] [0x55]",
+      "uartDesc": "XOR checksum across the PAYLOAD ensures transmission error detection. Fixed SOF/EOF\n(0xAA / 0x55) allows quick re-synchronization on frame loss.",
+      "protocolsTitle": "Supported Protocols",
+      "protocols": [
+        "OBD-II Mode 01 — Live data (ISO 15765-4 standard)",
+        "OBD-II Mode 03/04 — Read / clear DTC fault codes",
+        "UDS ISO 14229 — Diagnostic & Communication Management",
+        "Ford UDS Mode 22 — Read Data By Identifier (proprietary DIDs)",
+        "ISO-TP 15765-2 — Payload transmission >8 bytes over CAN"
+      ],
+      "imgAlt": "CAN bus interface PCB, 50×40 mm",
+      "imgCaption": "Figure 4 — CAN bus interface PCB, 50×40 mm."
+    },
+    "mobile": {
+      "eyebrow": "PILLAR 2 · MOBILE APP",
+      "title": "Android Diagnostic & Learning App",
+      "sub": "Communicates with CAN board via USB-OTG, displays live data, reads fault codes, and supports Lab mode for classroom use.",
+      "featuresTitle": "Key Features",
+      "features": [
+        { "icon": "⏱", "title": "Live Data", "desc": "Display 50+ sensor parameters updated every 500 ms, visualized as gauges and real-time charts." },
+        { "icon": "⚠", "title": "DTC Fault Codes", "desc": "Scan and decode P/C/B/U fault codes from all ECUs, clear DTCs and turn off Check Engine light." },
+        { "icon": "💻", "title": "ECU Information", "desc": "Read VIN, software version and standard IDs from modules: engine, transmission, ABS, airbags, BCM." },
+        { "icon": "📈", "title": "Data Logger", "desc": "Log data to CSV file for offline analysis after test runs." },
+        { "icon": "🔧", "title": "Actuator Test", "desc": "Activate actuators (EGR valve, fuel pump, electric fan…) via UDS Mode 31." },
+        { "icon": "📡", "title": "Raw CAN Monitor", "desc": "View raw CAN bytes alongside decoded results, a debugging tool for engineers." }
+      ],
+      "labTitle": "Lab Mode — Learning Mode",
+      "labDesc": "When an instructor activates a session, the app automatically switches to Lab mode. Students\nlog in with their Student ID, take the pre-quiz, follow step-by-step instructions, then complete\nthe post-lab. All CAN operations are recorded as evidence and sent in real-time to the instructor\ndashboard. PDF reports are auto-generated at the end of the session.",
+      "labSteps": [
+        { "num": "1", "label": "Pre-quiz", "sub": "10 questions, 5 min" },
+        { "num": "2", "label": "Practice", "sub": "15-30 min" },
+        { "num": "3", "label": "Post-lab", "sub": "5 questions, 3 min" },
+        { "num": "4", "label": "PDF Report", "sub": "auto-generated" }
+      ],
+      "screensCaption": "Figure 5 — Three main screens of the application."
+    },
+    "webPillar": {
+      "eyebrow": "PILLAR 3 · WEB PLATFORM",
+      "title": "Administration & Online Learning Portal",
+      "sub": "Web app for instructors to organize sessions, track progress, and export reports; for admins to manage users, activity logs, and CSV files exported from devices.",
+      "forTeacherLabel": "FOR INSTRUCTORS",
+      "forTeacher": [
+        "Create Labs & Sessions — Configure lessons, open sessions for classes",
+        "Manage student groups — Create groups, assign students",
+        "Real-time monitoring — View student evidence during lessons",
+        "Review submissions — Grade pre/post-quizzes",
+        "Download PDF reports — Export end-of-session reports"
+      ],
+      "forAdminLabel": "FOR ADMINS",
+      "forAdmin": [
+        "User management — Create/lock accounts, assign roles",
+        "Activity Logs live — Stream login and CAN operation logs",
+        "CSV Exports archive — Download CAN log files uploaded by the app",
+        "Wiring diagram — Reference wiring schematic"
+      ],
+      "tabs": [
+        { "key": "labs", "label": "Labs" },
+        { "key": "groups", "label": "Groups" },
+        { "key": "sessions", "label": "Sessions" },
+        { "key": "exports", "label": "Exports" },
+        { "key": "logs", "label": "Logs" }
+      ],
+      "imgAlt": "Admin Dashboard, session management tab",
+      "imgCaption": "Figure 6 — Admin Dashboard, session management tab."
+    },
+    "useCase": {
+      "eyebrow": "USE CASE",
+      "title": "How a Class Session Works",
+      "sub": "A standardized 6-step process, from when the instructor opens a session to when the PDF report is saved in the system.",
+      "steps": [
+        { "num": 1, "icon": "👨‍🏫", "title": "INSTRUCTOR CREATES SESSION", "desc": "Instructor selects a Lab, opens a new session, and the system generates a 6-character code." },
+        { "num": 2, "icon": "🎓", "title": "STUDENT JOINS", "desc": "Student enters the session code on the app/web using their Student ID account." },
+        { "num": 3, "icon": "📝", "title": "PRE-QUIZ", "desc": "10 multiple-choice questions testing prerequisite knowledge (5 minutes)." },
+        { "num": 4, "icon": "🔧", "title": "PRACTICE", "desc": "Connect USB cable → board → vehicle. Follow step-by-step instructions, evidence sent in real-time to dashboard." },
+        { "num": 5, "icon": "✅", "title": "POST-LAB", "desc": "5 review questions after the session (3 minutes)." },
+        { "num": 6, "icon": "📄", "title": "PDF REPORT", "desc": "System generates a report with pre/post scores, evidence, digital signature. Saved to \"My Reports\" and instructor's DB." }
+      ]
+    },
+    "techStack": {
+      "eyebrow": "TECH STACK",
+      "title": "Technologies Used",
+      "sub": "Technology choices prioritize open source, large community, and suitability for educational environments.",
+      "clusters": [
+        {
+          "icon": "⚡",
+          "title": "HARDWARE",
+          "items": ["STM32 HAL · C language", "MCP2515 · TJA1050", "CAN ISO 11898-1", "STM32CubeIDE"]
+        },
+        {
+          "icon": "📱",
+          "title": "MOBILE",
+          "items": ["Kotlin 2.2 · Coroutines", "Jetpack Compose · Material 3", "usb-serial-for-android", "Supabase Auth + Realtime"]
+        },
+        {
+          "icon": "🌐",
+          "title": "WEB",
+          "items": ["React 19 + Vite 8", "Ant Design 6", "Framer Motion 11", "React Router 7"]
+        },
+        {
+          "icon": "☁️",
+          "title": "BACKEND",
+          "items": ["Supabase Postgres", "Row-Level Security (RLS)", "Storage + Edge Functions", "PostgREST + Realtime"]
+        }
+      ]
+    },
+    "team": {
+      "eyebrow": "TEAM",
+      "title": "Project Team",
+      "sub": "Graduation project academic year 2025–2026, Department of Automotive Engineering, Faculty of Transportation Engineering, Ho Chi Minh City University of Technology.",
+      "members": [
+        { "name": "Đoàn Anh Kiệt", "mssv": "2211716", "role": "Team Leader", "work": "Mobile App · UART Protocol" },
+        { "name": "Trần Phan Duy", "mssv": "22xxxxxx", "role": "Member", "work": "Hardware · STM32 Firmware" },
+        { "name": "Trương Việt Hoàng", "mssv": "22xxxxxx", "role": "Member", "work": "OBD2 Protocol · System Testing" }
+      ],
+      "mssvLabel": "Student ID",
+      "advisorLabel": "🎓 Academic Advisor",
+      "advisorName": "MEng. Phạm Trần Đăng Quang",
+      "advisorAffiliation": "Dept. of Automotive Engineering · Faculty of Transportation Engineering · Ho Chi Minh City University of Technology, VNU-HCM"
+    },
+    "pipeline": {
+      "caption": "Figure 3 — Data pipeline from vehicle to cloud."
+    },
+    "footer": {
+      "description": "Vehicle diagnostics system and CAN bus training.\nAutomotive Engineering graduation project.",
+      "navLabel": "Navigation",
+      "navLinks": [
+        { "href": "#tong-quan", "label": "Overview" },
+        { "href": "#kien-truc", "label": "Architecture" },
+        { "href": "#mobile", "label": "Mobile App" },
+        { "href": "#web", "label": "Web Platform" },
+        { "href": "#lab", "label": "Lab System" },
+        { "href": "#team", "label": "Team" }
+      ],
+      "linksLabel": "Links",
+      "linkLogin": "Sign In",
+      "linkDocs": "Technical Documentation",
+      "linkSource": "Source Code",
+      "linkContact": "Contact",
+      "schoolLabel": "University",
+      "schoolName": "HCMC University of Technology",
+      "facultyName": "Faculty of Transportation Engineering",
+      "deptName": "Dept. of Automotive Engineering",
+      "copyright": "© 2026 BK Diagnostic · Graduation Project · HCMUT, VNU-HCM · Faculty of Transportation Engineering"
+    }
   }
 }

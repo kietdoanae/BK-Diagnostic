@@ -9,21 +9,21 @@ import UserBadge from '../../../components/UserBadge'
 import LanguageSwitcher from '../../../components/LanguageSwitcher'
 import logoSvg from '../../../assets/svg/bk-diagnostic-logo.svg'
 
-const NAV_ITEMS = [
-  { href: '#tong-quan',  label: 'Tổng quan' },
-  { href: '#kien-truc',  label: 'Kiến trúc' },
-  { href: '#mobile',     label: 'Mobile App' },
-  { href: '#web',        label: 'Web Platform' },
-  { href: '#lab',        label: 'Lab' },
-  { href: '#team',       label: 'Team' },
-]
-
 export default function Navbar() {
   const { session, profile, role } = useAuth()
   const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { scrollYProgress } = useScroll()
   const { t } = useTranslation()
+
+  const NAV_ITEMS = [
+    { href: '#tong-quan',  label: t('landing.nav.overview') },
+    { href: '#kien-truc',  label: t('landing.nav.architecture') },
+    { href: '#mobile',     label: t('landing.nav.mobile') },
+    { href: '#web',        label: t('landing.nav.web') },
+    { href: '#lab',        label: t('landing.nav.lab') },
+    { href: '#team',       label: t('landing.nav.team') },
+  ]
 
   return (
     <>

@@ -1,36 +1,28 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useInViewAnimation, fadeUp } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PlaceholderImage from '../shared/PlaceholderImage'
 
-const FOR_TEACHER = [
-  'Tạo Lab và Session — Cấu hình bài học, mở phiên cho lớp',
-  'Quản lý nhóm sinh viên — Tạo nhóm, gán SV vào nhóm',
-  'Theo dõi real-time — Xem evidence của SV trong khi học',
-  'Review submission — Chấm điểm pre/post-quiz',
-  'Tải báo cáo PDF — Export báo cáo cuối buổi',
-]
-
-const FOR_ADMIN = [
-  'Quản lý người dùng — Tạo/khóa tài khoản, gán role',
-  'Activity Logs live — Stream log đăng nhập, thao tác CAN',
-  'CSV Exports archive — Tải file CAN log do app upload',
-  'Wiring diagram — Sơ đồ đấu nối tham khảo',
-]
-
-const TABS = [
-  { key: 'labs',     label: 'Labs',     img: 'web/dashboard-labs.png' },
-  { key: 'groups',   label: 'Groups',   img: 'web/dashboard-groups.png' },
-  { key: 'sessions', label: 'Sessions', img: 'web/dashboard-sessions.png' },
-  { key: 'exports',  label: 'Exports',  img: 'web/dashboard-exports.png' },
-  { key: 'logs',     label: 'Logs',     img: 'web/dashboard-logs.png' },
-]
+const TAB_IMG_MAP = {
+  labs: 'web/dashboard-labs.png',
+  groups: 'web/dashboard-groups.png',
+  sessions: 'web/dashboard-sessions.png',
+  exports: 'web/dashboard-exports.png',
+  logs: 'web/dashboard-logs.png',
+}
 
 export default function WebPillar() {
   const [activeTab, setActiveTab] = useState('sessions')
-  const tab = TABS.find(t => t.key === activeTab) ?? TABS[2]
   const { ref, inView } = useInViewAnimation()
+  const { t } = useTranslation()
+
+  const FOR_TEACHER = t('landing.webPillar.forTeacher', { returnObjects: true })
+  const FOR_ADMIN = t('landing.webPillar.forAdmin', { returnObjects: true })
+  const TABS = t('landing.webPillar.tabs', { returnObjects: true })
+
+  const tab = TABS.find(t => t.key === activeTab) ?? TABS[2]
 
   return (
     <motion.section
@@ -44,9 +36,9 @@ export default function WebPillar() {
     >
       <div className="landing-container">
         <SectionHeader
-          eyebrow="TRỤ CỘT 3 · WEB PLATFORM"
-          title="Cổng quản trị & học liệu trực tuyến"
-          sub="Web app dành cho giảng viên tổ chức buổi học, theo dõi tiến trình và xuất báo cáo; dành cho admin quản lý người dùng, log hoạt động và file CSV xuất từ thiết bị."
+          eyebrow={t('landing.webPillar.eyebrow')}
+          title={t('landing.webPillar.title')}
+          sub={t('landing.webPillar.sub')}
           align="left"
         />
 
@@ -60,9 +52,9 @@ export default function WebPillar() {
         }} className="responsive-grid">
           <PlaceholderImage
             path="web/dashboard-sessions.png"
-            alt="Trang Admin Dashboard, tab quản lý phiên học"
+            alt={t('landing.webPillar.imgAlt')}
             ratio="16/10"
-            caption="Hình 6 — Trang Admin Dashboard, tab quản lý phiên học."
+            caption={t('landing.webPillar.imgCaption')}
           />
 
           <div style={{
@@ -77,12 +69,12 @@ export default function WebPillar() {
               color: 'var(--bk-blue-500)',
               letterSpacing: 2,
               fontWeight: 800,
-            }}>CHO GIẢNG VIÊN</h3>
+            }}>{t('landing.webPillar.forTeacherLabel')}</h3>
             <ul style={{ margin: '0 0 24px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {FOR_TEACHER.map((t, i) => (
+              {FOR_TEACHER.map((item, i) => (
                 <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--ink-700)' }}>
                   <span style={{ color: 'var(--green-600)', fontWeight: 700 }}>✓</span>
-                  <span>{t}</span>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -95,12 +87,12 @@ export default function WebPillar() {
               color: 'var(--bk-blue-500)',
               letterSpacing: 2,
               fontWeight: 800,
-            }}>CHO ADMIN</h3>
+            }}>{t('landing.webPillar.forAdminLabel')}</h3>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {FOR_ADMIN.map((t, i) => (
+              {FOR_ADMIN.map((item, i) => (
                 <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--ink-700)' }}>
                   <span style={{ color: 'var(--green-600)', fontWeight: 700 }}>✓</span>
-                  <span>{t}</span>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -135,7 +127,7 @@ export default function WebPillar() {
             ))}
           </div>
 
-          <PlaceholderImage path={tab.img} alt={`Tab ${tab.label}`} ratio="16/9" />
+          <PlaceholderImage path={TAB_IMG_MAP[activeTab] || TAB_IMG_MAP.sessions} alt={`Tab ${tab.label}`} ratio="16/9" />
         </div>
       </div>
     </motion.section>

@@ -1,26 +1,15 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PlaceholderImage from '../shared/PlaceholderImage'
 
-const FEATURES = [
-  ['⏱', 'Live Data', 'Hiển thị 50+ thông số sensor cập nhật mỗi 500 ms, biểu diễn dạng gauge và biểu đồ thời gian thực.'],
-  ['⚠', 'Mã lỗi DTC', 'Quét và giải mã mã lỗi P/C/B/U từ tất cả ECU, xóa DTC và tắt đèn Check Engine.'],
-  ['💻', 'Thông tin ECU', 'Đọc VIN, phiên bản phần mềm và mã hiệu chuẩn từ các module: động cơ, hộp số, ABS, túi khí, BCM.'],
-  ['📈', 'Data Logger', 'Ghi log dữ liệu ra file CSV để phân tích offline sau khi chạy thử nghiệm.'],
-  ['🔧', 'Actuator Test', 'Kích hoạt cơ cấu chấp hành (van EGR, bơm nhiên liệu, quạt điện…) qua UDS Mode 31.'],
-  ['📡', 'Raw CAN Monitor', 'Xem byte CAN thô song song với kết quả giải mã, công cụ debug cho kỹ sư.'],
-]
-
-const LAB_STEPS = [
-  { num: '1', label: 'Pre-quiz', sub: '10 câu, 5 phút' },
-  { num: '2', label: 'Thực hành', sub: '15-30 phút' },
-  { num: '3', label: 'Post-lab', sub: '5 câu, 3 phút' },
-  { num: '4', label: 'Báo cáo PDF', sub: 'sinh tự động' },
-]
-
 export default function MobilePillar() {
   const { ref, inView } = useInViewAnimation()
+  const { t } = useTranslation()
+
+  const FEATURES = t('landing.mobile.features', { returnObjects: true })
+  const LAB_STEPS = t('landing.mobile.labSteps', { returnObjects: true })
 
   return (
     <motion.section
@@ -34,9 +23,9 @@ export default function MobilePillar() {
     >
       <div className="landing-container">
         <SectionHeader
-          eyebrow="TRỤ CỘT 2 · MOBILE APP"
-          title="Ứng dụng Android chẩn đoán & học tập"
-          sub="Giao tiếp với mạch CAN qua USB-OTG, hiển thị live data, đọc mã lỗi và hỗ trợ chế độ Lab cho lớp học."
+          eyebrow={t('landing.mobile.eyebrow')}
+          title={t('landing.mobile.title')}
+          sub={t('landing.mobile.sub')}
           align="left"
         />
 
@@ -54,7 +43,7 @@ export default function MobilePillar() {
             padding: 28,
             border: '1px solid var(--rule)',
           }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 18, color: 'var(--ink-900)' }}>Tính năng chính</h3>
+            <h3 style={{ margin: '0 0 16px', fontSize: 18, color: 'var(--ink-900)' }}>{t('landing.mobile.featuresTitle')}</h3>
             <motion.div
               variants={fadeUpStagger}
               initial="hidden"
@@ -62,15 +51,15 @@ export default function MobilePillar() {
               viewport={{ once: true, amount: 0.3 }}
               style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
             >
-              {FEATURES.map(([icon, title, desc], i) => (
+              {FEATURES.map((f, i) => (
                 <motion.div key={i} variants={fadeUpItem} style={{ display: 'flex', gap: 12 }}>
-                  <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>{icon}</span>
+                  <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>{f.icon}</span>
                   <div>
                     <strong style={{ color: 'var(--ink-900)', fontSize: 14, display: 'block', marginBottom: 2 }}>
-                      {title}
+                      {f.title}
                     </strong>
                     <span style={{ color: 'var(--ink-500)', fontSize: 13, lineHeight: 1.6 }}>
-                      {desc}
+                      {f.desc}
                     </span>
                   </div>
                 </motion.div>
@@ -82,7 +71,7 @@ export default function MobilePillar() {
             <PlaceholderImage path="app/screen-live-data.png"  alt="Live Dashboard" ratio="9/19.5" />
             <PlaceholderImage path="app/screen-dtc-list.png"   alt="DTC List" ratio="9/19.5" />
             <PlaceholderImage path="app/screen-lab-session.png" alt="Lab Session" ratio="9/19.5"
-              caption="Hình 5 — Ba màn hình chính của ứng dụng." />
+              caption={t('landing.mobile.screensCaption')} />
           </div>
         </div>
 
@@ -97,12 +86,9 @@ export default function MobilePillar() {
             margin: '0 0 8px',
             fontSize: 20,
             color: 'var(--bk-navy-700)',
-          }}>Lab Mode — Chế độ học tập</h3>
+          }}>{t('landing.mobile.labTitle')}</h3>
           <p style={{ fontSize: 14, color: 'var(--ink-700)', lineHeight: 1.7, marginBottom: 24, maxWidth: 720 }}>
-            Khi giảng viên kích hoạt một buổi học, ứng dụng tự chuyển sang chế độ Lab. Sinh viên
-            đăng nhập bằng MSSV, làm pre-quiz, thực hành theo hướng dẫn, rồi hoàn thành post-lab.
-            Toàn bộ thao tác CAN được ghi nhận làm bằng chứng (evidence) gửi real-time về dashboard
-            giảng viên. Báo cáo PDF sinh tự động cuối buổi.
+            {t('landing.mobile.labDesc')}
           </p>
 
           <motion.div

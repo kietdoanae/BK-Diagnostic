@@ -1,16 +1,13 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import logoSvg from '../../../assets/svg/bk-diagnostic-logo.svg'
 
-const NAV_LINKS = [
-  ['#tong-quan',  'Tổng quan'],
-  ['#kien-truc',  'Kiến trúc'],
-  ['#mobile',     'Mobile App'],
-  ['#web',        'Web Platform'],
-  ['#lab',        'Lab System'],
-  ['#team',       'Team'],
-]
-
 export default function Footer() {
+  const { t } = useTranslation()
+
+  const NAV_LINKS = t('landing.footer.navLinks', { returnObjects: true })
+  const descriptionParts = t('landing.footer.description').split('\n')
+
   return (
     <footer style={{
       background: 'var(--bk-navy-900)',
@@ -36,8 +33,9 @@ export default function Footer() {
               margin: 0,
               maxWidth: 280,
             }}>
-              Hệ thống chẩn đoán xe và đào tạo CAN bus.<br />
-              Đồ án tốt nghiệp ngành Kỹ thuật Ô tô.
+              {descriptionParts.map((line, i) => (
+                <span key={i}>{line}{i < descriptionParts.length - 1 && <br />}</span>
+              ))}
             </p>
           </div>
 
@@ -49,15 +47,15 @@ export default function Footer() {
               letterSpacing: 2,
               fontWeight: 700,
               textTransform: 'uppercase',
-            }}>Điều hướng</h4>
+            }}>{t('landing.footer.navLabel')}</h4>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {NAV_LINKS.map(([href, label]) => (
-                <li key={href}>
-                  <a href={href} style={{
+              {NAV_LINKS.map((link, i) => (
+                <li key={i}>
+                  <a href={link.href} style={{
                     color: 'rgba(255,255,255,0.75)',
                     fontSize: 14,
                     textDecoration: 'none',
-                  }}>{label}</a>
+                  }}>{link.label}</a>
                 </li>
               ))}
             </ul>
@@ -71,12 +69,12 @@ export default function Footer() {
               letterSpacing: 2,
               fontWeight: 700,
               textTransform: 'uppercase',
-            }}>Liên kết</h4>
+            }}>{t('landing.footer.linksLabel')}</h4>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <li><Link to="/login" style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, textDecoration: 'none' }}>Đăng nhập</Link></li>
-              <li><a href="#" style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, textDecoration: 'none' }}>Tài liệu kỹ thuật</a></li>
-              <li><a href="#" style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, textDecoration: 'none' }}>Source code</a></li>
-              <li><a href="#" style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, textDecoration: 'none' }}>Liên hệ</a></li>
+              <li><Link to="/login" style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, textDecoration: 'none' }}>{t('landing.footer.linkLogin')}</Link></li>
+              <li><a href="#" style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, textDecoration: 'none' }}>{t('landing.footer.linkDocs')}</a></li>
+              <li><a href="#" style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, textDecoration: 'none' }}>{t('landing.footer.linkSource')}</a></li>
+              <li><a href="#" style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, textDecoration: 'none' }}>{t('landing.footer.linkContact')}</a></li>
             </ul>
           </div>
 
@@ -88,11 +86,11 @@ export default function Footer() {
               letterSpacing: 2,
               fontWeight: 700,
               textTransform: 'uppercase',
-            }}>Trường</h4>
+            }}>{t('landing.footer.schoolLabel')}</h4>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <li style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>ĐH Bách khoa TP.HCM</li>
-              <li style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>Khoa Kỹ thuật Giao thông</li>
-              <li style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>Bộ môn Kỹ thuật Ô tô</li>
+              <li style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>{t('landing.footer.schoolName')}</li>
+              <li style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>{t('landing.footer.facultyName')}</li>
+              <li style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>{t('landing.footer.deptName')}</li>
             </ul>
           </div>
         </div>
@@ -104,7 +102,7 @@ export default function Footer() {
           fontSize: 12,
           color: 'rgba(255,255,255,0.5)',
         }}>
-          © 2026 BK Diagnostic · Đồ án tốt nghiệp · Trường ĐH Bách khoa, ĐHQG-HCM · Khoa Kỹ thuật Giao thông
+          {t('landing.footer.copyright')}
         </div>
       </div>
     </footer>

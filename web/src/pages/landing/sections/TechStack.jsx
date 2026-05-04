@@ -1,32 +1,13 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 
-const CLUSTERS = [
-  {
-    icon: '⚡',
-    title: 'PHẦN CỨNG',
-    items: ['STM32 HAL · ngôn ngữ C', 'MCP2515 · TJA1050', 'CAN ISO 11898-1', 'STM32CubeIDE'],
-  },
-  {
-    icon: '📱',
-    title: 'MOBILE',
-    items: ['Kotlin 2.2 · Coroutines', 'Jetpack Compose · Material 3', 'usb-serial-for-android', 'Supabase Auth + Realtime'],
-  },
-  {
-    icon: '🌐',
-    title: 'WEB',
-    items: ['React 19 + Vite 8', 'Ant Design 6', 'Framer Motion 11', 'React Router 7'],
-  },
-  {
-    icon: '☁️',
-    title: 'BACKEND',
-    items: ['Supabase Postgres', 'Row-Level Security (RLS)', 'Storage + Edge Functions', 'PostgREST + Realtime'],
-  },
-]
-
 export default function TechStack() {
   const { ref, inView } = useInViewAnimation()
+  const { t } = useTranslation()
+
+  const CLUSTERS = t('landing.techStack.clusters', { returnObjects: true })
 
   return (
     <motion.section
@@ -39,9 +20,9 @@ export default function TechStack() {
     >
       <div className="landing-container">
         <SectionHeader
-          eyebrow="TECH STACK"
-          title="Công nghệ sử dụng"
-          sub="Lựa chọn công nghệ ưu tiên mã nguồn mở, cộng đồng lớn và phù hợp môi trường giáo dục."
+          eyebrow={t('landing.techStack.eyebrow')}
+          title={t('landing.techStack.title')}
+          sub={t('landing.techStack.sub')}
         />
 
         <motion.div

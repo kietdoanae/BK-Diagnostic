@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PipelineDiagram from '../shared/PipelineDiagram'
@@ -6,29 +7,30 @@ import iconHardware from '../../../assets/svg/three-pillars/icon-hardware.svg'
 import iconMobile from '../../../assets/svg/three-pillars/icon-mobile.svg'
 import iconWeb from '../../../assets/svg/three-pillars/icon-web.svg'
 
-const PILLARS = [
-  {
-    icon: iconHardware,
-    title: 'PHẦN CỨNG',
-    tech: 'STM32F103 + MCP2515 + CP2102',
-    desc: 'Đọc & giải mã khung CAN từ ECU',
-  },
-  {
-    icon: iconMobile,
-    title: 'MOBILE APP',
-    tech: 'Android Kotlin · Jetpack Compose',
-    desc: 'Hiển thị live data, ghi log, chế độ Lab',
-  },
-  {
-    icon: iconWeb,
-    title: 'WEB PLATFORM',
-    tech: 'React + Supabase · Ant Design 5',
-    desc: 'Quản trị người dùng và hệ thống Lab cho giảng viên',
-  },
-]
-
 export default function Architecture() {
   const { ref, inView } = useInViewAnimation()
+  const { t } = useTranslation()
+
+  const PILLARS = [
+    {
+      icon: iconHardware,
+      title: t('landing.architecture.pillars.hardware.title'),
+      tech: t('landing.architecture.pillars.hardware.tech'),
+      desc: t('landing.architecture.pillars.hardware.desc'),
+    },
+    {
+      icon: iconMobile,
+      title: t('landing.architecture.pillars.mobile.title'),
+      tech: t('landing.architecture.pillars.mobile.tech'),
+      desc: t('landing.architecture.pillars.mobile.desc'),
+    },
+    {
+      icon: iconWeb,
+      title: t('landing.architecture.pillars.web.title'),
+      tech: t('landing.architecture.pillars.web.tech'),
+      desc: t('landing.architecture.pillars.web.desc'),
+    },
+  ]
 
   return (
     <motion.section
@@ -42,9 +44,9 @@ export default function Architecture() {
     >
       <div className="landing-container">
         <SectionHeader
-          eyebrow="KIẾN TRÚC"
-          title="Ba trụ cột tích hợp"
-          sub="Phần cứng đo lường, ứng dụng di động hiển thị, web platform quản trị — kết nối qua giao thức CAN, USB và HTTPS."
+          eyebrow={t('landing.architecture.eyebrow')}
+          title={t('landing.architecture.title')}
+          sub={t('landing.architecture.sub')}
         />
 
         <motion.div

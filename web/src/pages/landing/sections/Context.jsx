@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useInViewAnimation, fadeUp } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import contextDiagramSvg from '../../../assets/svg/context-diagram.svg'
 
 export default function Context() {
   const { ref, inView } = useInViewAnimation()
+  const { t } = useTranslation()
 
   return (
     <motion.section
@@ -17,8 +19,8 @@ export default function Context() {
     >
       <div className="landing-container">
         <SectionHeader
-          eyebrow="BỐI CẢNH"
-          title="Vì sao cần đồ án này?"
+          eyebrow={t('landing.context.eyebrow')}
+          title={t('landing.context.title')}
         />
 
         <div style={{
@@ -29,25 +31,18 @@ export default function Context() {
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink-700)', margin: 0 }}>
-              Các thiết bị chẩn đoán xe thương mại (Autel, Launch, Bosch ESI…) có giá thành cao
-              và đóng kín mã nguồn. Sinh viên ngành Kỹ thuật Ô tô khó tiếp cận tầng thấp của giao
-              thức CAN, không thể quan sát trực tiếp khung dữ liệu thô hay can thiệp vào thuật
-              toán giải mã.
+              {t('landing.context.p1')}
             </p>
             <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink-700)', margin: 0 }}>
-              Đồ án xây dựng một hệ thống mở cho phòng thí nghiệm: phần cứng tự thiết kế dùng
-              linh kiện phổ thông, mã nguồn được cung cấp đầy đủ, đi kèm tài liệu thực hành 6
-              buổi học từ cơ bản đến nâng cao.
+              {t('landing.context.p2')}
             </p>
             <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink-700)', margin: 0 }}>
-              Phạm vi triển khai bao gồm xe Ford Ranger 2.0L Bi-Turbo (2018–2024) làm đối tượng
-              thực nghiệm, hỗ trợ chuẩn OBD-II và mở rộng sang UDS Mode 22 với các DID đặc thù
-              của Ford.
+              {t('landing.context.p3')}
             </p>
           </div>
 
           <figure style={{ margin: 0, textAlign: 'center' }}>
-            <img src={contextDiagramSvg} alt="Sơ đồ bối cảnh: Vấn đề → Giải pháp → Mục tiêu"
+            <img src={contextDiagramSvg} alt={t('landing.context.imgAlt')}
               style={{ maxWidth: '100%', height: 'auto' }} />
             <figcaption style={{
               marginTop: 12,
@@ -56,7 +51,7 @@ export default function Context() {
               color: 'var(--gold-500)',
               fontWeight: 500,
             }}>
-              Hình 2 — Sơ đồ bối cảnh: Vấn đề → Giải pháp → Mục tiêu.
+              {t('landing.context.imgCaption')}
             </figcaption>
           </figure>
         </div>

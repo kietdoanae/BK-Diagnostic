@@ -1,34 +1,16 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useInViewAnimation, fadeUp } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PlaceholderImage from '../shared/PlaceholderImage'
 
-const MEMBERS = [
-  {
-    name: 'Đoàn Anh Kiệt',
-    mssv: '2211716',
-    role: 'Trưởng nhóm',
-    work: 'Mobile App · Giao thức UART',
-    avatar: 'team/kiet.jpg',
-  },
-  {
-    name: 'Trần Phan Duy',
-    mssv: '22xxxxxx',
-    role: 'Thành viên',
-    work: 'Phần cứng · Firmware STM32',
-    avatar: 'team/duy.jpg',
-  },
-  {
-    name: 'Trương Việt Hoàng',
-    mssv: '22xxxxxx',
-    role: 'Thành viên',
-    work: 'Giao thức OBD2 · Kiểm thử hệ thống',
-    avatar: 'team/hoang.jpg',
-  },
-]
+const AVATARS = ['team/kiet.jpg', 'team/duy.jpg', 'team/hoang.jpg']
 
 export default function Team() {
   const { ref, inView } = useInViewAnimation()
+  const { t } = useTranslation()
+
+  const MEMBERS = t('landing.team.members', { returnObjects: true })
 
   return (
     <motion.section
@@ -42,9 +24,9 @@ export default function Team() {
     >
       <div className="landing-container">
         <SectionHeader
-          eyebrow="TEAM"
-          title="Nhóm thực hiện đồ án"
-          sub="Đồ án tốt nghiệp năm học 2025–2026, Bộ môn Kỹ thuật Ô tô, Khoa Kỹ thuật Giao thông, ĐH Bách khoa TP.HCM."
+          eyebrow={t('landing.team.eyebrow')}
+          title={t('landing.team.title')}
+          sub={t('landing.team.sub')}
         />
 
         <div style={{
@@ -62,7 +44,7 @@ export default function Team() {
               textAlign: 'center',
             }}>
               <div style={{ width: 80, height: 80, margin: '0 auto 12px' }}>
-                <PlaceholderImage path={m.avatar} alt={m.name} ratio="1/1" />
+                <PlaceholderImage path={AVATARS[i]} alt={m.name} ratio="1/1" />
               </div>
               <h3 style={{ margin: '8px 0 4px', fontSize: 16, color: 'var(--ink-900)' }}>{m.name}</h3>
               <div style={{
@@ -70,7 +52,7 @@ export default function Team() {
                 fontSize: 13,
                 fontWeight: 700,
                 marginBottom: 8,
-              }}>MSSV: {m.mssv}</div>
+              }}>{t('landing.team.mssvLabel')}: {m.mssv}</div>
               <div style={{ fontSize: 12, color: 'var(--ink-500)', lineHeight: 1.6 }}>
                 {m.role}<br />{m.work}
               </div>
@@ -85,13 +67,13 @@ export default function Team() {
           padding: '20px 24px',
         }}>
           <div style={{ fontSize: 13, color: 'var(--bk-navy-700)', fontWeight: 700, marginBottom: 4 }}>
-            🎓 Giảng viên hướng dẫn
+            {t('landing.team.advisorLabel')}
           </div>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink-900)', marginBottom: 4 }}>
-            ThS. Phạm Trần Đăng Quang
+            {t('landing.team.advisorName')}
           </div>
           <div style={{ fontSize: 13, color: 'var(--ink-500)' }}>
-            Bộ môn Kỹ thuật Ô tô · Khoa Kỹ thuật Giao thông · Trường Đại học Bách khoa, ĐHQG-HCM
+            {t('landing.team.advisorAffiliation')}
           </div>
         </div>
       </div>

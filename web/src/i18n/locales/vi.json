@@ -553,5 +553,234 @@
     "vi": "Tiếng Việt",
     "en": "English",
     "switch": "Ngôn ngữ"
+  },
+  "landing": {
+    "nav": {
+      "overview": "Tổng quan",
+      "architecture": "Kiến trúc",
+      "mobile": "Mobile App",
+      "web": "Web Platform",
+      "lab": "Lab",
+      "team": "Team"
+    },
+    "hero": {
+      "badge": "ĐỒ ÁN TỐT NGHIỆP · HCMUT · 2026",
+      "title": "Hệ thống chẩn đoán xe\nvà đào tạo CAN bus",
+      "desc": "Nền tảng tích hợp ba thành phần — phần cứng nhúng, ứng dụng Android và web platform —\nphục vụ giảng dạy giao thức CAN bus và quy trình chẩn đoán xe ô tô cho sinh viên\nngành Kỹ thuật Ô tô.",
+      "btnExplore": "Khám phá kiến trúc →",
+      "btnLab": "Xem hệ thống Lab",
+      "imgAlt": "Sa bàn thực hành CAN bus tại phòng lab Bộ môn Kỹ thuật Ô tô",
+      "imgCaption": "Hình 1 — Sa bàn thực hành CAN bus tại phòng lab Bộ môn Kỹ thuật Ô tô, Khoa Kỹ thuật Giao thông HCMUT."
+    },
+    "metrics": {
+      "brands": "Hãng xe\nhỗ trợ",
+      "sensors": "Thông số\ncảm biến",
+      "sessions": "Buổi học\nthực hành",
+      "components": "Thành phần\ntích hợp",
+      "protocols": "Giao thức\nchuẩn đoán"
+    },
+    "context": {
+      "eyebrow": "BỐI CẢNH",
+      "title": "Vì sao cần đồ án này?",
+      "p1": "Các thiết bị chẩn đoán xe thương mại (Autel, Launch, Bosch ESI…) có giá thành cao\nvà đóng kín mã nguồn. Sinh viên ngành Kỹ thuật Ô tô khó tiếp cận tầng thấp của giao\nthức CAN, không thể quan sát trực tiếp khung dữ liệu thô hay can thiệp vào thuật\ntoán giải mã.",
+      "p2": "Đồ án xây dựng một hệ thống mở cho phòng thí nghiệm: phần cứng tự thiết kế dùng\nlinh kiện phổ thông, mã nguồn được cung cấp đầy đủ, đi kèm tài liệu thực hành 6\nbuổi học từ cơ bản đến nâng cao.",
+      "p3": "Phạm vi triển khai bao gồm xe Ford Ranger 2.0L Bi-Turbo (2018–2024) làm đối tượng\nthực nghiệm, hỗ trợ chuẩn OBD-II và mở rộng sang UDS Mode 22 với các DID đặc thù\ncủa Ford.",
+      "imgAlt": "Sơ đồ bối cảnh: Vấn đề → Giải pháp → Mục tiêu",
+      "imgCaption": "Hình 2 — Sơ đồ bối cảnh: Vấn đề → Giải pháp → Mục tiêu."
+    },
+    "architecture": {
+      "eyebrow": "KIẾN TRÚC",
+      "title": "Ba trụ cột tích hợp",
+      "sub": "Phần cứng đo lường, ứng dụng di động hiển thị, web platform quản trị — kết nối qua giao thức CAN, USB và HTTPS.",
+      "pillars": {
+        "hardware": {
+          "title": "PHẦN CỨNG",
+          "tech": "STM32F103 + MCP2515 + CP2102",
+          "desc": "Đọc & giải mã khung CAN từ ECU"
+        },
+        "mobile": {
+          "title": "MOBILE APP",
+          "tech": "Android Kotlin · Jetpack Compose",
+          "desc": "Hiển thị live data, ghi log, chế độ Lab"
+        },
+        "web": {
+          "title": "WEB PLATFORM",
+          "tech": "React + Supabase · Ant Design 5",
+          "desc": "Quản trị người dùng và hệ thống Lab cho giảng viên"
+        }
+      }
+    },
+    "hardware": {
+      "eyebrow": "TRỤ CỘT 1 · PHẦN CỨNG",
+      "title": "Mạch giao tiếp CAN bus tự thiết kế",
+      "sub": "Bộ chuyển đổi CAN ↔ USB với khung dữ liệu nhị phân, xác thực checksum và auto-detect baudrate.",
+      "componentsTitle": "Thành phần",
+      "components": [
+        "STM32F103C8T6 — Vi điều khiển Cortex-M3, 72 MHz, 64 KB Flash",
+        "MCP2515 — Bộ điều khiển CAN 2.0B, giao tiếp SPI",
+        "TJA1050 — CAN transceiver chuẩn ISO 11898, tốc độ tới 1 Mbps",
+        "CP2102 — Cầu USB-UART Silicon Labs, driver có sẵn Android",
+        "Khối nguồn — 12 V DC → 5 V (LM7805) → 3.3 V (AMS1117)"
+      ],
+      "specsTitle": "Bảng thông số kỹ thuật",
+      "specs": {
+        "canBaudrate": "CAN baudrate",
+        "canBaudrateVal": "250 / 500 kbps (auto-detect)",
+        "uartBaud": "UART baud",
+        "uartBaudVal": "115200 8N1",
+        "frameProtocol": "Frame protocol",
+        "frameProtocolVal": "[0xAA][TYPE][LEN][PAYLOAD][XOR][0x55]",
+        "powerIn": "Nguồn vào",
+        "powerInVal": "12 V DC (cigarette lighter / OBD-II pin 16)",
+        "currentDraw": "Dòng tiêu thụ",
+        "currentDrawVal": "~120 mA active, ~25 mA idle",
+        "pcbSize": "Kích thước PCB",
+        "pcbSizeVal": "50 × 40 × 18 mm (kèm vỏ in 3D)"
+      },
+      "uartTitle": "Khung dữ liệu UART",
+      "uartCode": "[0xAA] [TYPE] [LEN]\n[PAYLOAD…] [XOR] [0x55]",
+      "uartDesc": "XOR checksum xuyên suốt PAYLOAD đảm bảo phát hiện lỗi truyền. SOF/EOF cố định\n(0xAA / 0x55) cho phép đồng bộ lại nhanh khi mất frame.",
+      "protocolsTitle": "Giao thức hỗ trợ",
+      "protocols": [
+        "OBD-II Mode 01 — Live data (tiêu chuẩn ISO 15765-4)",
+        "OBD-II Mode 03/04 — Đọc / xóa mã lỗi DTC",
+        "UDS ISO 14229 — Diagnostic & Communication Management",
+        "Ford UDS Mode 22 — Read Data By Identifier (DID độc quyền)",
+        "ISO-TP 15765-2 — Truyền payload >8 byte qua CAN"
+      ],
+      "imgAlt": "Mạch in giao tiếp CAN bus, kích thước 50×40 mm",
+      "imgCaption": "Hình 4 — Mạch in giao tiếp CAN bus, kích thước 50×40 mm."
+    },
+    "mobile": {
+      "eyebrow": "TRỤ CỘT 2 · MOBILE APP",
+      "title": "Ứng dụng Android chẩn đoán & học tập",
+      "sub": "Giao tiếp với mạch CAN qua USB-OTG, hiển thị live data, đọc mã lỗi và hỗ trợ chế độ Lab cho lớp học.",
+      "featuresTitle": "Tính năng chính",
+      "features": [
+        { "icon": "⏱", "title": "Live Data", "desc": "Hiển thị 50+ thông số sensor cập nhật mỗi 500 ms, biểu diễn dạng gauge và biểu đồ thời gian thực." },
+        { "icon": "⚠", "title": "Mã lỗi DTC", "desc": "Quét và giải mã mã lỗi P/C/B/U từ tất cả ECU, xóa DTC và tắt đèn Check Engine." },
+        { "icon": "💻", "title": "Thông tin ECU", "desc": "Đọc VIN, phiên bản phần mềm và mã hiệu chuẩn từ các module: động cơ, hộp số, ABS, túi khí, BCM." },
+        { "icon": "📈", "title": "Data Logger", "desc": "Ghi log dữ liệu ra file CSV để phân tích offline sau khi chạy thử nghiệm." },
+        { "icon": "🔧", "title": "Actuator Test", "desc": "Kích hoạt cơ cấu chấp hành (van EGR, bơm nhiên liệu, quạt điện…) qua UDS Mode 31." },
+        { "icon": "📡", "title": "Raw CAN Monitor", "desc": "Xem byte CAN thô song song với kết quả giải mã, công cụ debug cho kỹ sư." }
+      ],
+      "labTitle": "Lab Mode — Chế độ học tập",
+      "labDesc": "Khi giảng viên kích hoạt một buổi học, ứng dụng tự chuyển sang chế độ Lab. Sinh viên\nđăng nhập bằng MSSV, làm pre-quiz, thực hành theo hướng dẫn, rồi hoàn thành post-lab.\nToàn bộ thao tác CAN được ghi nhận làm bằng chứng (evidence) gửi real-time về dashboard\ngiảng viên. Báo cáo PDF sinh tự động cuối buổi.",
+      "labSteps": [
+        { "num": "1", "label": "Pre-quiz", "sub": "10 câu, 5 phút" },
+        { "num": "2", "label": "Thực hành", "sub": "15-30 phút" },
+        { "num": "3", "label": "Post-lab", "sub": "5 câu, 3 phút" },
+        { "num": "4", "label": "Báo cáo PDF", "sub": "sinh tự động" }
+      ],
+      "screensCaption": "Hình 5 — Ba màn hình chính của ứng dụng."
+    },
+    "webPillar": {
+      "eyebrow": "TRỤ CỘT 3 · WEB PLATFORM",
+      "title": "Cổng quản trị & học liệu trực tuyến",
+      "sub": "Web app dành cho giảng viên tổ chức buổi học, theo dõi tiến trình và xuất báo cáo; dành cho admin quản lý người dùng, log hoạt động và file CSV xuất từ thiết bị.",
+      "forTeacherLabel": "CHO GIẢNG VIÊN",
+      "forTeacher": [
+        "Tạo Lab và Session — Cấu hình bài học, mở phiên cho lớp",
+        "Quản lý nhóm sinh viên — Tạo nhóm, gán SV vào nhóm",
+        "Theo dõi real-time — Xem evidence của SV trong khi học",
+        "Review submission — Chấm điểm pre/post-quiz",
+        "Tải báo cáo PDF — Export báo cáo cuối buổi"
+      ],
+      "forAdminLabel": "CHO ADMIN",
+      "forAdmin": [
+        "Quản lý người dùng — Tạo/khóa tài khoản, gán role",
+        "Activity Logs live — Stream log đăng nhập, thao tác CAN",
+        "CSV Exports archive — Tải file CAN log do app upload",
+        "Wiring diagram — Sơ đồ đấu nối tham khảo"
+      ],
+      "tabs": [
+        { "key": "labs", "label": "Labs" },
+        { "key": "groups", "label": "Groups" },
+        { "key": "sessions", "label": "Sessions" },
+        { "key": "exports", "label": "Exports" },
+        { "key": "logs", "label": "Logs" }
+      ],
+      "imgAlt": "Trang Admin Dashboard, tab quản lý phiên học",
+      "imgCaption": "Hình 6 — Trang Admin Dashboard, tab quản lý phiên học."
+    },
+    "useCase": {
+      "eyebrow": "USE CASE",
+      "title": "Một buổi học diễn ra thế nào",
+      "sub": "Quy trình 6 bước chuẩn hóa, từ lúc giảng viên mở phiên đến khi báo cáo PDF được lưu vào hệ thống.",
+      "steps": [
+        { "num": 1, "icon": "👨‍🏫", "title": "GV TẠO SESSION", "desc": "Giảng viên chọn Lab, mở phiên mới, hệ thống sinh mã 6 ký tự." },
+        { "num": 2, "icon": "🎓", "title": "SV THAM GIA", "desc": "Sinh viên nhập mã session trên app/web bằng tài khoản MSSV." },
+        { "num": 3, "icon": "📝", "title": "PRE-QUIZ", "desc": "10 câu trắc nghiệm kiểm tra kiến thức nền (5 phút)." },
+        { "num": 4, "icon": "🔧", "title": "THỰC HÀNH", "desc": "Cắm cáp USB → mạch → xe. Làm theo hướng dẫn từng bước, evidence gửi real-time về dashboard." },
+        { "num": 5, "icon": "✅", "title": "POST-LAB", "desc": "5 câu rút kinh nghiệm sau buổi học (3 phút)." },
+        { "num": 6, "icon": "📄", "title": "BÁO CÁO PDF", "desc": "Hệ thống sinh báo cáo gồm pre/post score, evidence, chữ ký số. Lưu vào \"Báo cáo của tôi\" và DB của GV." }
+      ]
+    },
+    "techStack": {
+      "eyebrow": "TECH STACK",
+      "title": "Công nghệ sử dụng",
+      "sub": "Lựa chọn công nghệ ưu tiên mã nguồn mở, cộng đồng lớn và phù hợp môi trường giáo dục.",
+      "clusters": [
+        {
+          "icon": "⚡",
+          "title": "PHẦN CỨNG",
+          "items": ["STM32 HAL · ngôn ngữ C", "MCP2515 · TJA1050", "CAN ISO 11898-1", "STM32CubeIDE"]
+        },
+        {
+          "icon": "📱",
+          "title": "MOBILE",
+          "items": ["Kotlin 2.2 · Coroutines", "Jetpack Compose · Material 3", "usb-serial-for-android", "Supabase Auth + Realtime"]
+        },
+        {
+          "icon": "🌐",
+          "title": "WEB",
+          "items": ["React 19 + Vite 8", "Ant Design 6", "Framer Motion 11", "React Router 7"]
+        },
+        {
+          "icon": "☁️",
+          "title": "BACKEND",
+          "items": ["Supabase Postgres", "Row-Level Security (RLS)", "Storage + Edge Functions", "PostgREST + Realtime"]
+        }
+      ]
+    },
+    "team": {
+      "eyebrow": "TEAM",
+      "title": "Nhóm thực hiện đồ án",
+      "sub": "Đồ án tốt nghiệp năm học 2025–2026, Bộ môn Kỹ thuật Ô tô, Khoa Kỹ thuật Giao thông, ĐH Bách khoa TP.HCM.",
+      "members": [
+        { "name": "Đoàn Anh Kiệt", "mssv": "2211716", "role": "Trưởng nhóm", "work": "Mobile App · Giao thức UART" },
+        { "name": "Trần Phan Duy", "mssv": "22xxxxxx", "role": "Thành viên", "work": "Phần cứng · Firmware STM32" },
+        { "name": "Trương Việt Hoàng", "mssv": "22xxxxxx", "role": "Thành viên", "work": "Giao thức OBD2 · Kiểm thử hệ thống" }
+      ],
+      "mssvLabel": "MSSV",
+      "advisorLabel": "🎓 Giảng viên hướng dẫn",
+      "advisorName": "ThS. Phạm Trần Đăng Quang",
+      "advisorAffiliation": "Bộ môn Kỹ thuật Ô tô · Khoa Kỹ thuật Giao thông · Trường Đại học Bách khoa, ĐHQG-HCM"
+    },
+    "pipeline": {
+      "caption": "Hình 3 — Pipeline dữ liệu từ xe đến cloud."
+    },
+    "footer": {
+      "description": "Hệ thống chẩn đoán xe và đào tạo CAN bus.\nĐồ án tốt nghiệp ngành Kỹ thuật Ô tô.",
+      "navLabel": "Điều hướng",
+      "navLinks": [
+        { "href": "#tong-quan", "label": "Tổng quan" },
+        { "href": "#kien-truc", "label": "Kiến trúc" },
+        { "href": "#mobile", "label": "Mobile App" },
+        { "href": "#web", "label": "Web Platform" },
+        { "href": "#lab", "label": "Lab System" },
+        { "href": "#team", "label": "Team" }
+      ],
+      "linksLabel": "Liên kết",
+      "linkLogin": "Đăng nhập",
+      "linkDocs": "Tài liệu kỹ thuật",
+      "linkSource": "Source code",
+      "linkContact": "Liên hệ",
+      "schoolLabel": "Trường",
+      "schoolName": "ĐH Bách khoa TP.HCM",
+      "facultyName": "Khoa Kỹ thuật Giao thông",
+      "deptName": "Bộ môn Kỹ thuật Ô tô",
+      "copyright": "© 2026 BK Diagnostic · Đồ án tốt nghiệp · Trường ĐH Bách khoa, ĐHQG-HCM · Khoa Kỹ thuật Giao thông"
+    }
   }
 }

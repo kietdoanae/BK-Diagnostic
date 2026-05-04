@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
+import { useTranslation } from 'react-i18next'
 
 const NODES = [
   { x: 80,  fill: '#EFF6FF', stroke: '#1565C0', icon: '🚗', label: 'Xe' },
@@ -20,6 +21,7 @@ const EDGES = [
 
 export default function PipelineDiagram() {
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.3 })
+  const { t } = useTranslation()
 
   return (
     <figure ref={ref} style={{ margin: '24px 0 0', textAlign: 'center' }}>
@@ -69,7 +71,7 @@ export default function PipelineDiagram() {
         color: 'var(--gold-500)',
         fontWeight: 500,
       }}>
-        Hình 3 — Pipeline dữ liệu từ xe đến cloud.
+        {t('landing.pipeline.caption')}
       </figcaption>
     </figure>
   )

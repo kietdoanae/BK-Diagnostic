@@ -1,18 +1,13 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 
-const STEPS = [
-  { num: 1, icon: '👨‍🏫', title: 'GV TẠO SESSION',  desc: 'Giảng viên chọn Lab, mở phiên mới, hệ thống sinh mã 6 ký tự.' },
-  { num: 2, icon: '🎓', title: 'SV THAM GIA',     desc: 'Sinh viên nhập mã session trên app/web bằng tài khoản MSSV.' },
-  { num: 3, icon: '📝', title: 'PRE-QUIZ',        desc: '10 câu trắc nghiệm kiểm tra kiến thức nền (5 phút).' },
-  { num: 4, icon: '🔧', title: 'THỰC HÀNH',       desc: 'Cắm cáp USB → mạch → xe. Làm theo hướng dẫn từng bước, evidence gửi real-time về dashboard.' },
-  { num: 5, icon: '✅', title: 'POST-LAB',        desc: '5 câu rút kinh nghiệm sau buổi học (3 phút).' },
-  { num: 6, icon: '📄', title: 'BÁO CÁO PDF',     desc: 'Hệ thống sinh báo cáo gồm pre/post score, evidence, chữ ký số. Lưu vào "Báo cáo của tôi" và DB của GV.' },
-]
-
 export default function UseCase() {
   const { ref, inView } = useInViewAnimation()
+  const { t } = useTranslation()
+
+  const STEPS = t('landing.useCase.steps', { returnObjects: true })
 
   return (
     <motion.section
@@ -26,9 +21,9 @@ export default function UseCase() {
     >
       <div className="landing-container">
         <SectionHeader
-          eyebrow="USE CASE"
-          title="Một buổi học diễn ra thế nào"
-          sub="Quy trình 6 bước chuẩn hóa, từ lúc giảng viên mở phiên đến khi báo cáo PDF được lưu vào hệ thống."
+          eyebrow={t('landing.useCase.eyebrow')}
+          title={t('landing.useCase.title')}
+          sub={t('landing.useCase.sub')}
         />
 
         <motion.div

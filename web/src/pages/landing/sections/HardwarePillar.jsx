@@ -1,35 +1,24 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PlaceholderImage from '../shared/PlaceholderImage'
 
-const COMPONENTS = [
-  'STM32F103C8T6 — Vi điều khiển Cortex-M3, 72 MHz, 64 KB Flash',
-  'MCP2515 — Bộ điều khiển CAN 2.0B, giao tiếp SPI',
-  'TJA1050 — CAN transceiver chuẩn ISO 11898, tốc độ tới 1 Mbps',
-  'CP2102 — Cầu USB-UART Silicon Labs, driver có sẵn Android',
-  'Khối nguồn — 12 V DC → 5 V (LM7805) → 3.3 V (AMS1117)',
-]
-
-const SPECS = [
-  ['CAN baudrate',     '250 / 500 kbps (auto-detect)'],
-  ['UART baud',        '115200 8N1'],
-  ['Frame protocol',   '[0xAA][TYPE][LEN][PAYLOAD][XOR][0x55]'],
-  ['Nguồn vào',        '12 V DC (cigarette lighter / OBD-II pin 16)'],
-  ['Dòng tiêu thụ',    '~120 mA active, ~25 mA idle'],
-  ['Kích thước PCB',   '50 × 40 × 18 mm (kèm vỏ in 3D)'],
-]
-
-const PROTOCOLS = [
-  'OBD-II Mode 01 — Live data (tiêu chuẩn ISO 15765-4)',
-  'OBD-II Mode 03/04 — Đọc / xóa mã lỗi DTC',
-  'UDS ISO 14229 — Diagnostic & Communication Management',
-  'Ford UDS Mode 22 — Read Data By Identifier (DID độc quyền)',
-  'ISO-TP 15765-2 — Truyền payload >8 byte qua CAN',
-]
-
 export default function HardwarePillar() {
   const { ref, inView } = useInViewAnimation()
+  const { t } = useTranslation()
+
+  const COMPONENTS = t('landing.hardware.components', { returnObjects: true })
+  const PROTOCOLS = t('landing.hardware.protocols', { returnObjects: true })
+
+  const SPECS = [
+    [t('landing.hardware.specs.canBaudrate'), t('landing.hardware.specs.canBaudrateVal')],
+    [t('landing.hardware.specs.uartBaud'), t('landing.hardware.specs.uartBaudVal')],
+    [t('landing.hardware.specs.frameProtocol'), t('landing.hardware.specs.frameProtocolVal')],
+    [t('landing.hardware.specs.powerIn'), t('landing.hardware.specs.powerInVal')],
+    [t('landing.hardware.specs.currentDraw'), t('landing.hardware.specs.currentDrawVal')],
+    [t('landing.hardware.specs.pcbSize'), t('landing.hardware.specs.pcbSizeVal')],
+  ]
 
   return (
     <motion.section
@@ -42,9 +31,9 @@ export default function HardwarePillar() {
     >
       <div className="landing-container">
         <SectionHeader
-          eyebrow="TRỤ CỘT 1 · PHẦN CỨNG"
-          title="Mạch giao tiếp CAN bus tự thiết kế"
-          sub="Bộ chuyển đổi CAN ↔ USB với khung dữ liệu nhị phân, xác thực checksum và auto-detect baudrate."
+          eyebrow={t('landing.hardware.eyebrow')}
+          title={t('landing.hardware.title')}
+          sub={t('landing.hardware.sub')}
           align="left"
         />
 
@@ -58,9 +47,9 @@ export default function HardwarePillar() {
         }} className="responsive-grid">
           <PlaceholderImage
             path="hardware/pcb-top.jpg"
-            alt="Mạch in giao tiếp CAN bus, kích thước 50×40 mm"
+            alt={t('landing.hardware.imgAlt')}
             ratio="4/3"
-            caption="Hình 4 — Mạch in giao tiếp CAN bus, kích thước 50×40 mm."
+            caption={t('landing.hardware.imgCaption')}
           />
 
           <div style={{
@@ -69,7 +58,7 @@ export default function HardwarePillar() {
             padding: 28,
             border: '1px solid var(--rule)',
           }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 18, color: 'var(--ink-900)' }}>Thành phần</h3>
+            <h3 style={{ margin: '0 0 16px', fontSize: 18, color: 'var(--ink-900)' }}>{t('landing.hardware.componentsTitle')}</h3>
             <motion.ul
               variants={fadeUpStagger}
               initial="hidden"
@@ -95,7 +84,7 @@ export default function HardwarePillar() {
           border: '1px solid var(--rule)',
           marginBottom: 32,
         }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 18, color: 'var(--ink-900)' }}>Bảng thông số kỹ thuật</h3>
+          <h3 style={{ margin: '0 0 16px', fontSize: 18, color: 'var(--ink-900)' }}>{t('landing.hardware.specsTitle')}</h3>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <tbody>
               {SPECS.map(([k, v], i) => (
@@ -120,7 +109,7 @@ export default function HardwarePillar() {
             padding: 24,
             border: '1px solid var(--rule)',
           }}>
-            <h3 style={{ margin: '0 0 12px', fontSize: 16, color: 'var(--ink-900)' }}>Khung dữ liệu UART</h3>
+            <h3 style={{ margin: '0 0 12px', fontSize: 16, color: 'var(--ink-900)' }}>{t('landing.hardware.uartTitle')}</h3>
             <pre style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 13,
@@ -131,11 +120,9 @@ export default function HardwarePillar() {
               color: 'var(--ink-900)',
               margin: '0 0 12px',
               overflow: 'auto',
-            }}>{`[0xAA] [TYPE] [LEN]
-[PAYLOAD…] [XOR] [0x55]`}</pre>
+            }}>{t('landing.hardware.uartCode')}</pre>
             <p style={{ fontSize: 13, color: 'var(--ink-500)', lineHeight: 1.6, margin: 0 }}>
-              XOR checksum xuyên suốt PAYLOAD đảm bảo phát hiện lỗi truyền. SOF/EOF cố định
-              (0xAA / 0x55) cho phép đồng bộ lại nhanh khi mất frame.
+              {t('landing.hardware.uartDesc')}
             </p>
           </div>
 
@@ -145,7 +132,7 @@ export default function HardwarePillar() {
             padding: 24,
             border: '1px solid var(--rule)',
           }}>
-            <h3 style={{ margin: '0 0 12px', fontSize: 16, color: 'var(--ink-900)' }}>Giao thức hỗ trợ</h3>
+            <h3 style={{ margin: '0 0 12px', fontSize: 16, color: 'var(--ink-900)' }}>{t('landing.hardware.protocolsTitle')}</h3>
             <motion.ul
               variants={fadeUpStagger}
               initial="hidden"
