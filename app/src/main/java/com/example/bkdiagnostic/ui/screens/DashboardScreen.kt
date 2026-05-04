@@ -45,7 +45,7 @@ fun DashboardScreen(
     onLogout: () -> Unit,
     onDiagnosticsClick: () -> Unit = {},
     onLabModeClick: () -> Unit = {},
-    onWiringDiagramClick: () -> Unit = {},
+    onFaultHistoryClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     authViewModel: AuthViewModel = viewModel()
 ) {
@@ -62,11 +62,11 @@ fun DashboardScreen(
     val sSettings      = stringResource(R.string.feature_settings)
     val sUpdate        = stringResource(R.string.feature_update)
     val sRemoteDesktop = stringResource(R.string.feature_remote_desktop)
-    val sWiring        = stringResource(R.string.feature_wiring_diagram)
+    val sFaultHistory  = stringResource(R.string.feature_fault_history)
     val sSupport       = stringResource(R.string.feature_support)
 
     val features = remember(sDiagnostics, sLabMode, sDataManager, sSettings,
-                            sUpdate, sRemoteDesktop, sWiring, sSupport, canAccessLab) {
+                            sUpdate, sRemoteDesktop, sFaultHistory, sSupport, canAccessLab) {
         listOf(
             DashboardFeature("diagnostics",    sDiagnostics,   Icons.Filled.Build,          Color(0xFF1565C0), Color(0xFFBBDEFB), isEnabled = true),
             DashboardFeature("lab_mode",       sLabMode,       Icons.Filled.Science,        Color(0xFFF59E0B), Color(0xFFFEF3C7), isEnabled = canAccessLab),
@@ -74,7 +74,7 @@ fun DashboardScreen(
             DashboardFeature("settings",       sSettings,      Icons.Filled.Tune,           Color(0xFF00695C), Color(0xFFB2DFDB), isEnabled = true),
             DashboardFeature("update",         sUpdate,        Icons.Filled.SystemUpdate,   Color(0xFFE65100), Color(0xFFFFE0B2)),
             DashboardFeature("remote_desktop", sRemoteDesktop, Icons.Filled.DesktopWindows, Color(0xFF37474F), Color(0xFFCFD8DC)),
-            DashboardFeature("wiring_diagram", sWiring,        Icons.Filled.Cable,          Color(0xFFC62828), Color(0xFFFFCDD2), isEnabled = true),
+            DashboardFeature("fault_history",  sFaultHistory,  Icons.Filled.History,        Color(0xFFC62828), Color(0xFFFFCDD2)),
             DashboardFeature("support",        sSupport,       Icons.Filled.SupportAgent,   Color(0xFF283593), Color(0xFFC5CAE9)),
         )
     }
@@ -305,7 +305,6 @@ fun DashboardScreen(
                                 when (feature.id) {
                                     "diagnostics"    -> onDiagnosticsClick()
                                     "lab_mode"       -> onLabModeClick()
-                                    "wiring_diagram" -> onWiringDiagramClick()
                                     "settings"       -> onSettingsClick()
                                 }
                             }

@@ -37,7 +37,6 @@ import com.example.bkdiagnostic.ui.screens.ResetPasswordScreen
 import com.example.bkdiagnostic.ui.screens.SplashScreen
 import com.example.bkdiagnostic.SettingsViewModel
 import com.example.bkdiagnostic.ui.screens.SettingsScreen
-import com.example.bkdiagnostic.ui.screens.WiringDiagramScreen
 import com.example.bkdiagnostic.ui.screens.LabModeScreen
 import com.example.bkdiagnostic.ui.theme.BKDiagnosticTheme
 import com.example.bkdiagnostic.lab.LabModeManager
@@ -193,9 +192,6 @@ class MainActivity : ComponentActivity() {
                                     // Lab Mode flow: chọn brand → chọn model → vào lab
                                     navController.navigate("lab_brand_selection")
                                 },
-                                onWiringDiagramClick = {
-                                    navController.navigate("wiring_diagram")
-                                },
                                 onSettingsClick = {
                                     navController.navigate("settings")
                                 }
@@ -212,9 +208,6 @@ class MainActivity : ComponentActivity() {
                                 authViewModel    = authViewModel,
                                 settingsViewModel = settingsViewModel
                             )
-                        }
-                        composable("wiring_diagram") {
-                            WiringDiagramScreen(onBack = { navController.popBackStack() })
                         }
                         composable("brand_selection") {
                             BrandSelectionScreen(

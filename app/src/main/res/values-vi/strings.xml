@@ -72,7 +72,6 @@
     <string name="feature_settings">Cài đặt</string>
     <string name="feature_update">Cập nhật</string>
     <string name="feature_remote_desktop">Điều khiển từ xa</string>
-    <string name="feature_wiring_diagram">Sơ đồ dây điện</string>
     <string name="feature_support">Hỗ trợ</string>
     <string name="feature_not_available">Chưa khả dụng</string>
 
@@ -210,8 +209,8 @@
     <string name="active_test_unit_kmh">km/h</string>
     <string name="active_test_unit_rpm">RPM ×1000</string>
 
-    <!-- Wiring Diagram -->
-    <string name="wiring_diagram_title">Sơ đồ dây điện</string>
+    <!-- Fault History -->
+    <string name="feature_fault_history">Lịch sử lỗi</string>
 
     <!-- Raw Monitor -->
     <string name="raw_monitor_title">Màn hình CAN thô</string>
