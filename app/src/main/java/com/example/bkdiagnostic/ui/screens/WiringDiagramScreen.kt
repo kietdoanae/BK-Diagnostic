@@ -2,6 +2,7 @@ package com.example.bkdiagnostic.ui.screens
 
 import android.content.Context
 import android.view.View
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
@@ -43,13 +44,17 @@ fun WiringDiagramScreen(onBack: () -> Unit = {}) {
                     // Software rendering: required for complex SVG on all Android devices
                     setLayerType(View.LAYER_TYPE_SOFTWARE, null)
                     webViewClient = WebViewClient()
+                    webChromeClient = WebChromeClient()
                     settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
                     settings.allowFileAccess = true
+                    settings.allowContentAccess = true
                     settings.useWideViewPort = true
                     settings.loadWithOverviewMode = true
                     settings.builtInZoomControls = true
                     settings.displayZoomControls = false
                     settings.setSupportZoom(true)
+                    settings.defaultTextEncodingName = "UTF-8"
                     loadUrl("file:///android_asset/wiring_diagram.html?lang=$lang")
                 }
             }
