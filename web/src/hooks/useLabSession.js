@@ -40,7 +40,7 @@ export function useLabSession(sessionId) {
         .from('lab_sessions')
         .select(
           'id, session_code, status, current_step_id, step_started_at, ' +
-            'started_at, ended_at, expires_at, started_by, lab_id, group_id'
+            'started_at, ended_at, expires_at, started_by, lab_id, group_id, completed_step_ids'
         )
         .eq('id', sessionId)
         .maybeSingle()

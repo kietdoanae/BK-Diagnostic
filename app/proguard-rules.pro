@@ -5,17 +5,33 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ── Keep source file + line numbers for crash reports ─────────────────────
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── kotlinx.serialization ─────────────────────────────────────────────────
+# Keep serializers used by Supabase Postgrest (reflection-based decode)
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+-keepclassmembers class kotlinx.serialization.json.** { *** Companion; }
+-keepclasseswithmembers class kotlinx.serialization.json.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keep,includedescriptorclasses class com.example.bkdiagnostic.**$$serializer { *; }
+-keepclassmembers class com.example.bkdiagnostic.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.example.bkdiagnostic.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── Supabase / Ktor ──────────────────────────────────────────────────────
+-keep class io.github.jan.supabase.** { *; }
+-keep class io.ktor.** { *; }
+-dontwarn io.ktor.**
+
+# ── USB Serial for Android ───────────────────────────────────────────────
+-keep class com.hoho.android.usbserial.** { *; }
+
+# ── Coil SVG ─────────────────────────────────────────────────────────────
+-keep class coil3.svg.** { *; }

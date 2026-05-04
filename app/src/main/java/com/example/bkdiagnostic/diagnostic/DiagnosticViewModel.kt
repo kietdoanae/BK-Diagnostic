@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentLinkedDeque
 
 /** Một entry trong Raw Frame Monitor log */
 data class RawFrameEntry(
@@ -61,7 +62,9 @@ class DiagnosticViewModel(
     val connectionState = usbManager.connectionState
 
     // ── Live Data ────────────────────────────────────────────────────────────
-
+    // Use ConcurrentHashMap to avoid creating a new immutable Map on every PID reading.
+    // Emit snapshots only when UI needs to observe.
+    private val _liveDataMap = ConcurrentHashMap<OBD2PidDef, SensorReading>()
     private val _liveData = MutableStateFlow<Map<OBD2PidDef, SensorReading>>(emptyMap())
     val liveData: StateFlow<Map<OBD2PidDef, SensorReading>> = _liveData.asStateFlow()
 
@@ -88,10 +91,15 @@ class DiagnosticViewModel(
     private val rateTimestamps = ArrayDeque<Long>()
 
     // ── Raw Frame Monitor ────────────────────────────────────────────────────
-
+    // Use ConcurrentLinkedDeque as a bounded circular buffer to avoid creating
+    // a new List copy on every incoming frame (O(1) insert vs O(n) copy).
+    private val _rawFrameDeque = ConcurrentLinkedDeque<RawFrameEntry>()
     private val _rawFrameLog = MutableStateFlow<List<RawFrameEntry>>(emptyList())
     val rawFrameLog: StateFlow<List<RawFrameEntry>> = _rawFrameLog.asStateFlow()
     private val rawSeq = AtomicInteger(0)
+    private companion object {
+        const val MAX_RAW_LOG = 5000
+    }
 
     // ── Nội bộ ───────────────────────────────────────────────────────────────
 
@@ -151,7 +159,8 @@ class DiagnosticViewModel(
                     if (!isActive) break
                     val reading = requestPid(pid, config)
                     if (reading != null) {
-                        _liveData.update { it + (pid to reading) }
+                        _liveDataMap[pid] = reading
+                        _liveData.value = _liveDataMap.toMap()
                     }
                     delay(pollMs)
                 }
@@ -254,7 +263,10 @@ class DiagnosticViewModel(
         }
     }
 
-    fun clearRawLog() { _rawFrameLog.value = emptyList() }
+    fun clearRawLog() {
+        _rawFrameDeque.clear()
+        _rawFrameLog.value = emptyList()
+    }
 
     private fun addToRawLog(frame: CanFrame) {
         val decoded = protocolConfig?.let { tryDecodeFrame(frame, it) } ?: "—"
@@ -265,8 +277,14 @@ class DiagnosticViewModel(
             rawBytes = frame.effectiveData(),
             decoded = decoded
         )
-        _rawFrameLog.update { current ->
-            if (current.size >= 5000) current.drop(1) + entry else current + entry
+        // O(1) insert — no list copy. Snapshot emitted periodically for UI.
+        while (_rawFrameDeque.size >= MAX_RAW_LOG) {
+            _rawFrameDeque.pollFirst()
+        }
+        _rawFrameDeque.addLast(entry)
+        // Emit snapshot only every 10 frames to reduce recomposition overhead
+        if (entry.seq % 10 == 0 || _rawFrameLog.value.isEmpty()) {
+            _rawFrameLog.value = _rawFrameDeque.toList()
         }
     }
 
