@@ -41,7 +41,7 @@ export default function PipelineDiagram() {
             style={{ transformOrigin: `${n.x}px 100px` }}
           >
             <circle cx={n.x} cy="100" r="44" fill={n.fill} stroke={n.stroke} strokeWidth="2" />
-            <text x={n.x} y="92" textAnchor="middle" className="pl-icon">{n.icon}</text>
+            <text x={n.x} y="100" textAnchor="middle" dominantBaseline="central" className="pl-icon">{n.icon}</text>
             <text x={n.x} y="170" textAnchor="middle" className="pl-label">{n.label}</text>
           </motion.g>
         ))}
