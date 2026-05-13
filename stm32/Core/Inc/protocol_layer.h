@@ -49,4 +49,19 @@ void Protocol_PollCanRx(void);
  */
 bool Protocol_SetCanBaud(uint16_t baud_kbps);
 
+/**
+ * @brief  Periodic bus health check (Phase 7).
+ *         Reads EFLG/TEC/REC, reports state changes to Android, auto-recovers
+ *         from BUS-OFF. Call every iteration of App_Run() — it self-throttles.
+ *
+ *         Reports (via Comm_SendError):
+ *           ERR_BUS_WARNING     — error counter > 96 (rising edge only)
+ *           ERR_BUS_PASSIVE     — error counter > 127 (rising edge only)
+ *           ERR_BUS_OFF         — TXBO set; followed by auto-reset + reload
+ *           ERR_BUS_RECOVERED   — successful recovery from BUS-OFF
+ *           ERR_RX_BUF_OVERFLOW — RXB0 or RXB1 overflowed (frames lost)
+ *           ERR_TX_QUEUE_OVR    — UART TX queue overflow (Android frames lost)
+ */
+void Protocol_PeriodicHealthCheck(void);
+
 #endif /* PROTOCOL_LAYER_H */

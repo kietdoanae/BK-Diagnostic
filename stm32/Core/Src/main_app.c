@@ -29,7 +29,7 @@
  *           Prescaler=16 (500 kHz init), NSS=Software
  *  GPIO   : PA4 → Output PP, No pull  (MCP2515 CS)
  *           PB0 → Input, Pull-up, EXTI0 falling edge (MCP2515 INT)
- *  USART1 : Async, 115200 8N1, PA9(TX) PA10(RX), Global IT enabled
+ *  USART1 : Async, 460800 8N1, PA9(TX) PA10(RX), Global IT enabled
  *  NVIC   : USART1 global interrupt enabled
  *           EXTI0 interrupt enabled (for PB0)
  * ─────────────────────────────────────────────────────────────────────────────
@@ -111,6 +111,9 @@ void App_Run(void)
             Protocol_PollCanRx();
         }
     }
+
+    /* ── Phase 7: periodic bus health monitor (self-throttled to 200ms) ── */
+    Protocol_PeriodicHealthCheck();
 }
 
 /* ── ISR notification setters ────────────────────────────────────────────── */

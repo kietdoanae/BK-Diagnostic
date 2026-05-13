@@ -39,7 +39,8 @@ object LabEvidenceRepository {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val mutex = Mutex()
-    private val frameQueue = mutableListOf<CanFrame>()
+    // Phase 2: queue entries (not raw frames) to preserve direction + source
+    private val entryQueue = mutableListOf<com.example.bkdiagnostic.diagnostic.RawFrameEntry>()
     private var flushJob: Job? = null
 
     // ── Called by LabModeManager when session activates ───────────────────────
@@ -62,22 +63,44 @@ object LabEvidenceRepository {
         // Final flush then clear — sequential to avoid losing queued frames
         scope.launch {
             flushQueue(sessionId)
-            mutex.withLock { frameQueue.clear() }
+            mutex.withLock { entryQueue.clear() }
         }
     }
 
-    // ── Real-time streaming path (called per-frame from DiagnosticViewModel) ──
+    // ── Real-time streaming path (called per-entry from UnifiedRawFrameStore) ──
 
-    fun enqueueRawFrame(sessionId: String, frame: CanFrame) {
+    /**
+     * Enqueue 1 entry (TX hoặc RX) cho lab session đang active.
+     * Auto-flush khi queue đạt FLUSH_THRESHOLD.
+     */
+    fun enqueueEntry(sessionId: String, entry: com.example.bkdiagnostic.diagnostic.RawFrameEntry) {
         scope.launch {
             val toInsert = mutex.withLock {
-                frameQueue.add(frame)
-                if (frameQueue.size >= FLUSH_THRESHOLD) {
-                    frameQueue.toList().also { frameQueue.clear() }
+                entryQueue.add(entry)
+                if (entryQueue.size >= FLUSH_THRESHOLD) {
+                    entryQueue.toList().also { entryQueue.clear() }
                 } else null
             }
-            if (toInsert != null) doInsertRawFrames(sessionId, toInsert)
+            if (toInsert != null) doInsertEntries(sessionId, toInsert)
         }
+    }
+
+    /**
+     * @deprecated Backwards-compat shim — chuyển sang [enqueueEntry] có direction tag.
+     */
+    @Deprecated("Use enqueueEntry(sessionId, RawFrameEntry) to preserve direction tag")
+    fun enqueueRawFrame(sessionId: String, frame: CanFrame) {
+        // Map sang RX entry mặc định (giữ behavior cũ trước Phase 2)
+        val entry = com.example.bkdiagnostic.diagnostic.RawFrameEntry(
+            seq = 0,
+            timestampMs = System.currentTimeMillis(),
+            direction = com.example.bkdiagnostic.diagnostic.Direction.RX,
+            canId = frame.id,
+            rawBytes = frame.effectiveData(),
+            decoded = "",
+            source = "bus"
+        )
+        enqueueEntry(sessionId, entry)
     }
 
     // ── Active test path (called per-command from DiagnosticViewModel) ────────
@@ -118,6 +141,8 @@ object LabEvidenceRepository {
                                 chunk.forEach { entry ->
                                     add(buildJsonObject {
                                         put("seq",     entry.seq)
+                                        put("dir",     entry.direction.name)
+                                        put("src",     entry.source)
                                         put("can_id",  "0x%03X".format(entry.canId))
                                         put("ts_ms",   entry.timestampMs)
                                         put("data",    entry.rawBytes.joinToString(" ") { "%02X".format(it) })
@@ -137,13 +162,16 @@ object LabEvidenceRepository {
 
     private suspend fun flushQueue(sessionId: String) {
         val toInsert = mutex.withLock {
-            if (frameQueue.isEmpty()) return
-            frameQueue.toList().also { frameQueue.clear() }
+            if (entryQueue.isEmpty()) return
+            entryQueue.toList().also { entryQueue.clear() }
         }
-        doInsertRawFrames(sessionId, toInsert)
+        doInsertEntries(sessionId, toInsert)
     }
 
-    private suspend fun doInsertRawFrames(sessionId: String, frames: List<CanFrame>) {
+    private suspend fun doInsertEntries(
+        sessionId: String,
+        entries: List<com.example.bkdiagnostic.diagnostic.RawFrameEntry>
+    ) {
         val user = supabaseClient.auth.currentUserOrNull() ?: return
         runCatching {
             supabaseClient.postgrest["lab_evidence"].insert(
@@ -153,13 +181,16 @@ object LabEvidenceRepository {
                     evidenceType      = "raw_frame",
                     payload           = buildJsonObject {
                         put("frames", buildJsonArray {
-                            frames.forEach { frame ->
+                            entries.forEach { entry ->
                                 add(buildJsonObject {
-                                    put("can_id", "0x%03X".format(frame.id))
-                                    put("dlc",    frame.dlc)
-                                    put("data",   frame.effectiveData()
-                                            .joinToString(" ") { "%02X".format(it) })
-                                    put("ts_ms",  System.currentTimeMillis())
+                                    put("seq",     entry.seq)
+                                    put("dir",     entry.direction.name)
+                                    put("src",     entry.source)
+                                    put("can_id",  "0x%03X".format(entry.canId))
+                                    put("dlc",     entry.rawBytes.size)
+                                    put("data",    entry.rawBytes.joinToString(" ") { "%02X".format(it) })
+                                    put("ts_ms",   entry.timestampMs)
+                                    put("decoded", entry.decoded)
                                 })
                             }
                         })
@@ -167,6 +198,6 @@ object LabEvidenceRepository {
                     clientTimestampMs = System.currentTimeMillis()
                 )
             )
-        }.onFailure { Log.e(TAG, "raw_frame insert failed (${frames.size} frames): ${it.message}") }
+        }.onFailure { Log.e(TAG, "raw_frame insert failed (${entries.size} entries): ${it.message}") }
     }
 }

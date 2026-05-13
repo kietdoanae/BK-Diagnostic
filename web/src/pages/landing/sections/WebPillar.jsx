@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { useInViewAnimation, fadeUp } from '../shared/useInViewAnimation'
+import { useInViewAnimation, fadeUp, fadeUpStagger, fadeUpItem } from '../shared/useInViewAnimation'
 import SectionHeader from '../shared/SectionHeader'
 import PlaceholderImage from '../shared/PlaceholderImage'
 
@@ -70,14 +70,20 @@ export default function WebPillar() {
               letterSpacing: 2,
               fontWeight: 800,
             }}>{t('landing.webPillar.forTeacherLabel')}</h3>
-            <ul style={{ margin: '0 0 24px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <motion.ul
+              variants={fadeUpStagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              style={{ margin: '0 0 24px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}
+            >
               {FOR_TEACHER.map((item, i) => (
-                <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--ink-700)' }}>
+                <motion.li key={i} variants={fadeUpItem} whileHover={{ x: 4 }} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--ink-700)' }}>
                   <span style={{ color: 'var(--green-600)', fontWeight: 700 }}>✓</span>
                   <span>{item}</span>
-                </li>
+                </motion.li>
               ))}
-            </ul>
+            </motion.ul>
 
             <div style={{ height: 1, background: 'var(--rule)', margin: '12px 0 24px' }} />
 
@@ -88,14 +94,20 @@ export default function WebPillar() {
               letterSpacing: 2,
               fontWeight: 800,
             }}>{t('landing.webPillar.forAdminLabel')}</h3>
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <motion.ul
+              variants={fadeUpStagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}
+            >
               {FOR_ADMIN.map((item, i) => (
-                <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--ink-700)' }}>
+                <motion.li key={i} variants={fadeUpItem} whileHover={{ x: 4 }} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--ink-700)' }}>
                   <span style={{ color: 'var(--green-600)', fontWeight: 700 }}>✓</span>
                   <span>{item}</span>
-                </li>
+                </motion.li>
               ))}
-            </ul>
+            </motion.ul>
           </div>
         </div>
 
@@ -127,7 +139,17 @@ export default function WebPillar() {
             ))}
           </div>
 
-          <PlaceholderImage path={TAB_IMG_MAP[activeTab] || TAB_IMG_MAP.sessions} alt={`Tab ${tab.label}`} ratio="16/9" />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <PlaceholderImage path={TAB_IMG_MAP[activeTab] || TAB_IMG_MAP.sessions} alt={`Tab ${tab.label}`} ratio="16/9" />
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </motion.section>

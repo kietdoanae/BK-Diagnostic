@@ -43,14 +43,32 @@
 #define FRAME_STATUS      0x04U  /* payload: [status_flags:1B]               */
 
 /* ── Error codes ─────────────────────────────────────────────────────────── */
-#define ERR_CAN_SEND_FAIL 0x01U
-#define ERR_CAN_BAUD_FAIL 0x02U
-#define ERR_BAD_FRAME     0x03U
-#define ERR_UNKNOWN_TYPE  0x04U
+#define ERR_CAN_SEND_FAIL    0x01U
+#define ERR_CAN_BAUD_FAIL    0x02U
+#define ERR_BAD_FRAME        0x03U
+#define ERR_UNKNOWN_TYPE     0x04U
+/* Phase 7 — added in v2 firmware */
+#define ERR_TX_QUEUE_OVR     0x10U  /* UART TX queue full → frame dropped       */
+#define ERR_BAD_LENGTH       0x11U  /* Payload length out-of-range for frame    */
+#define ERR_BUS_WARNING      0x20U  /* CAN error counter > 96 (EFLG.EWARN)      */
+#define ERR_BUS_PASSIVE      0x21U  /* CAN error counter > 127 (EFLG.TXEP/RXEP) */
+#define ERR_BUS_OFF          0x22U  /* CAN bus off (EFLG.TXBO) — auto-recovery  */
+#define ERR_RX_BUF_OVERFLOW  0x23U  /* MCP2515 RXB0/RXB1 overflow (frames lost) */
+#define ERR_BUS_RECOVERED    0x24U  /* Auto-recovery from BUS-OFF succeeded     */
 
 /* ── Status flags ────────────────────────────────────────────────────────── */
-#define STATUS_CAN_OK     0x01U
-#define STATUS_CAN_ERR    0x02U
+#define STATUS_CAN_OK        0x01U
+#define STATUS_CAN_ERR       0x02U
+
+/* ── Diagnostic counters (sent on demand or periodically) ────────────────── */
+typedef struct {
+    uint16_t tx_dropped;     /* UART TX queue overflow count                  */
+    uint16_t rx_bad_frames;  /* checksum or EOF mismatch count                */
+    uint8_t  tec;            /* MCP2515 TEC register                          */
+    uint8_t  rec;            /* MCP2515 REC register                          */
+    uint8_t  eflg;           /* MCP2515 EFLG register                         */
+    uint8_t  reserved;
+} CommDiagCounters_t;
 
 /* ── RX parser state machine ─────────────────────────────────────────────── */
 typedef enum {
@@ -107,5 +125,21 @@ void Comm_UART_TxCallback(void);
  *         Safe to call every iteration of App_Run().
  */
 void Comm_ProcessPendingError(void);
+
+/**
+ * @brief  Get current count of frames dropped due to TX queue overflow.
+ *         Counter is cumulative since boot (or last Comm_ResetDroppedCount).
+ */
+uint16_t Comm_GetDroppedFrameCount(void);
+
+/**
+ * @brief  Reset the dropped-frame counter (e.g. after reporting to Android).
+ */
+void Comm_ResetDroppedCount(void);
+
+/**
+ * @brief  Get count of bad RX frames (checksum/EOF mismatch).
+ */
+uint16_t Comm_GetBadFrameCount(void);
 
 #endif /* COMM_LAYER_H */

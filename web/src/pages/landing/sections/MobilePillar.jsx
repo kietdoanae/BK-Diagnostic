@@ -52,8 +52,11 @@ export default function MobilePillar() {
               style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
             >
               {FEATURES.map((f, i) => (
-                <motion.div key={i} variants={fadeUpItem} style={{ display: 'flex', gap: 12 }}>
-                  <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>{f.icon}</span>
+                <motion.div key={i} variants={fadeUpItem} whileHover={{ x: 4 }} style={{ display: 'flex', gap: 12, padding: '4px 0', borderRadius: 8, transition: 'background 0.2s ease' }}>
+                  <motion.span
+                    style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}
+                    whileHover={{ scale: 1.2, rotate: 10 }}
+                  >{f.icon}</motion.span>
                   <div>
                     <strong style={{ color: 'var(--ink-900)', fontSize: 14, display: 'block', marginBottom: 2 }}>
                       {f.title}
@@ -103,7 +106,7 @@ export default function MobilePillar() {
             }}
           >
             {LAB_STEPS.map((s, i) => (
-              <motion.div key={i} variants={fadeUpItem} style={{
+              <motion.div key={i} variants={fadeUpItem} whileHover={{ scale: 1.03, y: -2 }} transition={{ duration: 0.2 }} style={{
                 background: 'var(--paper)',
                 borderRadius: 999,
                 padding: '14px 18px',

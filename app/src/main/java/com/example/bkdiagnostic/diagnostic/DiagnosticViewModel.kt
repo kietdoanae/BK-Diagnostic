@@ -31,17 +31,32 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.ConcurrentLinkedDeque
 
-/** Một entry trong Raw Frame Monitor log */
+/**
+ * Một entry trong Raw Frame Monitor log (unified TX + RX).
+ *
+ *  @param direction TX = Android gửi ra, RX = nhận về từ bus
+ *  @param source    Phân loại nguồn TX/RX:
+ *                     - RX: "bus"
+ *                     - TX: "live_data" / "dtc_read" / "dtc_clear" / "active_test"
+ *                            / "manual" / "gauge_event" / "gauge_delta"
+ */
 data class RawFrameEntry(
     val seq: Int,
     val timestampMs: Long,
+    val direction: Direction,
     val canId: Int,
     val rawBytes: ByteArray,
-    val decoded: String
-)
+    val decoded: String,
+    val source: String = "",
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is RawFrameEntry) return false
+        return seq == other.seq
+    }
+    override fun hashCode(): Int = seq
+}
 
 class DiagnosticViewModel(
     application: Application,
@@ -91,15 +106,10 @@ class DiagnosticViewModel(
     private val rateTimestamps = ArrayDeque<Long>()
 
     // ── Raw Frame Monitor ────────────────────────────────────────────────────
-    // Use ConcurrentLinkedDeque as a bounded circular buffer to avoid creating
-    // a new List copy on every incoming frame (O(1) insert vs O(n) copy).
-    private val _rawFrameDeque = ConcurrentLinkedDeque<RawFrameEntry>()
-    private val _rawFrameLog = MutableStateFlow<List<RawFrameEntry>>(emptyList())
-    val rawFrameLog: StateFlow<List<RawFrameEntry>> = _rawFrameLog.asStateFlow()
-    private val rawSeq = AtomicInteger(0)
-    private companion object {
-        const val MAX_RAW_LOG = 5000
-    }
+    // Delegate to UnifiedRawFrameStore singleton (shared with CanSenderViewModel,
+    // CSV export, and Supabase upload). See UnifiedRawFrameStore.kt for ring
+    // buffer (20,000 entries) and gauge delta logging.
+    val rawFrameLog: StateFlow<List<RawFrameEntry>> = UnifiedRawFrameStore.flow
 
     // ── Nội bộ ───────────────────────────────────────────────────────────────
 
@@ -111,16 +121,13 @@ class DiagnosticViewModel(
     private var liveDataJob: Job? = null
 
     init {
-        // Lắng nghe CAN frames đến từ STM32
+        // Lắng nghe CAN frames đến từ STM32. addToRawLog() ghi vào
+        // UnifiedRawFrameStore, store sẽ tự forward sang LabEvidence khi
+        // có lab session active.
         viewModelScope.launch {
             usbManager.canFrames.collect { frame ->
                 dispatchFrame(frame)
                 addToRawLog(frame)
-                // Lab: enqueue frame for evidence collection when session is active
-                val labState = LabModeManager.state.value
-                if (labState is LabModeState.Active) {
-                    LabEvidenceRepository.enqueueRawFrame(labState.sessionId, frame)
-                }
             }
         }
     }
@@ -181,6 +188,9 @@ class DiagnosticViewModel(
         pendingRequests[pid.pid] = deferred
 
         val requestFrame = OBD2Protocol.buildLiveDataRequest(pid, config.requestCanId)
+        // Log TX trước khi gửi để Raw Monitor thấy chiều "request"
+        logTxFrame(requestFrame, source = "live_data",
+            decoded = "Live Data request: ${pid.name} (PID=0x%02X)".format(pid.pid))
         usbManager.sendFrame(requestFrame)
 
         val response = withTimeoutOrNull(diagSettings.responseTimeoutMs) { deferred.await() }
@@ -204,7 +214,9 @@ class DiagnosticViewModel(
             val deferred = CompletableDeferred<CanFrame?>()
             pendingDtcRequest = deferred
 
-            usbManager.sendFrame(OBD2Protocol.buildDtcRequest(config.requestCanId))
+            val dtcReq = OBD2Protocol.buildDtcRequest(config.requestCanId)
+            logTxFrame(dtcReq, source = "dtc_read", decoded = "DTC read request (Mode 03)")
+            usbManager.sendFrame(dtcReq)
 
             val response = withTimeoutOrNull(1500L) { deferred.await() }
             pendingDtcRequest = null
@@ -234,7 +246,9 @@ class DiagnosticViewModel(
         val config = protocolConfig ?: return
         ActivityLogger.dtcClear(brandId, modelId)
         viewModelScope.launch(Dispatchers.IO) {
-            usbManager.sendFrame(OBD2Protocol.buildClearDtcRequest(config.requestCanId))
+            val clearReq = OBD2Protocol.buildClearDtcRequest(config.requestCanId)
+            logTxFrame(clearReq, source = "dtc_clear", decoded = "DTC clear request (Mode 04)")
+            usbManager.sendFrame(clearReq)
             delay(500)
             _dtcList.value = emptyList()
             _message.value = "Sent command to clear the error code."
@@ -254,6 +268,9 @@ class DiagnosticViewModel(
                 dlc = data.size.coerceAtMost(8),
                 data = ByteArray(8).also { buf -> data.copyInto(buf) }
             )
+            // Log TX vào unified store trước khi gửi
+            logTxFrame(frame, source = "active_test",
+                decoded = "Active Test: CAN 0x%03X".format(canId))
             usbManager.sendFrame(frame)
             // Lab: push active_test evidence when session is active
             val labState = LabModeManager.state.value
@@ -263,29 +280,143 @@ class DiagnosticViewModel(
         }
     }
 
-    fun clearRawLog() {
-        _rawFrameDeque.clear()
-        _rawFrameLog.value = emptyList()
+    // ════════════════════════════════════════════════════════════════════════
+    //  Gauge Streaming — gửi CAN frame liên tục để điều khiển kim đồng hồ
+    //  (RPM, Speed). Cluster cần stream liên tục mỗi 50-100ms để kim không
+    //  reset về 0 do timeout watchdog.
+    // ════════════════════════════════════════════════════════════════════════
+
+    /** True khi luồng gửi gauge đang chạy */
+    private val _gaugeStreamActive = MutableStateFlow(false)
+    val gaugeStreamActive: StateFlow<Boolean> = _gaugeStreamActive.asStateFlow()
+
+    /** Giá trị RPM hiện tại (0..maxValue) — UI cập nhật khi kéo slider */
+    val gaugeRpm = MutableStateFlow(0)
+
+    /** Giá trị Speed hiện tại (km/h) — UI cập nhật khi kéo slider */
+    val gaugeSpeed = MutableStateFlow(0)
+
+    /** Số frame đã gửi trong session streaming hiện tại — debug counter */
+    private val _gaugeFrameCount = MutableStateFlow(0)
+    val gaugeFrameCount: StateFlow<Int> = _gaugeFrameCount.asStateFlow()
+
+    private var gaugeStreamJob: Job? = null
+
+    /**
+     * Bắt đầu stream RPM + Speed liên tục theo chu kỳ [intervalMs].
+     * Gọi [updateGaugeRpm] / [updateGaugeSpeed] để thay đổi giá trị real-time.
+     */
+    fun startGaugeStream(
+        rpmCanId: Int?,
+        rpmScale: Int,
+        rpmStatusByte: Byte,
+        speedCanId: Int?,
+        speedScale: Int,
+        intervalMs: Long = 100L,
+    ) {
+        if (_gaugeStreamActive.value) return
+        if (rpmCanId == null && speedCanId == null) {
+            _message.value = "Chưa cấu hình CAN ID cho RPM/Speed"
+            return
+        }
+        _gaugeStreamActive.value = true
+        _gaugeFrameCount.value = 0
+        // Reset delta tracking — START event sẽ được log như force-event
+        UnifiedRawFrameStore.resetGaugeDelta()
+        gaugeStreamJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                var firstTick = true
+                while (isActive) {
+                    val rpm = gaugeRpm.value
+                    val speed = gaugeSpeed.value
+
+                    // ── RPM frame: [status][RPM_H][RPM_L][00][00][00][00][00] ──
+                    if (rpmCanId != null) {
+                        val raw = (rpm * rpmScale).coerceAtLeast(0)
+                        val data = ByteArray(8)
+                        data[0] = rpmStatusByte
+                        data[1] = ((raw shr 8) and 0xFF).toByte()
+                        data[2] = (raw and 0xFF).toByte()
+                        val rpmFrame = CanFrame(id = rpmCanId, dlc = 8, data = data)
+                        // Gauge delta logging: force log frame đầu tiên (event START)
+                        UnifiedRawFrameStore.addGaugeFrame(
+                            rpmFrame, GaugeKind.RPM, currentValue = rpm,
+                            force = firstTick
+                        )
+                        usbManager.sendFrame(rpmFrame)
+                    }
+
+                    // ── Speed frame: [Speed_H][Speed_L][00][00][00][00][00][00] ──
+                    if (speedCanId != null) {
+                        val raw = (speed * speedScale).coerceAtLeast(0)
+                        val data = ByteArray(8)
+                        data[0] = ((raw shr 8) and 0xFF).toByte()
+                        data[1] = (raw and 0xFF).toByte()
+                        val speedFrame = CanFrame(id = speedCanId, dlc = 8, data = data)
+                        UnifiedRawFrameStore.addGaugeFrame(
+                            speedFrame, GaugeKind.SPEED, currentValue = speed,
+                            force = firstTick
+                        )
+                        usbManager.sendFrame(speedFrame)
+                    }
+
+                    firstTick = false
+                    _gaugeFrameCount.value = _gaugeFrameCount.value + 1
+                    delay(intervalMs)
+                }
+            } finally {
+                _gaugeStreamActive.value = false
+            }
+        }
     }
 
+    /**
+     * Dừng stream và gửi 1 frame zero để cluster reset kim về 0.
+     */
+    fun stopGaugeStream(
+        rpmCanId: Int? = null,
+        speedCanId: Int? = null,
+    ) {
+        gaugeStreamJob?.cancel()
+        gaugeStreamJob = null
+        _gaugeStreamActive.value = false
+        // Gửi frame "tắt" (zero) để cluster reset kim ngay lập tức, log như STOP event
+        viewModelScope.launch(Dispatchers.IO) {
+            if (rpmCanId != null) {
+                val zero = CanFrame(id = rpmCanId, dlc = 8, data = ByteArray(8))
+                UnifiedRawFrameStore.addGaugeFrame(zero, GaugeKind.RPM, currentValue = 0, force = true)
+                usbManager.sendFrame(zero)
+            }
+            if (speedCanId != null) {
+                val zero = CanFrame(id = speedCanId, dlc = 8, data = ByteArray(8))
+                UnifiedRawFrameStore.addGaugeFrame(zero, GaugeKind.SPEED, currentValue = 0, force = true)
+                usbManager.sendFrame(zero)
+            }
+        }
+        gaugeRpm.value = 0
+        gaugeSpeed.value = 0
+        UnifiedRawFrameStore.resetGaugeDelta()
+    }
+
+    fun updateGaugeRpm(value: Int) { gaugeRpm.value = value.coerceAtLeast(0) }
+    fun updateGaugeSpeed(value: Int) { gaugeSpeed.value = value.coerceAtLeast(0) }
+
+    fun clearRawLog() {
+        UnifiedRawFrameStore.clear()
+    }
+
+    /** Ghi RX frame vào unified store (gọi từ usbManager.canFrames collector). */
     private fun addToRawLog(frame: CanFrame) {
         val decoded = protocolConfig?.let { tryDecodeFrame(frame, it) } ?: "—"
-        val entry = RawFrameEntry(
-            seq = rawSeq.incrementAndGet(),
-            timestampMs = System.currentTimeMillis(),
-            canId = frame.id,
-            rawBytes = frame.effectiveData(),
-            decoded = decoded
-        )
-        // O(1) insert — no list copy. Snapshot emitted periodically for UI.
-        while (_rawFrameDeque.size >= MAX_RAW_LOG) {
-            _rawFrameDeque.pollFirst()
-        }
-        _rawFrameDeque.addLast(entry)
-        // Emit snapshot only every 10 frames to reduce recomposition overhead
-        if (entry.seq % 10 == 0 || _rawFrameLog.value.isEmpty()) {
-            _rawFrameLog.value = _rawFrameDeque.toList()
-        }
+        UnifiedRawFrameStore.addRx(frame, decoded)
+    }
+
+    /**
+     * Ghi TX frame vào unified store. Gọi từ requestPid / readDtcs / clearDtcs
+     * / sendActiveTestCommand / gauge stream.
+     */
+    private fun logTxFrame(frame: CanFrame, source: String, decoded: String) {
+        UnifiedRawFrameStore.addTx(frame, source, decoded)
     }
 
     /** Cố giải mã frame thành chuỗi mô tả, trả về "—" nếu không nhận dạng được */
@@ -354,6 +485,8 @@ class DiagnosticViewModel(
     override fun onCleared() {
         super.onCleared()
         stopLiveData()
+        gaugeStreamJob?.cancel()
+        gaugeStreamJob = null
     }
 
     // ════════════════════════════════════════════════════════════════════════

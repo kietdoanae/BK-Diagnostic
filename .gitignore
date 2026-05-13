@@ -35,3 +35,26 @@ stm32/.project
 
 # Pilot evidence (downloaded PDFs, screenshots — not committed to git)
 docs/superpowers/pilot/phase-7-evidence/
+
+# STM32CubeIDE workspace metadata + build outputs
+stm32/.metadata/
+stm32/Core/Debug/
+
+# Local tooling artifacts (Claude Code / Superpowers)
+.claude/worktrees/
+.superpowers/
+
+# Local dev convenience scripts (not for distribution)
+serve_assets.js
+serve_assets.ps1
+serve_preview.bat
+switch_to_claude.ps1
+switch_to_mimo.ps1
+
+# Personal research material + thesis WIP (large binaries, not source code)
+source_material/
+docs/thesis/
+tr4021.pdf
+
+# Local website mockup
+website/

@@ -34,6 +34,7 @@
 #define MCP2515_INSTR_BIT_MODIFY 0x05
 #define MCP2515_INSTR_LOAD_TX0   0x40
 #define MCP2515_INSTR_READ_RX0   0x90
+#define MCP2515_INSTR_READ_RX1   0x94
 
 /* ── MCP2515 Registers ─────────────────────────────────────────────────── */
 #define MCP2515_REG_CANSTAT   0x0E
@@ -44,6 +45,8 @@
 #define MCP2515_REG_CANINTF   0x2C
 #define MCP2515_REG_CANINTE   0x2B
 #define MCP2515_REG_EFLG      0x2D
+#define MCP2515_REG_TEC       0x1C  /* Transmit Error Counter                  */
+#define MCP2515_REG_REC       0x1D  /* Receive  Error Counter                  */
 #define MCP2515_REG_TXB0CTRL  0x30
 #define MCP2515_REG_TXB0SIDH  0x31
 #define MCP2515_REG_TXB0SIDL  0x32
@@ -57,6 +60,16 @@
 #define MCP2515_REG_RXB1CTRL  0x70
 #define MCP2515_REG_RXF0SIDH  0x00
 #define MCP2515_REG_RXM0SIDH  0x20
+
+/* ── EFLG (Error Flag) bits ─────────────────────────────────────────────── */
+#define MCP2515_EFLG_EWARN    (1U << 0)  /* TEC or REC ≥ 96                    */
+#define MCP2515_EFLG_RXWAR    (1U << 1)  /* REC ≥ 96                           */
+#define MCP2515_EFLG_TXWAR    (1U << 2)  /* TEC ≥ 96                           */
+#define MCP2515_EFLG_RXEP     (1U << 3)  /* REC ≥ 128 (error-passive)          */
+#define MCP2515_EFLG_TXEP     (1U << 4)  /* TEC ≥ 128 (error-passive)          */
+#define MCP2515_EFLG_TXBO     (1U << 5)  /* TEC = 255 (BUS-OFF)                */
+#define MCP2515_EFLG_RX0OVR   (1U << 6)  /* RXB0 overflow                      */
+#define MCP2515_EFLG_RX1OVR   (1U << 7)  /* RXB1 overflow                      */
 
 /* ── CANCTRL modes ─────────────────────────────────────────────────────── */
 #define MCP2515_MODE_NORMAL   0x00
@@ -118,5 +131,26 @@ void             MCP2515_ClearInterrupts(void);
  * @param  cnf3  CNF3 register value (PS2)
  */
 void MCP2515_ApplyTiming(uint8_t cnf1, uint8_t cnf2, uint8_t cnf3);
+
+/* ── Phase 7: Bus health monitoring ─────────────────────────────────────── */
+
+/** @brief Read the EFLG register (Error Flag bits — TXBO, EWARN, RXxOVR…). */
+uint8_t MCP2515_ReadEflg(void);
+
+/** @brief Read the TEC register (Transmit Error Counter, 0–255). */
+uint8_t MCP2515_ReadTec(void);
+
+/** @brief Read the REC register (Receive Error Counter, 0–255). */
+uint8_t MCP2515_ReadRec(void);
+
+/**
+ * @brief  Clear specific EFLG bits (only RX0OVR/RX1OVR are software-clearable).
+ *         Other EFLG bits clear automatically when error counters drop.
+ * @param  bits  Bitmask of MCP2515_EFLG_RX0OVR / RX1OVR.
+ */
+void MCP2515_ClearEflgBits(uint8_t bits);
+
+/** @brief Read a register directly (debugging). */
+uint8_t MCP2515_ReadRegister(uint8_t addr);
 
 #endif /* MCP2515_H */

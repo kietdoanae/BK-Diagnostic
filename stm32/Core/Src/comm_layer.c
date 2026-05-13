@@ -36,6 +36,10 @@ static volatile uint8_t s_tx_head  = 0;   /* slot currently being sent       */
 static volatile uint8_t s_tx_tail  = 0;   /* next free slot                  */
 static volatile uint8_t s_tx_busy  = 0;   /* 1 = HAL_UART_Transmit_IT active */
 
+/* ── Diagnostic counters (Phase 7) ──────────────────────────────────────── */
+static volatile uint16_t s_dropped_frames = 0;  /* TX queue full count       */
+static volatile uint16_t s_bad_rx_frames  = 0;  /* Bad checksum/EOF count    */
+
 /* ── Private: compute XOR checksum ──────────────────────────────────────── */
 /* CHECKSUM = TYPE XOR LEN XOR payload[0] XOR ... XOR payload[N-1]          */
 static uint8_t xor_checksum(uint8_t type, uint8_t len,
@@ -81,7 +85,9 @@ bool Comm_SendFrame(uint8_t type, const uint8_t *payload, uint8_t len)
 
     uint8_t next_tail = (uint8_t)((s_tx_tail + 1U) % TX_QUEUE_DEPTH);
     if (next_tail == s_tx_head) {
-        /* Queue full — drop frame to avoid blocking */
+        /* Queue full — drop frame to avoid blocking.
+         * Increment counter; main loop reports overflow to Android periodically. */
+        s_dropped_frames++;
         __enable_irq();
         return false;
     }
@@ -174,6 +180,7 @@ bool Comm_ProcessByte(uint8_t byte)
                 /* Checksum mismatch → resync; defer error to main loop */
                 s_rx_state     = RX_WAIT_SOF;
                 s_pending_error = ERR_BAD_FRAME;
+                s_bad_rx_frames++;
             }
             break;
 
@@ -185,6 +192,7 @@ bool Comm_ProcessByte(uint8_t byte)
             }
             /* EOF mismatch → frame corrupted; defer error to main loop */
             s_pending_error = ERR_BAD_FRAME;
+            s_bad_rx_frames++;
             break;
 
         default:
@@ -216,4 +224,20 @@ void Comm_UART_RxCallback(void)
 {
     Comm_ProcessByte(s_rx_byte);
     HAL_UART_Receive_IT(&COMM_UART, &s_rx_byte, 1);
+}
+
+/* ── Diagnostic counter accessors (Phase 7) ──────────────────────────────── */
+uint16_t Comm_GetDroppedFrameCount(void)
+{
+    return s_dropped_frames;
+}
+
+void Comm_ResetDroppedCount(void)
+{
+    s_dropped_frames = 0;
+}
+
+uint16_t Comm_GetBadFrameCount(void)
+{
+    return s_bad_rx_frames;
 }

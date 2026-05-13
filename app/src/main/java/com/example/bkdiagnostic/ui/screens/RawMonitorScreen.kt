@@ -75,6 +75,7 @@ import com.example.bkdiagnostic.diagnostic.CanSendEntry
 import com.example.bkdiagnostic.diagnostic.CanSenderViewModel
 import com.example.bkdiagnostic.diagnostic.CanSenderViewModelFactory
 import com.example.bkdiagnostic.diagnostic.DiagnosticViewModel
+import com.example.bkdiagnostic.diagnostic.Direction
 import com.example.bkdiagnostic.diagnostic.RawFrameEntry
 import com.example.bkdiagnostic.diagnostic.SendStatus
 import com.example.bkdiagnostic.supabaseClient
@@ -221,6 +222,9 @@ private fun ModernTabRow(
 //  Monitor tab (existing content)
 // ════════════════════════════════════════════════════════════════════════════
 
+/** Filter chiều cho Monitor tab + CSV export */
+private enum class DirFilter { BOTH, TX, RX }
+
 @Composable
 private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
     val rawLog by viewModel.rawFrameLog.collectAsStateWithLifecycle()
@@ -229,7 +233,24 @@ private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
 
     var paused by remember { mutableStateOf(false) }
     var frozenLog by remember { mutableStateOf<List<RawFrameEntry>>(emptyList()) }
-    val displayLog = if (paused) frozenLog else rawLog
+    var dirFilter by remember { mutableStateOf(DirFilter.BOTH) }
+
+    // Lấy data đang hiển thị: pause → frozen, không pause → live
+    val sourceLog = if (paused) frozenLog else rawLog
+    // Áp filter direction (chỉ ảnh hưởng hiển thị + export, NOT Supabase upload)
+    val displayLog = remember(sourceLog, dirFilter) {
+        when (dirFilter) {
+            DirFilter.BOTH -> sourceLog
+            DirFilter.TX   -> sourceLog.filter { it.direction == Direction.TX }
+            DirFilter.RX   -> sourceLog.filter { it.direction == Direction.RX }
+        }
+    }
+    // Count statistics riêng cho TX / RX (luôn tính trên sourceLog full)
+    val (txCount, rxCount) = remember(sourceLog) {
+        var tx = 0; var rx = 0
+        sourceLog.forEach { if (it.direction == Direction.TX) tx++ else rx++ }
+        tx to rx
+    }
 
     var exportMessage by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
@@ -271,6 +292,14 @@ private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
             frameCount = displayLog.size,
             framesPerSec = recentRate,
             uniqueIds = uniqueIds
+        )
+
+        // ── Direction filter segmented control ───────────────────────────────
+        DirectionFilterBar(
+            current  = dirFilter,
+            txCount  = txCount,
+            rxCount  = rxCount,
+            onChange = { dirFilter = it }
         )
 
         // ── Header cột cố định ───────────────────────────────────────────────
@@ -371,6 +400,80 @@ private fun MonitorTabContent(viewModel: DiagnosticViewModel) {
                 }
             }
         )
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Direction filter bar — TX / RX / Both
+// ════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun DirectionFilterBar(
+    current: DirFilter,
+    txCount: Int,
+    rxCount: Int,
+    onChange: (DirFilter) -> Unit,
+) {
+    val options = listOf(
+        Triple(DirFilter.BOTH, "Both",          txCount + rxCount),
+        Triple(DirFilter.TX,   "▲ Request",     txCount),
+        Triple(DirFilter.RX,   "▼ Response",    rxCount),
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(BgChrome)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "FILTER",
+            color = ColorMuted,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace,
+            letterSpacing = 1.2.sp,
+        )
+        Spacer(Modifier.width(4.dp))
+        options.forEach { (value, label, count) ->
+            val selected = current == value
+            val accent = when (value) {
+                DirFilter.TX -> ColorBlue
+                DirFilter.RX -> ColorGreen
+                DirFilter.BOTH -> ColorAccent
+            }
+            Surface(
+                modifier = Modifier.height(28.dp),
+                color = if (selected) accent.copy(alpha = 0.20f) else BgRow,
+                shape = RoundedCornerShape(7.dp),
+                border = if (selected)
+                    androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = 0.6f))
+                else null,
+                onClick = { onChange(value) }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Text(
+                        text = label,
+                        color = if (selected) accent else ColorGray,
+                        fontSize = 10.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                    Text(
+                        text = "$count",
+                        color = if (selected) accent.copy(alpha = 0.9f) else ColorMuted,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -908,10 +1011,13 @@ private fun RawFrameRow(
     responseCanId: Int?,
     isEven: Boolean
 ) {
-    val isEcuResponse = responseCanId != null && entry.canId == responseCanId
-    val isDecoded     = entry.decoded != "—"
+    val isTx          = entry.direction == Direction.TX
+    val isEcuResponse = responseCanId != null && entry.canId == responseCanId && !isTx
+    val isDecoded     = entry.decoded.isNotEmpty() && entry.decoded != "—"
 
+    // Màu chỉ thị direction + status
     val accentColor = when {
+        isTx          -> ColorBlue        // TX = xanh
         isDecoded     -> ColorGreen
         isEcuResponse -> ColorYellow
         else          -> ColorGray
@@ -930,14 +1036,24 @@ private fun RawFrameRow(
             .padding(horizontal = 12.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Chỉ thị màu
+        // Chỉ thị màu (direction)
         Box(
             modifier = Modifier
                 .size(5.dp)
                 .clip(CircleShape)
-                .background(accentColor.copy(alpha = if (isDecoded || isEcuResponse) 1f else 0.35f))
+                .background(accentColor.copy(alpha = if (isDecoded || isEcuResponse || isTx) 1f else 0.35f))
         )
-        Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(4.dp))
+
+        // TX/RX badge
+        Text(
+            text = if (isTx) "▲" else "▼",
+            color = accentColor,
+            fontSize = 9.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.width(10.dp)
+        )
 
         // # seq
         Text(
@@ -946,7 +1062,7 @@ private fun RawFrameRow(
             fontSize = 10.sp,
             fontFamily = FontFamily.Monospace,
             textAlign = TextAlign.End,
-            modifier = Modifier.width(W_SEQ - 11.dp)   // trừ dot + spacer
+            modifier = Modifier.width(W_SEQ - 21.dp)   // trừ dot + spacer + badge
         )
         Spacer(Modifier.width(12.dp))
 
@@ -1167,7 +1283,8 @@ private fun exportToCsv(
     val sb = StringBuilder()
     // UTF-8 BOM — bắt buộc để Excel trên Windows nhận đúng encoding UTF-8
     sb.append('\uFEFF')
-    sb.appendLine("SEQ,TIME,TIMESTAMP_MS,ADDRESS,CAN_FRAME_HEX,DELAY_MS,DECODED")
+    // Phase 2: thêm DIRECTION + SOURCE để phân biệt TX/RX và phân loại nguồn
+    sb.appendLine("SEQ,TIME,TIMESTAMP_MS,DIRECTION,SOURCE,ADDRESS,CAN_FRAME_HEX,DELAY_MS,DECODED")
     frames.forEachIndexed { i, e ->
         val delay = if (i > 0) e.timestampMs - frames[i - 1].timestampMs else 0L
         val id    = "0x${e.canId.toString(16).uppercase().padStart(3, '0')}"
@@ -1175,9 +1292,11 @@ private fun exportToCsv(
             it.toUByte().toInt().toString(16).uppercase().padStart(2, '0')
         }
         val timeStr = sdfExport.format(Date(e.timestampMs))
-        // Bọc TIME và DECODED trong dấu nháy kép; escape dấu nháy kép bên trong
+        val dir     = e.direction.name           // TX hoặc RX
+        val srcEsc  = e.source.replace("\"", "\"\"")
+        // Bọc TIME, SOURCE và DECODED trong dấu nháy kép; escape dấu nháy kép bên trong
         val decodedEscaped = e.decoded.replace("\"", "\"\"")
-        sb.appendLine("${e.seq},\"$timeStr\",${e.timestampMs},$id,\"$hex\",$delay,\"$decodedEscaped\"")
+        sb.appendLine("${e.seq},\"$timeStr\",${e.timestampMs},$dir,\"$srcEsc\",$id,\"$hex\",$delay,\"$decodedEscaped\"")
     }
     // Xuất UTF-8 — BOM ở đầu đã giúp Excel nhận đúng
     val csvBytes = sb.toString().toByteArray(Charsets.UTF_8)

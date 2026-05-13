@@ -1,0 +1,136 @@
+{
+  "_doc": "Ford Ranger 2019 (PXIII) — Dashboard CAN Config (Warning Icons + Gauge Control)",
+  "_format": {
+    "canId": "CAN Arbitration ID — hex string, vd: 0x7A0",
+    "canData": "8 byte hex, cách nhau bởi dấu cách, vd: 06 2F D0 21 03 01 00 00",
+    "canDataOff": "(tùy chọn) frame TẮT đèn — nếu không có thì chỉ gửi frame ON"
+  },
+  "_notes": [
+    "Mỗi icon tương ứng 1 đèn cảnh báo trên cụm đồng hồ (instrument cluster).",
+    "Khi nhấn icon trên app -> gửi CAN frame (canId + canData) qua USB -> STM32 -> CAN bus.",
+    "Để thêm icon mới: thêm entry ở đây + thêm SVG vào assets/warning_icons/ + thêm vào WARNING_ICONS trong ActiveTestScreen.kt",
+    "canId và canData cần tra cứu từ tài liệu kỹ thuật (workshop manual) hoặc FORScan DID list."
+  ],
+
+  "gauges": {
+    "_doc": "Gauge Control — điều khiển kim đồng hồ RPM/Speed bằng CAN broadcast liên tục",
+    "_encoding_rpm": "Raw = RPM × scaleFactor → Byte[1]=High, Byte[2]=Low. Byte[0]=statusByte",
+    "_encoding_speed": "Raw = Speed × scaleFactor → Byte[0]=High, Byte[1]=Low",
+
+    "rpm": {
+      "_label": "Vòng tua máy (Tachometer)",
+      "canId": "0x201",
+      "maxValue": 8000,
+      "scaleFactor": 4,
+      "statusByte": "0x01"
+    },
+    "speed": {
+      "_label": "Tốc độ xe (Speedometer)",
+      "canId": "0x300",
+      "maxValue": 240,
+      "scaleFactor": 100
+    },
+    "intervalMs": 100
+  },
+
+  "icons": {
+
+    "high_beam": {
+      "_label": "Đèn pha (High Beam)",
+      "canId": "0x7A0",
+      "canData":    "06 2F D0 21 03 01 00 00",
+      "canDataOff": "05 2F D0 21 00 00 00 00"
+    },
+
+    "lamp_on": {
+      "_label": "Đèn cos / Đèn bật (Low Beam / Lamp On)",
+      "canId": "0x7A0",
+      "canData":    "06 2F D0 20 03 01 00 00",
+      "canDataOff": "05 2F D0 20 00 00 00 00"
+    },
+
+    "seat_belt": {
+      "_label": "Dây an toàn (Seatbelt Warning)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "tire": {
+      "_label": "Áp suất lốp (TPMS)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "battery": {
+      "_label": "Ắc quy / Alternator",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "engine_chk": {
+      "_label": "Check Engine (MIL)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "airbag": {
+      "_label": "Túi khí (Airbag / SRS)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "engine": {
+      "_label": "Lỗi động cơ (Engine Malfunction)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "overheat": {
+      "_label": "Quá nhiệt động cơ (Engine Overheat)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "abs": {
+      "_label": "ABS (Anti-lock Braking System)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "brake": {
+      "_label": "Cảnh báo phanh (Brake Warning)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "stability": {
+      "_label": "Ổn định thân xe (ESC / Traction Control)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "oil": {
+      "_label": "Áp suất dầu (Oil Pressure Warning)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    },
+
+    "fuel": {
+      "_label": "Mức nhiên liệu (Low Fuel Warning)",
+      "canId": "0x000",
+      "canData":    "00 00 00 00 00 00 00 00",
+      "canDataOff": "00 00 00 00 00 00 00 00"
+    }
+  }
+}

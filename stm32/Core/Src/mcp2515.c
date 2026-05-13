@@ -92,8 +92,8 @@ MCP2515_Status_t MCP2515_Init(void)
     reg_write(MCP2515_REG_RXF0SIDH, 0x00);
     reg_write(MCP2515_REG_RXF0SIDH + 1, 0x00);  /* RXF0SIDL */
 
-    /* 4. Enable RX interrupt on pin INT (PB0) */
-    reg_write(MCP2515_REG_CANINTE, MCP2515_INTF_RX0IF);
+    /* 4. Enable RX interrupts on pin INT (PB0) — both RXB0 and RXB1 */
+    reg_write(MCP2515_REG_CANINTE, MCP2515_INTF_RX0IF | MCP2515_INTF_RX1IF);
 
     /* 5. Switch to Normal mode */
     if (MCP2515_SetMode(MCP2515_MODE_NORMAL) != MCP2515_OK) {
@@ -154,21 +154,15 @@ MCP2515_Status_t MCP2515_SendFrame(const CAN_Frame_t *frame)
 /* ── MCP2515_RxAvailable ─────────────────────────────────────────────────── */
 bool MCP2515_RxAvailable(void)
 {
-    return (reg_read(MCP2515_REG_CANINTF) & MCP2515_INTF_RX0IF) != 0;
+    uint8_t intf = reg_read(MCP2515_REG_CANINTF);
+    return (intf & (MCP2515_INTF_RX0IF | MCP2515_INTF_RX1IF)) != 0;
 }
 
-/* ── MCP2515_ReceiveFrame ────────────────────────────────────────────────── */
-MCP2515_Status_t MCP2515_ReceiveFrame(CAN_Frame_t *frame)
+/* ── Private: Burst-read one RX buffer via SPI ───────────────────────────── */
+static MCP2515_Status_t read_rx_buffer(uint8_t instr, CAN_Frame_t *frame)
 {
-    if (!frame) return MCP2515_ERROR;
-
-    if (!MCP2515_RxAvailable()) {
-        return MCP2515_NO_MSG;
-    }
-
-    /* Burst-read RX buffer 0 */
     cs_low();
-    spi_transfer(MCP2515_INSTR_READ_RX0);  /* Also clears RX0IF */
+    spi_transfer(instr);
 
     uint8_t sidh = spi_transfer(0x00);
     uint8_t sidl = spi_transfer(0x00);
@@ -187,6 +181,24 @@ MCP2515_Status_t MCP2515_ReceiveFrame(CAN_Frame_t *frame)
     return MCP2515_OK;
 }
 
+/* ── MCP2515_ReceiveFrame ────────────────────────────────────────────────── */
+MCP2515_Status_t MCP2515_ReceiveFrame(CAN_Frame_t *frame)
+{
+    if (!frame) return MCP2515_ERROR;
+
+    uint8_t intf = reg_read(MCP2515_REG_CANINTF);
+
+    /* Prefer RXB0, fall back to RXB1 */
+    if (intf & MCP2515_INTF_RX0IF) {
+        return read_rx_buffer(MCP2515_INSTR_READ_RX0, frame);
+    }
+    if (intf & MCP2515_INTF_RX1IF) {
+        return read_rx_buffer(MCP2515_INSTR_READ_RX1, frame);
+    }
+
+    return MCP2515_NO_MSG;
+}
+
 /* ── MCP2515_ClearInterrupts ─────────────────────────────────────────────── */
 void MCP2515_ClearInterrupts(void)
 {
@@ -199,4 +211,35 @@ void MCP2515_ApplyTiming(uint8_t cnf1, uint8_t cnf2, uint8_t cnf3)
     reg_write(MCP2515_REG_CNF1, cnf1);
     reg_write(MCP2515_REG_CNF2, cnf2);
     reg_write(MCP2515_REG_CNF3, cnf3);
+}
+
+/* ── Phase 7: Bus health helpers ─────────────────────────────────────────── */
+
+uint8_t MCP2515_ReadEflg(void)
+{
+    return reg_read(MCP2515_REG_EFLG);
+}
+
+uint8_t MCP2515_ReadTec(void)
+{
+    return reg_read(MCP2515_REG_TEC);
+}
+
+uint8_t MCP2515_ReadRec(void)
+{
+    return reg_read(MCP2515_REG_REC);
+}
+
+void MCP2515_ClearEflgBits(uint8_t bits)
+{
+    /* Only RX0OVR/RX1OVR bits are software-clearable via BIT-MODIFY */
+    uint8_t mask = bits & (MCP2515_EFLG_RX0OVR | MCP2515_EFLG_RX1OVR);
+    if (mask) {
+        reg_bit_modify(MCP2515_REG_EFLG, mask, 0x00);
+    }
+}
+
+uint8_t MCP2515_ReadRegister(uint8_t addr)
+{
+    return reg_read(addr);
 }

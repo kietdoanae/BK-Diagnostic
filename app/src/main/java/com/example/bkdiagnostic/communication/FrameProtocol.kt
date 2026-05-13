@@ -32,8 +32,18 @@ package com.example.bkdiagnostic.communication
  *    0x04  STATUS           Trạng thái kết nối CAN
  *                           PAYLOAD = [STATUS_FLAGS:1]             (1 byte)
  *
- *  ERROR_CODE:  0x01=CAN_BUS_OFF  0x02=CAN_ERROR_PASSIVE
- *               0x03=TX_TIMEOUT   0x04=UNKNOWN
+ *  ERROR_CODE (firmware v2 / Phase 7):
+ *    0x01 CAN_SEND_FAIL    Lỗi gửi frame lên CAN bus (TXREQ timeout)
+ *    0x02 CAN_BAUD_FAIL    Lỗi đặt baud rate
+ *    0x03 BAD_FRAME        Frame UART có checksum/EOF sai
+ *    0x04 UNKNOWN_TYPE     Type byte không nhận diện được
+ *    0x10 TX_QUEUE_OVR     UART TX queue đầy → frame bị drop
+ *    0x11 BAD_LENGTH       Payload length sai cho frame type
+ *    0x20 BUS_WARNING      Error counter > 96 (rising edge)
+ *    0x21 BUS_PASSIVE      Error counter > 127 (rising edge)
+ *    0x22 BUS_OFF          BUS-OFF detected — auto-recovery đang chạy
+ *    0x23 RX_BUF_OVERFLOW  MCP2515 RX buffer tràn — frame mất trên bus
+ *    0x24 BUS_RECOVERED    Phục hồi BUS-OFF thành công
  * ══════════════════════════════════════════════════════════════════════════════
  *  STM32 firmware note: MCP2515 đặt ở chế độ Normal/Listen-only mode
  *  CAN_ID big-endian → byte[0] MSB, byte[3] LSB
@@ -58,6 +68,43 @@ object FrameProtocol {
 
     // Minimum frame size: SOF + TYPE + LEN + CHECKSUM + EOF = 5 bytes
     const val MIN_FRAME_SIZE = 5
+
+    // ── Error codes (must match firmware comm_layer.h) ─────────────────────
+    object ErrorCode {
+        const val CAN_SEND_FAIL    = 0x01
+        const val CAN_BAUD_FAIL    = 0x02
+        const val BAD_FRAME        = 0x03
+        const val UNKNOWN_TYPE     = 0x04
+        const val TX_QUEUE_OVR     = 0x10
+        const val BAD_LENGTH       = 0x11
+        const val BUS_WARNING      = 0x20
+        const val BUS_PASSIVE      = 0x21
+        const val BUS_OFF          = 0x22
+        const val RX_BUF_OVERFLOW  = 0x23
+        const val BUS_RECOVERED    = 0x24
+
+        /** Map error code → human-readable Vietnamese message */
+        fun describe(code: Int): String = when (code) {
+            CAN_SEND_FAIL    -> "Gửi CAN frame thất bại (TXREQ timeout)"
+            CAN_BAUD_FAIL    -> "Đặt CAN baud rate thất bại"
+            BAD_FRAME        -> "Frame UART sai checksum/EOF"
+            UNKNOWN_TYPE     -> "Frame type không nhận diện được"
+            TX_QUEUE_OVR     -> "UART TX queue tràn — frame bị drop"
+            BAD_LENGTH       -> "Payload length sai cho frame type"
+            BUS_WARNING      -> "CAN bus warning (error counter > 96)"
+            BUS_PASSIVE      -> "CAN bus error-passive (error counter > 127)"
+            BUS_OFF          -> "CAN BUS-OFF — đang phục hồi tự động"
+            RX_BUF_OVERFLOW  -> "MCP2515 RX buffer tràn — frame mất trên bus"
+            BUS_RECOVERED    -> "Phục hồi BUS-OFF thành công"
+            else             -> "Lỗi không xác định (0x${code.toString(16).uppercase()})"
+        }
+
+        /** True for errors that warrant a toast/snackbar (vs silent log) */
+        fun isCritical(code: Int): Boolean = when (code) {
+            BUS_OFF, BUS_PASSIVE, RX_BUF_OVERFLOW -> true
+            else -> false
+        }
+    }
 
     // ── Encode ─────────────────────────────────────────────────────────────
 

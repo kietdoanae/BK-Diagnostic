@@ -22,7 +22,7 @@
  * ── Peripherals ──────────────────────────────────────────────────────────────
  *  SPI1   : Master, Full-duplex, 8-bit, CPOL=0/CPHA=0, NSS Software
  *           Prescaler /16 → 4.5 MHz (well within MCP2515's 10 MHz SPI max)
- *  USART1 : Async 115200 8N1, interrupt-driven RX
+ *  USART1 : Async 460800 8N1, interrupt-driven RX
  *  EXTI0  : PB0 falling edge → MCP2515 INT → App_SetCanRxPending()
  *  NVIC   : USART1 global interrupt, EXTI0 interrupt
  */
@@ -187,7 +187,10 @@ static void MX_SPI1_Init(void)
     hspi1.Init.TIMode            = SPI_TIMODE_DISABLE;
     hspi1.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
     hspi1.Init.CRCPolynomial     = 10;
-    HAL_SPI_Init(&hspi1);
+    if (HAL_SPI_Init(&hspi1) != HAL_OK)
+    {
+        Error_Handler();
+    }
 }
 
 /* ── MX_USART1_UART_Init ─────────────────────────────────────────────────────── */
@@ -204,7 +207,10 @@ static void MX_USART1_UART_Init(void)
     huart1.Init.Mode         = UART_MODE_TX_RX;
     huart1.Init.HwFlowCtl   = UART_HWCONTROL_NONE;
     huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-    HAL_UART_Init(&huart1);
+    if (HAL_UART_Init(&huart1) != HAL_OK)
+    {
+        Error_Handler();
+    }
 
     /* Enable USART1 interrupt in NVIC */
     HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);

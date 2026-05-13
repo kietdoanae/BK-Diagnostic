@@ -66,16 +66,19 @@ export function computeLabState({
   return LAB_STATES.PRE_LAB_PASSED
 }
 
-/** Human label for the state tag in /labs. */
+/**
+ * i18n key for the state tag in /labs. Callers should wrap this in `t(...)`
+ * from react-i18next, e.g. `t(labStateLabel(state))`.
+ */
 export function labStateLabel(state) {
   switch (state) {
-    case LAB_STATES.NOT_ASSIGNED: return 'Chưa được gán nhóm'
-    case LAB_STATES.PRE_LAB_PENDING: return 'Chưa làm pre-lab'
-    case LAB_STATES.PRE_LAB_FAILED: return 'Pre-lab chưa đạt'
-    case LAB_STATES.PRE_LAB_PASSED: return 'Sẵn sàng thực hành'
-    case LAB_STATES.PRACTICE_ACTIVE: return 'Đang thực hành'
-    case LAB_STATES.PRACTICE_DONE_POST_PENDING: return 'Cần làm post-lab'
-    case LAB_STATES.COMPLETED: return 'Đã hoàn thành'
+    case LAB_STATES.NOT_ASSIGNED: return 'lab.state.notAssigned'
+    case LAB_STATES.PRE_LAB_PENDING: return 'lab.state.preLabPending'
+    case LAB_STATES.PRE_LAB_FAILED: return 'lab.state.preLabFailed'
+    case LAB_STATES.PRE_LAB_PASSED: return 'lab.state.preLabPassed'
+    case LAB_STATES.PRACTICE_ACTIVE: return 'lab.state.practiceActive'
+    case LAB_STATES.PRACTICE_DONE_POST_PENDING: return 'lab.state.postPending'
+    case LAB_STATES.COMPLETED: return 'lab.state.completed'
     default: return state
   }
 }

@@ -106,7 +106,9 @@ fun DiagnosticScreen(
         DiagView.ACTIVE_TEST ->
             ActiveTestScreen(
                 viewModel = viewModel,
-                onBack = { currentView = DiagView.HUB }
+                brandId   = brandId,
+                modelId   = modelId,
+                onBack    = { currentView = DiagView.HUB }
             )
         DiagView.LIVE_DATA ->
             LiveDataScreen(

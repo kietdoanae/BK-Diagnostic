@@ -141,7 +141,14 @@ class CanSenderViewModel(
         viewModelScope.launch {
             try {
                 val padded = bytes.copyOf(8)
-                usb.sendFrame(CanFrame(canId, bytes.size, padded))
+                val frame = CanFrame(canId, bytes.size, padded)
+                // Log TX vào UnifiedRawFrameStore — đồng bộ với Monitor tab + CSV + Supabase
+                UnifiedRawFrameStore.addTx(
+                    frame,
+                    source = "manual",
+                    decoded = "Manual send CAN 0x%03X".format(canId)
+                )
+                usb.sendFrame(frame)
                 delay(2000)
             } finally {
                 val state = pendingState.get()
