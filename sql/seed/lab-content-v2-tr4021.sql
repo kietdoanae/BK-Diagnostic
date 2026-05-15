@@ -23,3 +23,435 @@ DELETE FROM public.lab_questions
      (phase = 'pre_lab'  AND question_order > 8) OR
      (phase = 'post_lab' AND question_order > 5)
    );
+
+-- ════════════════════════════════════════════════════════════════════════════
+--  LAB-01 — Nền tảng CAN Bus & Sniffing Traffic (v2)
+-- ════════════════════════════════════════════════════════════════════════════
+
+INSERT INTO public.labs (code, title, description, order_index, pre_quiz_pass_threshold, is_published)
+VALUES (
+    'LAB-01',
+    'Nền tảng CAN Bus & Sniffing Traffic',
+    $md$### Mục tiêu học tập (TR4021 LO.2, LO.6, Ch.3)
+Sau khi hoàn thành lab này, sinh viên có thể:
+1. Giải thích cấu trúc của 1 CAN frame (SOF, ID, DLC, data, CRC, ACK, EOF)
+2. Phân biệt MS-CAN (125kbps) vs HS-CAN (500kbps) trên xe Ford
+3. Sử dụng app BKDiagnostic + STM32 gateway để sniff bus passive
+4. Sử dụng filter TX/RX trong Raw Monitor mới
+5. Xuất file CSV với cột DIRECTION + SOURCE và phân tích traffic patterns
+
+### Thiết bị
+- Cluster Ford Ranger + BCM Ford Ranger + STM32 + MCP2515 + Android phone
+- Termination 120Ω 2 đầu bus MS-CAN
+
+### Thời lượng
+5 tiết (4h): Pre-quiz 15' → Theory 20' → Hands-on 2.5h → Post-quiz 30' → Report 30'$md$,
+    1, 70, true
+)
+ON CONFLICT (code) DO UPDATE SET
+    title                   = EXCLUDED.title,
+    description             = EXCLUDED.description,
+    order_index             = EXCLUDED.order_index,
+    pre_quiz_pass_threshold = EXCLUDED.pre_quiz_pass_threshold,
+    is_published            = EXCLUDED.is_published,
+    updated_at              = now();
+
+-- ── LAB-01 Steps (8) ───────────────────────────────────────────────────────
+
+-- LAB-01 Step 1 — Setup bench + safety check
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    1,
+    'Setup bench + safety check',
+    $md$### Mục tiêu
+Sinh viên kiểm tra setup bench an toàn trước khi cấp nguồn cho hệ thống.
+
+### Các bước
+1. Kiểm tra nguồn 12V đấu đúng cực (+/−) vào BCM Ford Ranger
+2. USB cable từ Android tới CP2102 cắm chắc chắn, không lỏng
+3. Termination resistor 120Ω được gắn đủ ở **cả 2 đầu** bus MS-CAN
+4. Ghi checklist trước khi cấp nguồn
+
+### Lưu ý
+- Đấu sai cực 12V có thể làm hỏng BCM ngay lập tức — kiểm tra kỹ bằng đồng hồ trước khi cắm
+- Submit: checkbox "Safety check passed"$md$,
+    'none',
+    0,
+    'Dùng đồng hồ VOM đo cực BCM trước khi cấp nguồn — đỏ vào (+12V), đen vào GND.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Step 2 — Verify USB & STM32 boot
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    2,
+    'Verify USB & STM32 boot',
+    $md$### Mục tiêu
+Xác nhận kết nối Android ↔ STM32 ↔ MCP2515 hoạt động bình thường.
+
+### Các bước
+1. Cắm Android vào CP2102 → mở app BKDiagnostic → vào màn hình **Diagnostic Hub**
+2. Quan sát status bar trên cùng: phải hiển thị "**ONLINE**" màu xanh
+3. Quan sát LED trên board STM32: nháy 3× chậm (3 nháy dài) → MCP2515 init OK
+
+### Lưu ý
+- Nếu status bar đỏ "OFFLINE" → kiểm tra cable USB OTG + permission USB cho app
+- Nếu LED STM32 nháy nhanh liên tục → MCP2515 init fail, kiểm tra dây SPI
+- Submit: screenshot Diagnostic Hub với status ONLINE$md$,
+    'screenshot',
+    1,
+    'Status bar ONLINE màu xanh nằm trên cùng màn hình Diagnostic Hub.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Step 3 — Configure bus speed & enter Raw Monitor
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    3,
+    'Configure bus speed & enter Raw Monitor',
+    $md$### Mục tiêu
+Cấu hình bus speed 125 kbps (MS-CAN) và mở Raw Frame Monitor sẵn sàng sniff.
+
+### Các bước
+1. Vào **Settings → CAN Bus Speed** → chọn **125 kbps** (MS-CAN cho Ford Ranger PX2)
+2. Quay lại Diagnostic → mở **Raw Frame Monitor**
+3. App tự gửi frame `FRAME_SET_BAUD` → STM32 reconfigure MCP2515 ở tốc độ mới
+
+### Lưu ý
+- Sai tốc độ bus → không sniff được frame nào, hoặc nhận toàn frame lỗi CRC
+- HS-CAN của Ford Ranger chạy 500 kbps — KHÔNG chọn nhầm
+- Submit: screenshot Raw Monitor đang ở trạng thái "RESUME" + connection ONLINE$md$,
+    'screenshot',
+    1,
+    'Settings → CAN Bus Speed → 125 kbps. Sau đó vào Raw Monitor và screenshot.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Step 4 — Passive sniff 2 phút
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    4,
+    'Passive sniff 2 phút',
+    $md$### Mục tiêu
+Capture ≥ 200 raw frames passive (không gửi gì) trong 2 phút để quan sát traffic background.
+
+### Các bước
+1. Nhấn **RESUME** → bắt đầu capture frame
+2. Đợi đủ 2 phút (instructor có thể bật/tắt đèn pha BCM để giả lập sự kiện)
+3. Nhấn **STOP**
+4. Filter: chọn "**▼ Response**" (chỉ RX) — lab này quan sát traffic, không gửi gì
+
+### Lưu ý
+- Nếu < 200 frame sau 2 phút → có thể bus không có thiết bị active broadcast → gọi instructor
+- App tự upload raw_frames evidence khi nhấn STOP
+- Submit: ≥ 200 raw frames$md$,
+    'raw_frames',
+    200,
+    'Nhấn RESUME, đợi 2 phút, nhấn STOP. App tự upload evidence.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Step 5 — Identify periodic broadcast IDs
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    5,
+    'Identify periodic broadcast IDs',
+    $md$### Mục tiêu
+Tìm và phân loại các CAN ID xuất hiện đều đặn (periodic broadcast) trên bus.
+
+### Các bước
+1. Trong Raw Monitor đã pause (sau Step 4): tìm các CAN ID xuất hiện đều đặn
+2. Quan sát cột **DELAY_MS** để tính period cho ít nhất 3 ID
+3. Ghi vào bảng giấy hoặc app notes:
+
+| CAN ID | Period (ms) | Suspected function |
+|--------|-------------|---------------------|
+| 0x430  | ~10         | Engine speed?       |
+| 0x...  | ~...        | ...                 |
+
+### Lưu ý
+- Period điển hình trên xe: 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s
+- Submit: screenshot bảng + Raw Monitor với 3 ID đã được khoanh tròn$md$,
+    'screenshot',
+    1,
+    'Sort theo CAN ID, đọc cột DELAY_MS để biết period giữa 2 frame liên tiếp cùng ID.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Step 6 — Compare cluster vs BCM sources
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    6,
+    'Compare cluster vs BCM sources',
+    $md$### Mục tiêu
+Phân biệt CAN ID nào do BCM phát, ID nào do cluster phát bằng cách disconnect/reconnect BCM.
+
+### Các bước
+1. Instructor disconnect dây CAN_H đến BCM trong 30 giây
+2. Sinh viên quan sát Raw Monitor: ID nào biến mất → đó là từ **BCM**
+3. ID còn lại → của **cluster** (hoặc node khác)
+4. Sau khi reconnect, capture thêm 30 giây nữa
+5. Filter "**Both**" để thấy đầy đủ TX + RX
+
+### Lưu ý
+- Chỉ instructor được tháo dây — sinh viên KHÔNG tự tháo (an toàn bus)
+- Submit: raw frames (≥100) + ghi chú ID nào thuộc BCM, ID nào thuộc cluster$md$,
+    'raw_frames',
+    100,
+    'Khi BCM disconnect: ID của BCM sẽ ngừng xuất hiện trong stream. Ghi lại các ID đó.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Step 7 — Export CSV & verify columns
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    7,
+    'Export CSV & verify columns',
+    $md$### Mục tiêu
+Xuất raw frames ra file CSV và verify 9 cột chuẩn của format mới (có DIRECTION + SOURCE).
+
+### Các bước
+1. Trong Raw Monitor: nhấn **EXPORT .CSV** → file lưu vào thư mục Downloads
+2. Mở file bằng Excel hoặc Google Sheets trên điện thoại
+3. Verify đủ 9 cột:
+   1. SEQ
+   2. TIME
+   3. TIMESTAMP_MS
+   4. **DIRECTION** (TX / RX)
+   5. **SOURCE** (gateway_rx / user_tx / gauge_event / ...)
+   6. ADDRESS
+   7. CAN_FRAME_HEX
+   8. DELAY_MS
+   9. DECODED
+
+### Lưu ý
+- Nếu thiếu cột DIRECTION hoặc SOURCE → app cũ, cần update lên v2
+- Submit: screenshot Excel/Sheets show CSV với 9 cột rõ ràng$md$,
+    'screenshot',
+    1,
+    'Mở file CSV từ Downloads bằng Sheets app, screenshot ngang để thấy đủ 9 cột.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Step 8 — Summary table
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    8,
+    'Summary table',
+    $md$### Mục tiêu
+Tổng hợp kết quả sniff thành 1 bảng summary để báo cáo.
+
+### Các bước
+Trên giấy hoặc app notes, vẽ bảng tổng kết với cột:
+
+| CAN ID | Period (ms) | Source (BCM/Cluster) | Suspected function |
+|--------|-------------|----------------------|---------------------|
+| 0xXXX  | 10          | BCM                  | Engine speed       |
+| ...    | ...         | ...                  | ...                |
+
+Liệt kê ít nhất 5 CAN ID đã quan sát được trong Step 4-6.
+
+### Lưu ý
+- Có thể chụp ảnh bảng viết tay hoặc gõ text trong app notes
+- Submit: screenshot bảng tổng kết$md$,
+    'screenshot',
+    1,
+    'Chụp ảnh bảng viết tay hoặc gõ trong Notes app cũng được, miễn đủ 4 cột và ≥ 5 dòng.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- ── LAB-01 Pre-quiz (5 questions) ──────────────────────────────────────────
+
+-- LAB-01 Pre-Q 1
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    'pre_lab', 1, 'multiple_choice',
+    'CAN frame chuẩn 11-bit có tối đa bao nhiêu CAN ID unique?',
+    '{"A":"256","B":"1024","C":"2048","D":"4096"}'::jsonb,
+    'C',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Pre-Q 2
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    'pre_lab', 2, 'multiple_choice',
+    'Trên Ford Ranger PX2, Instrument Cluster nằm trên bus nào?',
+    '{"A":"HS-CAN 500k","B":"MS-CAN 125k","C":"LIN bus","D":"FlexRay"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Pre-Q 3
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    'pre_lab', 3, 'multiple_choice',
+    'Termination resistor 120Ω cần đặt ở đâu?',
+    '{"A":"1 đầu bus","B":"Cả 2 đầu bus","C":"Giữa bus","D":"Không cần"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Pre-Q 4
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    'pre_lab', 4, 'multiple_choice',
+    'DLC = 5 nghĩa là gì?',
+    '{"A":"5 bit data","B":"5 byte data","C":"5 frame liên tiếp","D":"Frame ID = 5"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Pre-Q 5 (free_text)
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    'pre_lab', 5, 'free_text',
+    'Trong cơ chế arbitration của CAN, frame có CAN ID **thấp hơn** thắng hay thua? Giải thích 1-2 câu.',
+    NULL,
+    'thắng — vì bit 0 dominant, ID thấp hơn có nhiều bit 0 ở vị trí cao hơn nên thắng arbitration',
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- ── LAB-01 Post-quiz (3 questions) ─────────────────────────────────────────
+
+-- LAB-01 Post-Q 1
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    'post_lab', 1, 'free_text',
+    'Bao nhiêu unique CAN ID bạn quan sát được trong 2 phút sniff? Phân loại theo period (≤50ms / 50-200ms / >200ms).',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Post-Q 2
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    'post_lab', 2, 'free_text',
+    'Khi ngắt BCM khỏi bus, traffic giảm bao nhiêu %? Frame rate trước-sau là bao nhiêu?',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-01 Post-Q 3
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-01'),
+    'post_lab', 3, 'image_upload',
+    'Upload 1 screenshot bạn tâm đắc nhất trong quá trình lab + giải thích 2-3 câu',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
