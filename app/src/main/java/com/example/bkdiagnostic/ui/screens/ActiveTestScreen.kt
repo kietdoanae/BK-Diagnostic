@@ -555,12 +555,9 @@ fun ActiveTestScreen(
                     onSpeedChange  = viewModel::updateGaugeSpeed,
                     onStartStream  = {
                         viewModel.startGaugeStream(
-                            rpmCanId      = gaugeConfig.rpm?.canId,
-                            rpmScale      = gaugeConfig.rpm?.scaleFactor ?: 1,
-                            rpmStatusByte = gaugeConfig.rpm?.statusByte ?: 0,
-                            speedCanId    = gaugeConfig.speed?.canId,
-                            speedScale    = gaugeConfig.speed?.scaleFactor ?: 1,
-                            intervalMs    = gaugeConfig.intervalMs,
+                            rpm        = gaugeConfig.rpm,
+                            speed      = gaugeConfig.speed,
+                            intervalMs = gaugeConfig.intervalMs,
                         )
                     },
                     onStopStream  = {

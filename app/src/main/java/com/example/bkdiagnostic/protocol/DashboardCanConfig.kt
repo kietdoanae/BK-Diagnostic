@@ -30,17 +30,41 @@ object DashboardCanConfig {
     /**
      * Cấu hình streaming cho 1 đồng hồ kim (RPM/Speed).
      *
-     * Encoding:
-     *  - RPM:   Raw = value × scaleFactor → Byte[1]=High, Byte[2]=Low. Byte[0]=statusByte.
-     *  - Speed: Raw = value × scaleFactor → Byte[0]=High, Byte[1]=Low.
+     * Encoding template-based:
+     *   raw                       = round(value × scaleFactor)        // big-endian 16-bit
+     *   frame                     = template.copyOf()                 // 8 byte cố định
+     *   frame[highByteIndex]      = (raw shr 8) and 0xFF              // byte cao
+     *   frame[lowByteIndex]       =  raw        and 0xFF              // byte thấp
+     *
+     * Vd Ford Ranger:
+     *   RPM   (0x201): scaleFactor=0.5, template="00 00 00 00 00 00 00 00", hi=3, lo=4
+     *                 7000 rpm → raw=3500=0x0DAC → byte3=0x0D, byte4=0xAC
+     *   Speed (0x202): scaleFactor=100, template="00 00 00 00 F0 00 00 00", hi=6, lo=7
+     *                 100 km/h → raw=10000=0x2710 → byte6=0x27, byte7=0x10
      */
     data class GaugeEntry(
         val canId: Int,
         val maxValue: Int,
-        val scaleFactor: Int,
-        val statusByte: Byte = 0x00,
+        val scaleFactor: Float,
+        val template: ByteArray = ByteArray(8),
+        val highByteIndex: Int = 0,
+        val lowByteIndex: Int = 1,
         val label: String = ""
-    )
+    ) {
+        /**
+         * Encode 1 giá trị (RPM hoặc km/h) thành 8-byte CAN payload theo template.
+         */
+        fun encode(value: Int): ByteArray {
+            val raw = (value.coerceAtLeast(0) * scaleFactor).toInt().coerceIn(0, 0xFFFF)
+            val data = template.copyOf()
+            if (highByteIndex in 0..7) data[highByteIndex] = ((raw shr 8) and 0xFF).toByte()
+            if (lowByteIndex in 0..7)  data[lowByteIndex]  = ( raw         and 0xFF).toByte()
+            return data
+        }
+
+        override fun equals(other: Any?) = other is GaugeEntry && canId == other.canId
+        override fun hashCode() = canId
+    }
 
     /**
      * Cấu hình tổng cho gauge streaming.
@@ -138,12 +162,34 @@ object DashboardCanConfig {
         return try {
             val canId = parseHexInt(obj.getString("canId"))
             if (canId == 0) return null
+
+            // scaleFactor: hỗ trợ Float (vd 0.5 cho RPM/2) hoặc Int (vd 100 cho speed*100)
+            val scaleFactor = obj.optDouble("scaleFactor", 1.0).toFloat()
+
+            // Template: 8-byte payload base. Mặc định all-zero nếu không khai báo.
+            val template = obj.optString("template", "").let { s ->
+                if (s.isBlank()) ByteArray(8) else parseHexBytes(s)
+            }
+
+            // Vị trí byte chứa MSB/LSB của raw value. Mặc định byte 0,1 (legacy).
+            val highByteIndex = obj.optInt("highByteIndex", 0).coerceIn(0, 7)
+            val lowByteIndex  = obj.optInt("lowByteIndex",  1).coerceIn(0, 7)
+
+            // Legacy: statusByte chèn vào template tại byte 0 nếu được khai báo
+            //         (giữ backward-compat với config cũ chưa có template).
+            val statusByteHex = obj.optString("statusByte", "")
+            if (statusByteHex.isNotBlank()) {
+                template[0] = parseHexInt(statusByteHex).toByte()
+            }
+
             GaugeEntry(
-                canId = canId,
-                maxValue = obj.optInt("maxValue", 8000),
-                scaleFactor = obj.optInt("scaleFactor", 1),
-                statusByte = parseHexInt(obj.optString("statusByte", "0x00")).toByte(),
-                label = obj.optString("_label", "")
+                canId          = canId,
+                maxValue       = obj.optInt("maxValue", 8000),
+                scaleFactor    = scaleFactor,
+                template       = template,
+                highByteIndex  = highByteIndex,
+                lowByteIndex   = lowByteIndex,
+                label          = obj.optString("_label", "")
             )
         } catch (e: Exception) {
             Log.w(TAG, "Lỗi parse gauge entry: ${e.message}")

@@ -570,7 +570,7 @@
       "btnExplore": "Khám phá kiến trúc →",
       "btnLab": "Xem hệ thống Lab",
       "imgAlt": "Sa bàn thực hành CAN bus tại phòng lab Bộ môn Kỹ thuật Ô tô",
-      "imgCaption": "Hình 1 — Sa bàn thực hành CAN bus tại phòng lab Bộ môn Kỹ thuật Ô tô, Khoa Kỹ thuật Giao thông HCMUT."
+      "imgCaption": ""
     },
     "metrics": {
       "brands": "Hãng xe\nhỗ trợ",
@@ -586,7 +586,7 @@
       "p2": "Đồ án xây dựng một hệ thống mở cho phòng thí nghiệm: phần cứng tự thiết kế dùng\nlinh kiện phổ thông, mã nguồn được cung cấp đầy đủ, đi kèm tài liệu thực hành 6\nbuổi học từ cơ bản đến nâng cao.",
       "p3": "Phạm vi triển khai bao gồm xe Ford Ranger 2.0L Bi-Turbo (2018–2024) làm đối tượng\nthực nghiệm, hỗ trợ chuẩn OBD-II và mở rộng sang UDS Mode 22 với các DID đặc thù\ncủa Ford.",
       "imgAlt": "Sơ đồ bối cảnh: Vấn đề → Giải pháp → Mục tiêu",
-      "imgCaption": "Hình 2 — Sơ đồ bối cảnh: Vấn đề → Giải pháp → Mục tiêu."
+      "imgCaption": ""
     },
     "architecture": {
       "eyebrow": "KIẾN TRÚC",
@@ -617,8 +617,7 @@
       "componentsTitle": "Thành phần",
       "components": [
         "STM32F103C8T6 — Vi điều khiển Cortex-M3, 72 MHz, 64 KB Flash",
-        "MCP2515 — Bộ điều khiển CAN 2.0B, giao tiếp SPI",
-        "TJA1050 — CAN transceiver chuẩn ISO 11898, tốc độ tới 1 Mbps",
+        "MCP2515 — Module CAN 2.0B tích hợp transceiver, giao tiếp SPI",
         "CP2102 — Cầu USB-UART Silicon Labs, driver có sẵn Android",
         "Khối nguồn — 12 V DC → 5 V (LM7805) → 3.3 V (AMS1117)"
       ],
@@ -649,7 +648,7 @@
         "ISO-TP 15765-2 — Truyền payload >8 byte qua CAN"
       ],
       "imgAlt": "Mạch in giao tiếp CAN bus, kích thước 50×40 mm",
-      "imgCaption": "Hình 4 — Mạch in giao tiếp CAN bus, kích thước 50×40 mm."
+      "imgCaption": ""
     },
     "mobile": {
       "eyebrow": "TRỤ CỘT 2 · MOBILE APP",
@@ -672,7 +671,7 @@
         { "num": "3", "label": "Post-lab", "sub": "5 câu, 3 phút" },
         { "num": "4", "label": "Báo cáo PDF", "sub": "sinh tự động" }
       ],
-      "screensCaption": "Hình 5 — Ba màn hình chính của ứng dụng."
+      "screensCaption": ""
     },
     "webPillar": {
       "eyebrow": "TRỤ CỘT 3 · WEB PLATFORM",
@@ -701,7 +700,7 @@
         { "key": "logs", "label": "Logs" }
       ],
       "imgAlt": "Trang Admin Dashboard, tab quản lý phiên học",
-      "imgCaption": "Hình 6 — Trang Admin Dashboard, tab quản lý phiên học."
+      "imgCaption": ""
     },
     "useCase": {
       "eyebrow": "USE CASE",
@@ -724,7 +723,7 @@
         {
           "icon": "⚡",
           "title": "PHẦN CỨNG",
-          "items": ["STM32 HAL · ngôn ngữ C", "MCP2515 · TJA1050", "CAN ISO 11898-1", "STM32CubeIDE"]
+          "items": ["STM32 HAL · ngôn ngữ C", "Module CAN MCP2515", "CAN ISO 11898-1", "STM32CubeIDE"]
         },
         {
           "icon": "📱",
@@ -758,7 +757,7 @@
       "advisorAffiliation": "Bộ môn Kỹ thuật Ô tô · Khoa Kỹ thuật Giao thông · Trường Đại học Bách khoa, ĐHQG-HCM"
     },
     "pipeline": {
-      "caption": "Hình 3 — Pipeline dữ liệu từ xe đến cloud."
+      "caption": ""
     },
     "footer": {
       "description": "Hệ thống chẩn đoán xe và đào tạo CAN bus.\nĐồ án tốt nghiệp ngành Kỹ thuật Ô tô.",

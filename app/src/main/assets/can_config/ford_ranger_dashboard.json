@@ -12,24 +12,56 @@
     "canId và canData cần tra cứu từ tài liệu kỹ thuật (workshop manual) hoặc FORScan DID list."
   ],
 
+  "_missing_icons_todo": [
+    "Các đèn/chức năng có CAN frame trong tài liệu nhưng CHƯA có SVG/vị trí trên app — bổ sung sau:",
+    "  • hand_brake     (Phanh tay)               CAN 0x3C3  ON: 4C 48 10 01 10 00 00 02  OFF: 4C 48 00 01 10 00 00 02",
+    "  • hill_descent   (Cảnh báo trơn trượt + Hill descent) CAN 0x416  ON: 40 00 02 12 00 E3 80 02",
+    "  • turn_left      (Si nhan trái)            CAN 0x3B3  ON: 44 88 C0 0C 18 50 00 C2  OFF: 44 88 C0 0C E6 00 00 02",
+    "  • turn_right     (Si nhan phải)            CAN 0x3B3  ON: 44 88 C0 0C 10 50 40 02  OFF: 44 88 C0 0C E6 00 00 02",
+    "  • fog_lamp       (Đèn sương mù — base, có thể kèm cờ cửa ở byte 6/7)",
+    "  • door_rear_l    (Cửa sau trái mở)         CAN 0x3B3  ON: 44 88 C0 0C E6 00 01 01",
+    "  • door_rear_r    (Cửa sau phải mở)         CAN 0x3B3  ON: 44 88 C0 0C E6 00 02 01",
+    "  • door_rear_lr   (Cả 2 cửa sau)            CAN 0x3B3  ON: 44 88 C0 0C E6 00 03 01",
+    "  • door_driver    (Cửa tài mở)              CAN 0x3B3  ON: 44 88 C0 0C E6 00 00 11",
+    "  • door_passenger (Cửa phụ mở)              CAN 0x3B3  ON: 44 88 C0 0C E6 00 00 21",
+    "  • door_front_lr  (Cả 2 cửa trước)          CAN 0x3B3  ON: 44 88 C0 0C E6 00 00 31",
+    "  • gear_d         (Chỉnh số D)              CAN 0x171  ON: 34 60 00 00 00 00 00 00"
+  ],
+
   "gauges": {
     "_doc": "Gauge Control — điều khiển kim đồng hồ RPM/Speed bằng CAN broadcast liên tục",
-    "_encoding_rpm": "Raw = RPM × scaleFactor → Byte[1]=High, Byte[2]=Low. Byte[0]=statusByte",
-    "_encoding_speed": "Raw = Speed × scaleFactor → Byte[0]=High, Byte[1]=Low",
+    "_schema": [
+      "Mỗi gauge encode theo công thức:",
+      "  raw            = round(value * scaleFactor)         (Int 16-bit, big-endian)",
+      "  frame          = template (8 byte cố định)",
+      "  frame[highByteIndex] = (raw >> 8) & 0xFF            (byte cao)",
+      "  frame[lowByteIndex]  =  raw       & 0xFF            (byte thấp)",
+      "Cho phép tùy biến vị trí byte chứa giá trị cho từng loại xe."
+    ],
 
     "rpm": {
-      "_label": "Vòng tua máy (Tachometer)",
+      "_label": "Vòng tua máy (Tachometer) — Ford Ranger",
+      "_formula": "RPM/2 → 0x0xxx → bytes 3,4. Vd: 7000 rpm → 3500 → 0x0DAC → byte3=0x0D, byte4=0xAC.",
       "canId": "0x201",
       "maxValue": 8000,
-      "scaleFactor": 4,
-      "statusByte": "0x01"
+      "scaleFactor": 0.5,
+      "template":      "00 00 00 00 00 00 00 00",
+      "highByteIndex": 3,
+      "lowByteIndex":  4
     },
+
     "speed": {
-      "_label": "Tốc độ xe (Speedometer)",
-      "canId": "0x300",
+      "_label": "Tốc độ xe (Speedometer) — Ford Ranger",
+      "_formula": "Frame: 00 00 00 00 F0 00 XX YY. raw = speed*100; byte6=hi, byte7=lo. Vd: 100km/h → 10000 = 0x2710 → byte6=0x27, byte7=0x10.",
+      "_optimization": "Bảng gốc đề xuất byte7=0xFF cố định ⇒ độ phân giải 2.56 km/h + sai số rounding. Dùng byte7 = LSB(raw) thay vì cố định 0xFF giúp đạt độ phân giải 0.01 km/h.",
+      "canId": "0x202",
       "maxValue": 240,
-      "scaleFactor": 100
+      "scaleFactor": 100,
+      "template":      "00 00 00 00 F0 00 00 00",
+      "highByteIndex": 6,
+      "lowByteIndex":  7
     },
+
     "intervalMs": 100
   },
 
@@ -37,13 +69,15 @@
 
     "high_beam": {
       "_label": "Đèn pha (High Beam)",
-      "canId": "0x7A0",
-      "canData":    "06 2F D0 21 03 01 00 00",
-      "canDataOff": "05 2F D0 21 00 00 00 00"
+      "_note": "Bảng v2 (broadcast injection trên 0x3C3) — thay cho UDS 0x7A0 trước đây.",
+      "canId": "0x3C3",
+      "canData":    "01 48 10 01 10 00 00 02",
+      "canDataOff": "00 48 00 01 10 00 00 02"
     },
 
     "lamp_on": {
       "_label": "Đèn cos / Đèn bật (Low Beam / Lamp On)",
+      "_note": "Chưa có trong bảng v2 — giữ UDS cũ làm fallback.",
       "canId": "0x7A0",
       "canData":    "06 2F D0 20 03 01 00 00",
       "canDataOff": "05 2F D0 20 00 00 00 00"
@@ -51,6 +85,7 @@
 
     "seat_belt": {
       "_label": "Dây an toàn (Seatbelt Warning)",
+      "_note": "Chưa có dữ liệu CAN — bổ sung sau.",
       "canId": "0x000",
       "canData":    "00 00 00 00 00 00 00 00",
       "canDataOff": "00 00 00 00 00 00 00 00"
@@ -58,13 +93,14 @@
 
     "tire": {
       "_label": "Áp suất lốp (TPMS)",
-      "canId": "0x000",
-      "canData":    "00 00 00 00 00 00 00 00",
-      "canDataOff": "00 00 00 00 00 00 00 00"
+      "canId": "0x3B4",
+      "canData":    "88 07 00 00 00 00 00 00",
+      "canDataOff": "00 07 00 00 00 00 00 00"
     },
 
     "battery": {
       "_label": "Ắc quy / Alternator",
+      "_note": "Chưa có dữ liệu CAN — bổ sung sau.",
       "canId": "0x000",
       "canData":    "00 00 00 00 00 00 00 00",
       "canDataOff": "00 00 00 00 00 00 00 00"
@@ -72,20 +108,21 @@
 
     "engine_chk": {
       "_label": "Check Engine (MIL)",
-      "canId": "0x000",
-      "canData":    "00 00 00 00 00 00 00 00",
-      "canDataOff": "00 00 00 00 00 00 00 00"
+      "canId": "0x421",
+      "canData":    "0C 4A 06 12 00 50 00 02",
+      "canDataOff": "00 4A 06 12 00 50 00 02"
     },
 
     "airbag": {
       "_label": "Túi khí (Airbag / SRS)",
-      "canId": "0x000",
-      "canData":    "00 00 00 00 00 00 00 00",
-      "canDataOff": "00 00 00 00 00 00 00 00"
+      "canId": "0x04C",
+      "canData":    "40 AF FF 12 00 50 00 02",
+      "canDataOff": "00 AF FF 12 00 50 00 02"
     },
 
     "engine": {
       "_label": "Lỗi động cơ (Engine Malfunction)",
+      "_note": "Trùng chức năng với engine_chk — chưa có dữ liệu riêng, dùng tạm OFF frame của MIL.",
       "canId": "0x000",
       "canData":    "00 00 00 00 00 00 00 00",
       "canDataOff": "00 00 00 00 00 00 00 00"
@@ -93,6 +130,7 @@
 
     "overheat": {
       "_label": "Quá nhiệt động cơ (Engine Overheat)",
+      "_note": "Chưa có dữ liệu CAN — bổ sung sau.",
       "canId": "0x000",
       "canData":    "00 00 00 00 00 00 00 00",
       "canDataOff": "00 00 00 00 00 00 00 00"
@@ -100,27 +138,29 @@
 
     "abs": {
       "_label": "ABS (Anti-lock Braking System)",
-      "canId": "0x000",
-      "canData":    "00 00 00 00 00 00 00 00",
-      "canDataOff": "00 00 00 00 00 00 00 00"
+      "canId": "0x416",
+      "canData":    "40 00 02 12 00 50 80 02",
+      "canDataOff": "40 00 02 12 00 00 00 02"
     },
 
     "brake": {
       "_label": "Cảnh báo phanh (Brake Warning)",
+      "_note": "Chưa có dữ liệu CAN — bổ sung sau (xem hand_brake trong _missing_icons_todo).",
       "canId": "0x000",
       "canData":    "00 00 00 00 00 00 00 00",
       "canDataOff": "00 00 00 00 00 00 00 00"
     },
 
     "stability": {
-      "_label": "Ổn định thân xe (ESC / Traction Control)",
-      "canId": "0x000",
-      "canData":    "00 00 00 00 00 00 00 00",
-      "canDataOff": "00 00 00 00 00 00 00 00"
+      "_label": "Cân bằng điện tử (ESC / Traction Control)",
+      "canId": "0x416",
+      "canData":    "40 00 02 12 00 50 00 02",
+      "canDataOff": "40 00 02 12 00 00 00 02"
     },
 
     "oil": {
       "_label": "Áp suất dầu (Oil Pressure Warning)",
+      "_note": "Chưa có dữ liệu CAN — bổ sung sau.",
       "canId": "0x000",
       "canData":    "00 00 00 00 00 00 00 00",
       "canDataOff": "00 00 00 00 00 00 00 00"
@@ -128,6 +168,7 @@
 
     "fuel": {
       "_label": "Mức nhiên liệu (Low Fuel Warning)",
+      "_note": "Chưa có dữ liệu CAN — bổ sung sau.",
       "canId": "0x000",
       "canData":    "00 00 00 00 00 00 00 00",
       "canDataOff": "00 00 00 00 00 00 00 00"

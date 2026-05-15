@@ -570,7 +570,7 @@
       "btnExplore": "Explore Architecture →",
       "btnLab": "View Lab System",
       "imgAlt": "CAN bus practice workbench at the Automotive Engineering lab",
-      "imgCaption": "Figure 1 — CAN bus practice workbench at the Automotive Engineering lab, Faculty of Transportation Engineering, HCMUT."
+      "imgCaption": ""
     },
     "metrics": {
       "brands": "Car brands\nsupported",
@@ -586,7 +586,7 @@
       "p2": "This project builds an open system for the laboratory: self-designed hardware using\nreadily available components, fully provided source code, accompanied by practice documentation\nfor 6 sessions from basic to advanced.",
       "p3": "The implementation scope includes a Ford Ranger 2.0L Bi-Turbo (2018–2024) as the\ntest subject, supporting OBD-II standard and extending to UDS Mode 22 with Ford-specific\nDIDs.",
       "imgAlt": "Context diagram: Problem → Solution → Goal",
-      "imgCaption": "Figure 2 — Context diagram: Problem → Solution → Goal."
+      "imgCaption": ""
     },
     "architecture": {
       "eyebrow": "ARCHITECTURE",
@@ -617,8 +617,7 @@
       "componentsTitle": "Components",
       "components": [
         "STM32F103C8T6 — Cortex-M3 MCU, 72 MHz, 64 KB Flash",
-        "MCP2515 — CAN 2.0B Controller, SPI interface",
-        "TJA1050 — ISO 11898 CAN transceiver, up to 1 Mbps",
+        "MCP2515 — CAN 2.0B module with integrated transceiver, SPI interface",
         "CP2102 — Silicon Labs USB-UART bridge, Android drivers included",
         "Power supply — 12 V DC → 5 V (LM7805) → 3.3 V (AMS1117)"
       ],
@@ -649,7 +648,7 @@
         "ISO-TP 15765-2 — Payload transmission >8 bytes over CAN"
       ],
       "imgAlt": "CAN bus interface PCB, 50×40 mm",
-      "imgCaption": "Figure 4 — CAN bus interface PCB, 50×40 mm."
+      "imgCaption": ""
     },
     "mobile": {
       "eyebrow": "PILLAR 2 · MOBILE APP",
@@ -672,7 +671,7 @@
         { "num": "3", "label": "Post-lab", "sub": "5 questions, 3 min" },
         { "num": "4", "label": "PDF Report", "sub": "auto-generated" }
       ],
-      "screensCaption": "Figure 5 — Three main screens of the application."
+      "screensCaption": ""
     },
     "webPillar": {
       "eyebrow": "PILLAR 3 · WEB PLATFORM",
@@ -701,7 +700,7 @@
         { "key": "logs", "label": "Logs" }
       ],
       "imgAlt": "Admin Dashboard, session management tab",
-      "imgCaption": "Figure 6 — Admin Dashboard, session management tab."
+      "imgCaption": ""
     },
     "useCase": {
       "eyebrow": "USE CASE",
@@ -724,7 +723,7 @@
         {
           "icon": "⚡",
           "title": "HARDWARE",
-          "items": ["STM32 HAL · C language", "MCP2515 · TJA1050", "CAN ISO 11898-1", "STM32CubeIDE"]
+          "items": ["STM32 HAL · C language", "MCP2515 CAN module", "CAN ISO 11898-1", "STM32CubeIDE"]
         },
         {
           "icon": "📱",
@@ -758,7 +757,7 @@
       "advisorAffiliation": "Dept. of Automotive Engineering · Faculty of Transportation Engineering · Ho Chi Minh City University of Technology, VNU-HCM"
     },
     "pipeline": {
-      "caption": "Figure 3 — Data pipeline from vehicle to cloud."
+      "caption": ""
     },
     "footer": {
       "description": "Vehicle diagnostics system and CAN bus training.\nAutomotive Engineering graduation project.",

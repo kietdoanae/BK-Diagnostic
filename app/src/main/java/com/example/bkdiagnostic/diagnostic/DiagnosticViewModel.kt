@@ -12,6 +12,7 @@ import com.example.bkdiagnostic.lab.LabModeState
 import com.example.bkdiagnostic.DiagnosticsSettings
 import com.example.bkdiagnostic.communication.CanFrame
 import com.example.bkdiagnostic.communication.UsbSerialManager
+import com.example.bkdiagnostic.protocol.DashboardCanConfig
 import com.example.bkdiagnostic.protocol.ProtocolConfig
 import com.example.bkdiagnostic.protocol.ProtocolRegistry
 import com.example.bkdiagnostic.protocol.obd2.DtcCode
@@ -304,18 +305,18 @@ class DiagnosticViewModel(
 
     /**
      * Bắt đầu stream RPM + Speed liên tục theo chu kỳ [intervalMs].
+     * Mỗi frame encode bằng [DashboardCanConfig.GaugeEntry.encode] — vị trí byte
+     * & scaleFactor được lấy hoàn toàn từ JSON config.
+     *
      * Gọi [updateGaugeRpm] / [updateGaugeSpeed] để thay đổi giá trị real-time.
      */
     fun startGaugeStream(
-        rpmCanId: Int?,
-        rpmScale: Int,
-        rpmStatusByte: Byte,
-        speedCanId: Int?,
-        speedScale: Int,
+        rpm: DashboardCanConfig.GaugeEntry?,
+        speed: DashboardCanConfig.GaugeEntry?,
         intervalMs: Long = 100L,
     ) {
         if (_gaugeStreamActive.value) return
-        if (rpmCanId == null && speedCanId == null) {
+        if (rpm == null && speed == null) {
             _message.value = "Chưa cấu hình CAN ID cho RPM/Speed"
             return
         }
@@ -327,34 +328,24 @@ class DiagnosticViewModel(
             try {
                 var firstTick = true
                 while (isActive) {
-                    val rpm = gaugeRpm.value
-                    val speed = gaugeSpeed.value
+                    val rpmVal = gaugeRpm.value
+                    val speedVal = gaugeSpeed.value
 
-                    // ── RPM frame: [status][RPM_H][RPM_L][00][00][00][00][00] ──
-                    if (rpmCanId != null) {
-                        val raw = (rpm * rpmScale).coerceAtLeast(0)
-                        val data = ByteArray(8)
-                        data[0] = rpmStatusByte
-                        data[1] = ((raw shr 8) and 0xFF).toByte()
-                        data[2] = (raw and 0xFF).toByte()
-                        val rpmFrame = CanFrame(id = rpmCanId, dlc = 8, data = data)
-                        // Gauge delta logging: force log frame đầu tiên (event START)
+                    // ── RPM frame ─ encode theo template trong config ──
+                    if (rpm != null) {
+                        val rpmFrame = CanFrame(id = rpm.canId, dlc = 8, data = rpm.encode(rpmVal))
                         UnifiedRawFrameStore.addGaugeFrame(
-                            rpmFrame, GaugeKind.RPM, currentValue = rpm,
+                            rpmFrame, GaugeKind.RPM, currentValue = rpmVal,
                             force = firstTick
                         )
                         usbManager.sendFrame(rpmFrame)
                     }
 
-                    // ── Speed frame: [Speed_H][Speed_L][00][00][00][00][00][00] ──
-                    if (speedCanId != null) {
-                        val raw = (speed * speedScale).coerceAtLeast(0)
-                        val data = ByteArray(8)
-                        data[0] = ((raw shr 8) and 0xFF).toByte()
-                        data[1] = (raw and 0xFF).toByte()
-                        val speedFrame = CanFrame(id = speedCanId, dlc = 8, data = data)
+                    // ── Speed frame ─ encode theo template trong config ──
+                    if (speed != null) {
+                        val speedFrame = CanFrame(id = speed.canId, dlc = 8, data = speed.encode(speedVal))
                         UnifiedRawFrameStore.addGaugeFrame(
-                            speedFrame, GaugeKind.SPEED, currentValue = speed,
+                            speedFrame, GaugeKind.SPEED, currentValue = speedVal,
                             force = firstTick
                         )
                         usbManager.sendFrame(speedFrame)
