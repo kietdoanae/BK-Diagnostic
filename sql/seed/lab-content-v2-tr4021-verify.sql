@@ -92,3 +92,61 @@ SELECT 'LAB-06 pre-quiz' AS check_name, count(*) AS actual, 8 AS expected
 
 SELECT 'LAB-06 post-quiz' AS check_name, count(*) AS actual, 5 AS expected
   FROM public.lab_questions WHERE lab_id = (SELECT id FROM public.labs WHERE code = 'LAB-06') AND phase = 'post_lab';
+
+-- ════════════════════════════════════════════════════════════════════════════
+--  TR4021 v2 — Full integrity report
+-- ════════════════════════════════════════════════════════════════════════════
+
+-- 1. All labs published & ordered correctly
+SELECT 'Labs ordered & published' AS check_name,
+       code, title, order_index, pre_quiz_pass_threshold, is_published
+  FROM public.labs
+ WHERE code LIKE 'LAB-0%'
+ ORDER BY order_index;
+
+-- 2. Evidence type distribution (sanity)
+SELECT 'Evidence types in use' AS check_name,
+       evidence_type, count(*) AS step_count
+  FROM public.lab_steps
+ WHERE lab_id IN (SELECT id FROM public.labs WHERE code LIKE 'LAB-0%')
+ GROUP BY evidence_type
+ ORDER BY evidence_type;
+
+-- 3. Required count totals per lab
+SELECT 'Evidence totals per lab' AS check_name,
+       l.code,
+       sum(CASE WHEN s.evidence_type = 'raw_frames'  THEN s.required_count ELSE 0 END) AS raw_frames_required,
+       sum(CASE WHEN s.evidence_type = 'active_test' THEN s.required_count ELSE 0 END) AS active_test_required,
+       sum(CASE WHEN s.evidence_type = 'screenshot' THEN s.required_count ELSE 0 END) AS screenshot_required
+  FROM public.labs l
+  JOIN public.lab_steps s ON s.lab_id = l.id
+ WHERE l.code LIKE 'LAB-0%'
+ GROUP BY l.code
+ ORDER BY l.code;
+
+-- 4. Question type distribution per lab
+SELECT 'Question types' AS check_name,
+       l.code, q.phase, q.question_type, count(*) AS qty
+  FROM public.labs l
+  JOIN public.lab_questions q ON q.lab_id = l.id
+ WHERE l.code LIKE 'LAB-0%'
+ GROUP BY l.code, q.phase, q.question_type
+ ORDER BY l.code, q.phase, q.question_type;
+
+-- 5. Multiple choice sanity — all MC must have non-NULL correct_answer
+SELECT 'MC missing correct_answer' AS check_name, count(*) AS actual, 0 AS expected
+  FROM public.lab_questions
+ WHERE question_type = 'multiple_choice'
+   AND (correct_answer IS NULL OR correct_answer = '');
+-- Expected: 0 rows missing
+
+-- 6. Final totals
+SELECT 'TOTAL' AS check_name,
+       (SELECT count(*) FROM public.labs WHERE code LIKE 'LAB-0%' AND is_published) AS labs,
+       (SELECT count(*) FROM public.lab_steps
+         WHERE lab_id IN (SELECT id FROM public.labs WHERE code LIKE 'LAB-0%')) AS steps,
+       (SELECT count(*) FROM public.lab_questions
+         WHERE lab_id IN (SELECT id FROM public.labs WHERE code LIKE 'LAB-0%')) AS questions;
+-- Expected: labs=6, steps=44, questions=61
+--   Steps: LAB-01 (8) + LAB-02 (8) + LAB-03 (8) + LAB-04 (7) + LAB-05 (7) + LAB-06 (6) = 44
+--   Questions: LAB-01 (5+3=8) + LAB-02 (6+4=10) + LAB-03 (7+4=11) + LAB-04 (5+4=9) + LAB-05 (6+4=10) + LAB-06 (8+5=13) = 61

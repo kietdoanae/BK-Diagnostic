@@ -2928,3 +2928,9 @@ ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
     correct_answer = EXCLUDED.correct_answer,
     points         = EXCLUDED.points,
     hint           = EXCLUDED.hint;
+
+COMMIT;
+
+-- ════════════════════════════════════════════════════════════════════════════
+--  End of TR4021 v2 seed. Run lab-content-v2-tr4021-verify.sql next.
+-- ════════════════════════════════════════════════════════════════════════════
