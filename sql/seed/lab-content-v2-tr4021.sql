@@ -920,3 +920,520 @@ ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
     correct_answer = EXCLUDED.correct_answer,
     points         = EXCLUDED.points,
     hint           = EXCLUDED.hint;
+
+-- ════════════════════════════════════════════════════════════════════════════
+--  LAB-03 — Mô phỏng Kim Đồng hồ & Hàm Truyền Sensor ⭐ FLAGSHIP (v2)
+-- ════════════════════════════════════════════════════════════════════════════
+
+INSERT INTO public.labs (code, title, description, order_index, pre_quiz_pass_threshold, is_published)
+VALUES (
+    'LAB-03',
+    'Mô phỏng Kim Đồng hồ & Hàm Truyền Sensor',
+    $md$### Mục tiêu học tập (TR4021 LO.1, LO.2, Ch.3, Ch.4.5)
+Sau khi hoàn thành lab này, sinh viên có thể:
+1. Hiểu nguyên lý sensor → CAN encoding: `Raw_Value = Sensor_Value × Scale_Factor`
+2. Giải mã byte order (high byte / low byte) và status byte
+3. Sử dụng Gauge Control mới để drive kim RPM và Speed
+4. Đo hàm truyền (transfer function) thực nghiệm, so sánh với lý thuyết
+5. Phân tích sai số calibration, latency, độ ổn định
+
+### Thiết bị
+- Cluster Ford Ranger + STM32 + MCP2515 + Android phone (BCM optional)
+
+### Thời lượng
+5 tiết (4h) — đây là FLAGSHIP lab, hands-on phức tạp nhất$md$,
+    3, 70, true
+)
+ON CONFLICT (code) DO UPDATE SET
+    title                   = EXCLUDED.title,
+    description             = EXCLUDED.description,
+    order_index             = EXCLUDED.order_index,
+    pre_quiz_pass_threshold = EXCLUDED.pre_quiz_pass_threshold,
+    is_published            = EXCLUDED.is_published,
+    updated_at              = now();
+
+-- ── LAB-03 Steps (8) ───────────────────────────────────────────────────────
+
+-- LAB-03 Step 1 — Open Gauge Control panel
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    1,
+    'Open Gauge Control panel',
+    $md$### Mục tiêu
+Mở panel Gauge Control mới — công cụ để drive kim RPM và Speed trên cluster Ford Ranger.
+
+### Các bước
+1. Vào màn hình **Active Test**
+2. Trên top bar, nhấn icon **GAUGE** màu tím
+3. Panel slide up từ dưới — chiếm ~60% chiều cao màn hình
+4. Quan sát layout:
+   - 2 digital display lớn: **RPM** (số đỏ) và **SPEED** (số xanh)
+   - 2 slider tương ứng (RPM 0-8000, Speed 0-200 km/h)
+   - Nút **START / STOP** stream + status pill
+5. Submit: screenshot panel với cả 2 slider visible
+
+### Lưu ý
+- Nếu không thấy icon GAUGE → cập nhật app lên version mới nhất (≥ v2.0)
+- Panel có thể vuốt xuống để đóng và mở lại nhiều lần — state không reset$md$,
+    'screenshot',
+    1,
+    'Active Test → top bar → icon GAUGE màu tím. Sau khi panel mở, screenshot toàn màn hình.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Step 2 — START stream & verify static RPM
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    2,
+    'START stream & verify static RPM',
+    $md$### Mục tiêu
+Khởi động luồng phát frame định kỳ tới cluster và verify cluster nhận được (kim đứng yên ở 0).
+
+### Các bước
+1. Set RPM = **0**, Speed = **0** (cả 2 slider về tận trái)
+2. Nhấn **START** → status pill chuyển sang "**STREAMING · 0**"
+3. Quan sát kim cluster: phải ở vị trí **0** (kim không nhảy lung tung)
+4. Mở Raw Monitor song song — quan sát:
+   - ~10 frame/s trên CAN ID **0x201** (RPM)
+   - ~10 frame/s trên CAN ID **0x300** (Speed)
+   - Tổng ~20 fps TX
+5. Filter source: frame đầu mỗi loại có source = **"gauge_event"**, các frame tiếp theo = **"gauge_delta"**
+6. Submit: ≥ 50 raw frames TX gauge
+
+### Lưu ý
+- Nếu status pill báo lỗi → check kết nối STM32 (status bar phải ONLINE)
+- Stream phải chạy liên tục — cluster timeout watchdog sẽ reset kim nếu mất frame > 500ms$md$,
+    'raw_frames',
+    50,
+    'Filter Raw Monitor theo CAN ID = 0x201 hoặc 0x300, hoặc filter source = gauge_event/gauge_delta.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Step 3 — Sweep RPM 0 → 3000 → 0
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    3,
+    'Sweep RPM 0 → 3000 → 0',
+    $md$### Mục tiêu
+Kéo slider RPM lên xuống và quan sát kim cluster di chuyển smooth — verify control loop hoạt động.
+
+### Các bước
+1. Đảm bảo stream đang chạy (status "STREAMING")
+2. Kéo slider **RPM** từ 0 lên **3000**, từng bước ~500 (dừng lại quan sát mỗi mốc)
+3. Quan sát: kim cluster di chuyển **smooth, theo realtime** (không nhảy giật)
+4. Verify: digital display trên app = giá trị slider
+5. Kéo slider từ 3000 về **0** từ từ
+6. Submit: ≥ 100 raw frames (delta logging chỉ log khi value thay đổi ≥ 50)
+
+### Lưu ý
+- Nếu kim cluster nhảy giật → có thể do bus collision hoặc tốc độ frame quá thấp
+- Delta logging giảm spam log — frame chỉ đẩy lên khi thay đổi đáng kể
+- Submit ≥ 100 raw frames thường tương đương với 1 full sweep up + down$md$,
+    'raw_frames',
+    100,
+    'Kéo từ tốn, mỗi nấc 500 RPM, dừng 2-3 giây. Tổng cộng ~30 giây sweep là đủ 100 frame.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Step 4 — Build calibration table
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    4,
+    'Build calibration table',
+    $md$### Mục tiêu
+Đo sai số calibration giữa giá trị slider (app) và vị trí kim thực trên cluster — xây bảng dữ liệu để vẽ transfer function ở Step 8.
+
+### Các bước
+1. Set RPM lần lượt: **500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7000**
+2. Mỗi giá trị: **đợi 5 giây stable** để kim cluster ổn định
+3. Đo: vị trí kim cluster (chụp ảnh thước trên cluster), so với giá trị app
+4. Đọc hex data từ Raw Monitor (frame CAN ID 0x201) tại thời điểm đó
+
+| Slider RPM | Kim cluster đọc | Sai số (%) | Hex data trên Raw Monitor |
+|------------|-----------------|------------|----------------------------|
+| 500        | ?               | ?          | `01 07 D0 00 ...`         |
+| 1000       | ?               | ?          | `01 0F A0 00 ...`         |
+| 3000       | ?               | ?          | `01 2E E0 00 ...`         |
+| 6000       | ?               | ?          | `01 5D C0 00 ...`         |
+
+5. Submit: screenshot bảng + ảnh kim cluster ở **3 mốc đại diện** (ví dụ 1000, 3000, 6000)
+
+### Lưu ý
+- Verify công thức: Raw = RPM × 4 → ví dụ 3000 × 4 = 12000 = 0x2EE0 → high=0x2E, low=0xE0
+- Byte[0] thường là status (0x01 = engine running)
+- Sai số > 5% → có thể cluster bị lệch calibration vật lý (chấp nhận được, ghi vào báo cáo)$md$,
+    'screenshot',
+    1,
+    'Pause Raw Monitor sau mỗi mốc để chép hex data chính xác. Chụp kim cluster bằng phone khác để khỏi che màn hình app.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Step 5 — Speed sweep tương tự
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    5,
+    'Speed sweep tương tự',
+    $md$### Mục tiêu
+Lặp lại Step 4 nhưng với slider Speed — verify hàm truyền của kênh tốc độ.
+
+### Các bước
+1. Stream vẫn đang chạy
+2. Set Speed lần lượt: **20, 40, 60, 80, 100, 120, 140, 160, 180, 200 km/h**
+3. Mỗi mốc: đợi 5 giây stable
+4. Đo vị trí kim **Speed** trên cluster, so với app
+5. Quan sát hex data Raw Monitor (CAN ID 0x300) — verify công thức Raw = Speed × 100
+   - Ví dụ: 80 km/h × 100 = 8000 = 0x1F40
+6. Submit: ≥ 80 raw frames
+
+### Lưu ý
+- Một số cluster Ford có max speed 240 km/h — không vượt quá để tránh overflow
+- Sai số kim Speed thường nhỏ hơn RPM (cluster bevel speedometer chính xác hơn tachometer)
+- Nếu kim Speed không nhúc nhích: check CAN ID 0x300 có thấy trên Raw Monitor không$md$,
+    'raw_frames',
+    80,
+    'Sweep tương tự Step 3: kéo slider Speed từ 0 → 200 → 0, từng nấc ~20 km/h.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Step 6 — Measure latency
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    6,
+    'Measure latency',
+    $md$### Mục tiêu
+Đo 2 tham số timing quan trọng của cluster: **damping latency** (kim chậm phản hồi) và **watchdog timeout** (thời gian cluster tự reset kim khi mất frame).
+
+### Các bước
+**Phần A — Damping**:
+1. Set RPM = **5000**, đợi kim ổn định
+2. Set slider về **0** đột ngột
+3. Đo thời gian từ lúc kéo slider đến khi kim cluster về 0 (~500-1000ms typical)
+
+**Phần B — Watchdog timeout**:
+1. Nhấn **START** → set RPM = **3000** → đợi 2 giây
+2. Nhấn **STOP** stream (KHÔNG kéo slider về 0)
+3. Đếm thời gian (giây) đến khi kim cluster **rớt về 0** do mất frame
+4. Expected: 500ms - 2 giây (Ford cluster typical)
+
+5. Submit: screenshot kèm ghi chú **"Damping = X ms, Watchdog timeout = Y giây"**
+
+### Lưu ý
+- Dùng stopwatch trên phone khác để đo chính xác, hoặc quay video rồi đếm frame
+- Watchdog timeout là tính năng an toàn: nếu sensor failure, cluster tự về 0 thay vì "freeze"
+- Nếu kim KHÔNG bao giờ rớt → có nguồn khác đang phát RPM lên bus (BCM hoặc ECU thực)$md$,
+    'screenshot',
+    1,
+    'Stopwatch trên phone thứ 2, hoặc record video 60 fps rồi đếm frame để có timing chính xác.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Step 7 — Edge case: RPM > maxValue
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    7,
+    'Edge case: RPM > maxValue',
+    $md$### Mục tiêu
+Test hành vi cluster khi nhận giá trị RPM vượt thang đo (over-range) — bài học về defensive coding và safety.
+
+### Các bước
+1. **Instructor giúp** sửa file JSON config: tạm thời nâng RPM maxValue lên **10000**
+2. Reload app → slider RPM giờ có range 0-10000
+3. Gửi RPM = **9000** → quan sát kim cluster
+4. Hành vi có thể xảy ra:
+   - **Pin pegged**: kim chạm vạch max và đứng yên
+   - **Wrap-around**: kim quay về 0 rồi tăng lên (overflow byte)
+   - **Blink / error light**: cluster báo lỗi sensor
+5. Ghi chú behavior vào notes
+6. Hết edge test → **restore maxValue về 8000** (quan trọng!)
+7. Submit: ≥ 20 raw frames + ghi chú behavior quan sát được
+
+### Lưu ý
+- Đây là bài học: app cần **clamp** giá trị input trước khi encode, KHÔNG để user gửi giá trị vô tội vạ
+- Trên xe thực, sensor failure có thể gây giá trị bất thường — ECU phải có giới hạn hợp lý
+- Nếu quên restore → student tiếp theo dùng app sẽ thấy range sai$md$,
+    'raw_frames',
+    20,
+    'Trong quá trình edge test, mở Raw Monitor và filter CAN ID 0x201 để capture 20 frame nhanh.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Step 8 — Plot transfer function
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    8,
+    'Plot transfer function',
+    $md$### Mục tiêu
+Vẽ đồ thị **hàm truyền (transfer function)** từ dữ liệu Step 4 — visualization là deliverable chính của flagship lab này.
+
+### Các bước
+1. Mở dữ liệu Step 4 (bảng RPM slider vs Kim cluster đọc)
+2. Vẽ đồ thị (vẽ tay trên giấy kẻ ô, hoặc Google Sheets / Excel / Desmos):
+   - **Trục X**: Slider RPM (giá trị app gửi)
+   - **Trục Y**: Kim cluster đọc thực (giá trị quan sát)
+3. Nối các điểm và **fit đường thẳng** (linear regression)
+4. Tính **slope** (độ dốc) của đường:
+   - Slope ≈ **1.0** nếu calibration đúng (kim đúng = app)
+   - Slope < 1.0 → cluster underreports (kim chỉ thấp hơn thực)
+   - Slope > 1.0 → cluster overreports
+5. Submit: screenshot đồ thị (kèm trục, scale, slope number)
+
+### Lưu ý
+- Đường có thể không hoàn toàn thẳng ở 2 đầu (0 và max) — hiện tượng nonlinearity
+- Lý tưởng: slope = 1.0, intercept = 0, R² > 0.99
+- Trong thực tế: sai số 2-5% là chấp nhận được cho cluster aftermarket bench
+- Đây là phương pháp **system identification** cơ bản trong điều khiển học$md$,
+    'screenshot',
+    1,
+    'Google Sheets: chèn 2 cột số (slider, đọc) → Insert → Chart → Scatter → Trendline với equation visible.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- ── LAB-03 Pre-quiz (7 questions) ──────────────────────────────────────────
+
+-- LAB-03 Pre-Q 1
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'pre_lab', 1, 'multiple_choice',
+    'Công thức encode RPM trên Ford Ranger?',
+    '{"A":"Raw = RPM / 4","B":"Raw = RPM × 4","C":"Raw = RPM × 2","D":"Raw = RPM × 8"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Pre-Q 2
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'pre_lab', 2, 'multiple_choice',
+    'Với RPM = 3000, byte high (Byte[1]) là gì? (gợi ý: 3000 × 4 = 12000 = 0x2EE0)',
+    '{"A":"0x1F","B":"0x2E","C":"0x3A","D":"0x4E"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Pre-Q 3
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'pre_lab', 3, 'multiple_choice',
+    'Byte order trên Ford MS-CAN cho RPM là gì?',
+    '{"A":"Little-endian","B":"Big-endian","C":"Mixed","D":"Không định nghĩa"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Pre-Q 4
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'pre_lab', 4, 'multiple_choice',
+    'Vì sao phải gửi RPM frame mỗi 100ms (chứ không phải 1 lần duy nhất)?',
+    '{"A":"Để tiết kiệm bus","B":"Vì cluster timeout watchdog reset kim về 0 nếu mất frame","C":"Vì CAN protocol yêu cầu","D":"Vì RPM thay đổi liên tục"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Pre-Q 5
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'pre_lab', 5, 'multiple_choice',
+    'Status byte (Byte[0]) trên frame RPM thường có ý nghĩa gì?',
+    '{"A":"RPM × 256","B":"Engine running flag","C":"Random","D":"Checksum"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Pre-Q 6 (free_text)
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'pre_lab', 6, 'free_text',
+    'Tính raw value (2 byte) để hiển thị RPM = 4500. Show your work.',
+    NULL,
+    '4500 × 4 = 18000 = 0x4650 → Byte[1]=0x46, Byte[2]=0x50',
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Pre-Q 7 (free_text)
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'pre_lab', 7, 'free_text',
+    'Speed = 80 km/h với scale factor 100. Encode thành 2 bytes (big-endian).',
+    NULL,
+    '80 × 100 = 8000 = 0x1F40 → Byte[0]=0x1F, Byte[1]=0x40',
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- ── LAB-03 Post-quiz (4 questions) ─────────────────────────────────────────
+
+-- LAB-03 Post-Q 1
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'post_lab', 1, 'free_text',
+    'Độ dốc (slope) đường truyền của bạn là bao nhiêu? Có gần 1.0 không? Nguyên nhân lệch (nếu có)?',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Post-Q 2
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'post_lab', 2, 'free_text',
+    'Watchdog timeout đo được là bao nhiêu giây? So với expected (500ms-2s) như thế nào?',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Post-Q 3
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'post_lab', 3, 'free_text',
+    'Đoán: nếu xe thực phát RPM với scale ÷4 mà app encode ×4 → sẽ thế nào? (gợi ý: kim sẽ chỉ sai 16 lần)',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-03 Post-Q 4
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-03'),
+    'post_lab', 4, 'image_upload',
+    'Upload đồ thị transfer function (Slider RPM vs Kim cluster đọc) — kèm trục, scale, slope number.',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
