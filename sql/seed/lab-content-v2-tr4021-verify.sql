@@ -82,3 +82,13 @@ SELECT 'LAB-05 pre-quiz' AS check_name, count(*) AS actual, 6 AS expected
 
 SELECT 'LAB-05 post-quiz' AS check_name, count(*) AS actual, 4 AS expected
   FROM public.lab_questions WHERE lab_id = (SELECT id FROM public.labs WHERE code = 'LAB-05') AND phase = 'post_lab';
+
+-- ── LAB-06 detailed check ──────────────────────────────────────────────────
+SELECT 'LAB-06 step count' AS check_name, count(*) AS actual, 6 AS expected
+  FROM public.lab_steps WHERE lab_id = (SELECT id FROM public.labs WHERE code = 'LAB-06');
+
+SELECT 'LAB-06 pre-quiz' AS check_name, count(*) AS actual, 8 AS expected
+  FROM public.lab_questions WHERE lab_id = (SELECT id FROM public.labs WHERE code = 'LAB-06') AND phase = 'pre_lab';
+
+SELECT 'LAB-06 post-quiz' AS check_name, count(*) AS actual, 5 AS expected
+  FROM public.lab_questions WHERE lab_id = (SELECT id FROM public.labs WHERE code = 'LAB-06') AND phase = 'post_lab';

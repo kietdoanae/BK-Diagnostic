@@ -2347,3 +2347,584 @@ ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
     correct_answer = EXCLUDED.correct_answer,
     points         = EXCLUDED.points,
     hint           = EXCLUDED.hint;
+
+-- ════════════════════════════════════════════════════════════════════════════
+--  LAB-06 — Quy trình Chẩn đoán Tổng hợp — Case Study (v2 — CAPSTONE)
+--  Vận dụng LAB-01 → LAB-05. GV inject fault, SV diagnose theo 3S/5S workflow.
+-- ════════════════════════════════════════════════════════════════════════════
+
+INSERT INTO public.labs (code, title, description, order_index, pre_quiz_pass_threshold, is_published)
+VALUES (
+    'LAB-06',
+    'Quy trình Chẩn đoán Tổng hợp — Case Study',
+    $md$### Mục tiêu học tập (TR4021 LO.1 → LO.6, Ch.4.5) — CAPSTONE
+Đây là bài **CAPSTONE** tổng hợp toàn bộ kiến thức LAB-01 đến LAB-05. Sau khi hoàn thành, sinh viên có thể:
+1. Vận dụng quy trình chẩn đoán 3S/5S (theo TR4021 Ch.5)
+2. Diagnose 3 fault scenarios do GV inject
+3. Document root cause + proposed fix + verification
+4. Viết PDF report đầy đủ theo template TR4021
+5. Trình bày group findings (oral, 5 phút/nhóm)
+
+### Tiền điều kiện
+- ✅ Đã hoàn thành LAB-01 đến LAB-05
+- ✅ Đã pass tất cả pre-quiz trước đó
+
+### Thiết bị
+- Cluster + BCM + STM32 + Android + Web platform
+- Multimeter (đo điện áp BCM)
+- File JSON config (instructor sẽ inject fault)
+
+### Thời lượng
+5 tiết (4h): Pre-quiz 15' → Hands-on 3h (3 case studies + free-form) → Group presentation 30' → Report 30'$md$,
+    6, 70, true
+)
+ON CONFLICT (code) DO UPDATE SET
+    title                   = EXCLUDED.title,
+    description             = EXCLUDED.description,
+    order_index             = EXCLUDED.order_index,
+    pre_quiz_pass_threshold = EXCLUDED.pre_quiz_pass_threshold,
+    is_published            = EXCLUDED.is_published,
+    updated_at              = now();
+
+-- ── LAB-06 Steps (6) ───────────────────────────────────────────────────────
+
+-- LAB-06 Step 1 — Initial bench check
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    1,
+    'Initial bench check — baseline trước khi GV inject fault',
+    $md$### Mục tiêu
+Xác nhận bench hoạt động bình thường **trước khi** GV inject fault — đây là baseline để so sánh và đảm bảo lỗi sau này thực sự do fault, không phải do setup sẵn có vấn đề.
+
+### Các bước
+1. Bật cluster + BCM + STM32, kết nối app qua BLE
+2. Mở **Raw Monitor** → quan sát traffic ổn định ~30-60 frame/s, không có ERROR frame (TYPE 0x03)
+3. Mở **Gauge Control** → kéo thử RPM=2000, Speed=60 → quan sát kim cluster lên đúng
+4. Mở **Active Test** → bật/tắt 1 đèn (vd low_beam) → quan sát BCM phản hồi PR (Positive Response)
+5. Status bar app: ONLINE (xanh), không toast/snackbar cảnh báo
+6. Submit: screenshot Raw Monitor với traffic ổn định + status bar ONLINE rõ ràng
+
+### Lưu ý
+- Bước này CHƯA có fault — chỉ là baseline
+- Nếu baseline đã lỗi (vd kim không lên, BCM không phản hồi) → báo GV NGAY, không tiếp tục
+- Sau khi GV xác nhận baseline OK → mới chuyển sang Step 2 (GV bắt đầu inject fault)$md$,
+    'screenshot',
+    1,
+    'Raw Monitor traffic đều + status bar ONLINE + kim cluster lên đúng khi test. Chưa có fault.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Step 2 — Case Study #1: Kim RPM không lên
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    2,
+    'Case Study #1 — Kim RPM không lên (JSON config fault)',
+    $md$### Triệu chứng (SV nhìn thấy)
+Mở **Gauge Control** → kéo RPM=3000 → kim RPM trên cluster **không lên** (vẫn nằm ở 0 hoặc idle). Speed, fuel, các gauge khác vẫn hoạt động bình thường.
+
+### GV inject (INSTRUCTOR ONLY — SV không thấy phần này)
+> Sửa `ford_ranger_dashboard.json`: đổi `gauges.rpm.canId` từ `0x201` (đúng) thành `0x205` (sai). Restart app để load config mới. Các gauge khác giữ nguyên.
+
+### Nhiệm vụ SV (theo 3S workflow)
+1. **SENSE**: Mở **Raw Monitor**, filter TX
+   - Kéo RPM=3000 → quan sát frame TX vừa gửi
+   - Ghi nhận CAN ID frame RPM = **0x205** (in hex)
+2. **SOLVE**:
+   - Đối chiếu tài liệu Ford Ranger MS-CAN (bảng CAN ID từ LAB-04) → đúng phải là **0x201** cho RPM
+   - Hypothesis: file JSON config bị sai canId
+3. **SHOW**:
+   - Mở file `ford_ranger_dashboard.json` (Settings → Edit Dashboard JSON)
+   - Sửa `gauges.rpm.canId` từ `0x205` → `0x201`
+   - Restart app (hoặc reload JSON)
+   - Verify: kéo RPM=3000 → kim lên đúng vị trí 3000 RPM
+4. Submit:
+   - ≥ 50 raw frames (gồm cả before fix với 0x205 và after fix với 0x201)
+   - 1 screenshot cluster với kim RPM lên đúng (after fix)
+
+### Tiêu chí pass
+- Raw frames có đủ 2 giai đoạn (trước & sau fix)
+- Screenshot final state: kim RPM ở vị trí 3000 (± 100)
+- Diagnostic note trong post-quiz mô tả đúng root cause (JSON canId sai)
+
+### Hints
+- Nếu không nhớ CAN ID đúng → xem bảng từ LAB-04 (DTC + Live Data) hoặc spec sheet Ford Ranger
+- Nếu sửa JSON xong vẫn không lên → kiểm tra app có reload config chưa (restart hẳn app)
+- Đây là lỗi "config-level", không phải "wiring" — không cần chạm phần cứng$md$,
+    'raw_frames',
+    50,
+    'Raw Monitor → ID RPM sai (0x205). Đúng là 0x201 (xem LAB-04 table). Sửa JSON → restart → verify.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Step 3 — Case Study #2: Cluster câm sau 5 phút
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    3,
+    'Case Study #2 — Cluster câm sau 5 phút (termination fault)',
+    $md$### Triệu chứng (SV nhìn thấy)
+Bench chạy bình thường ~5 phút. Đột nhiên cluster "câm" (kim đứng yên, đèn check engine sáng), app spam toast/snackbar liên tục về ERROR. Raw Monitor cho thấy chuỗi 4 ERROR frame xuất hiện liên tiếp.
+
+### GV inject (INSTRUCTOR ONLY — SV không thấy phần này)
+> Tháo lỏng (gần như hờ) 1 đầu termination resistor 120Ω ở cluster end. Tiếp xúc kém → sau vài phút bus sẽ vào BUS-OFF do CRC errors tăng dần.
+
+### Nhiệm vụ SV (theo 5S workflow)
+1. **SORT — liệt kê hiện tượng**:
+   - Cluster câm, kim đứng yên
+   - App spam ERROR toast
+   - Raw Monitor: chuỗi 4 ERROR frame **(0x20 → 0x21 → 0x22 → 0x24)** lặp lại
+2. **SET IN ORDER — priority**:
+   - Ưu tiên 1: hiểu các ERROR code (xem LAB-05) → BUS_WARNING → PASSIVE → BUS_OFF → RECOVERED
+   - Ưu tiên 2: root cause nào gây CRC errors? (termination, baud mismatch, noise, broken transceiver)
+3. **SHINE — clean inspection**:
+   - Kiểm tra vật lý từng đoạn dây: connector lỏng? termination resistor cố định chắc chưa?
+   - Tìm thấy: 1 termination ở cluster end **bị tháo lỏng** (gần như hờ)
+4. **STANDARDIZE — fix theo procedure**:
+   - Re-attach termination chắc chắn (2 đầu, mỗi đầu 120Ω song song = 60Ω tổng)
+   - Restart STM32 (power cycle) để reset error counters
+   - Quan sát Raw Monitor: ERROR frame ngừng xuất hiện, traffic trở lại bình thường
+5. **SUSTAIN — verify + document**:
+   - Chạy bench 5 phút nữa → không có ERROR frame mới → fault đã được sửa
+   - Ghi note: "Termination cluster end bị lỏng, đã re-attach"
+6. Submit: ≥ 80 raw frames bao gồm cả 4 ERROR frame (giai đoạn lỗi) + traffic ổn định (sau khi fix)
+
+### Tiêu chí pass
+- Log chứa đủ 4 ERROR frame (0x20, 0x21, 0x22, 0x24)
+- Log có giai đoạn sau fix (traffic ổn định ≥ 1 phút, không ERROR)
+- Diagnostic note trong post-quiz mô tả đúng root cause (termination lỏng)
+
+### Hints
+- 4 ERROR frame là chữ ký rất rõ của BUS-OFF event → ôn lại LAB-05
+- Termination phải **chắc** ở cả 2 đầu — chỉ cần 1 đầu lỏng đã đủ gây CRC errors
+- Nếu re-attach xong vẫn lỗi → kiểm tra cả connector D-Sub/Molex có oxy hóa không$md$,
+    'raw_frames',
+    80,
+    '4 ERROR frame (0x20→0x21→0x22→0x24) = chữ ký BUS-OFF. Kiểm tra termination physical, re-attach.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Step 4 — Case Study #3: Đèn pha không bật được
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    4,
+    'Case Study #3 — Đèn pha không bật được (NRC + voltage fault)',
+    $md$### Triệu chứng (SV nhìn thấy)
+Vào **Active Test** → nhấn nút "High Beam ON" → đèn pha **không sáng**. App hiện error "NRC 0x22 ConditionsNotCorrect". Các đèn khác (low beam, signal) cũng có thể bị tương tự.
+
+### GV inject (INSTRUCTOR ONLY — SV không thấy phần này)
+> Hạ điện áp cấp cho BCM xuống 8V (thay vì 12V chuẩn) — bằng cách dùng bench power supply điều chỉnh, hoặc kẹp diode/điện trở nối tiếp đường nguồn. BCM sẽ từ chối lệnh active test với NRC 0x22 (ConditionsNotCorrect — under-voltage).
+
+### Nhiệm vụ SV (theo 3S workflow)
+1. **SENSE**:
+   - Active Test → nhấn High Beam ON → đèn không sáng
+   - Mở Raw Monitor filter "Both" (TX+RX) → quan sát:
+     - TX: `0x7A0 06 2F D0 21 03 01 ...` (UDS RoutineControl request)
+     - RX: `0x7A8 03 7F 2F 22` ← **Negative Response Code (NRC)!** Byte 0x7F là negative response, 0x22 là sub-code
+2. **SOLVE**:
+   - Tra cứu NRC table (UDS ISO 14229) → `0x22 = ConditionsNotCorrect`
+   - Conditions not correct thường do: under-voltage, sai precondition, over-temp, ignition state
+   - Hypothesis #1: điện áp BCM thấp
+3. **SHOW**:
+   - Dùng multimeter đo điện áp cấp cho BCM tại connector chính
+   - Phát hiện: **8V** (thay vì 12V chuẩn)
+   - Tìm nguyên nhân: bench power supply để 8V, hoặc kẹp diode trên đường nguồn
+   - Khôi phục về 12V → test lại Active Test High Beam → đèn sáng, RX phản hồi `0x7A8 03 71 01 D0 21 ...` (Positive Response)
+4. Submit:
+   - **2 active_test entries**:
+     - Entry 1: before fix — request `0x7A0 06 2F D0 21 ...`, response `0x7A8 03 7F 2F 22` (NRC)
+     - Entry 2: after fix — request giống, response `0x7A8 03 71 01 D0 21 ...` (Positive Response)
+
+### Tiêu chí pass
+- 2 active_test evidence đủ (1 NRC + 1 Positive Response)
+- Diagnostic note đúng root cause (under-voltage 8V → fix 12V)
+- Hiểu được NRC 0x22 nghĩa là gì (ConditionsNotCorrect)
+
+### Hints
+- NRC luôn nằm trong byte thứ 4 của response, sau prefix `0x7F SID_ECHO`
+- NRC 0x22 = một trong các code phổ biến nhất → cần thuộc lòng (xem bảng NRC LAB-03)
+- Đây là lỗi "physical-level" (điện áp) — KHÔNG sửa được bằng JSON config
+- Nếu không có bench power điều chỉnh → GV có thể chỉ rút bớt 1 đường nguồn parallel để hạ áp$md$,
+    'active_test',
+    2,
+    'NRC 0x22 ConditionsNotCorrect = under-voltage. Đo BCM bằng multimeter → 8V → khôi phục 12V.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Step 5 — Free-form diagnostic
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    5,
+    'Free-form diagnostic — GV inject fault tự do (5S workflow)',
+    $md$### Mục tiêu
+Áp dụng **đầy đủ 5S workflow** vào 1 fault mà GV inject **chưa tiết lộ trước** — đây là bài đánh giá năng lực chẩn đoán độc lập của nhóm.
+
+### GV inject (INSTRUCTOR ONLY)
+> Chọn 1 trong các fault sau (đa dạng giữa các nhóm để tránh copy):
+> - Baud rate sai (đổi STM32 sang 500k trong khi cluster 125k)
+> - Đảo CAN-H ↔ CAN-L (đảo 2 dây tín hiệu)
+> - Sửa DID trong JSON từ `0xF187` thành `0xF999` (DID không tồn tại → NRC 0x31 RequestOutOfRange)
+> - Tháo SPI MISO giữa STM32 và MCP2515 (UART vẫn OK nhưng không có CAN traffic)
+> - Sửa byte 0 của RPM frame trong gauge config (multiplier sai → kim lên gấp đôi)
+
+### Nhiệm vụ SV — áp dụng 5S workflow
+
+#### 1. SORT — Liệt kê hiện tượng
+- Quan sát app: status bar màu gì? Có toast nào không? Gauge có lên không?
+- Quan sát cluster: kim hoạt động bình thường không? Đèn check engine?
+- Liệt kê **tất cả** triệu chứng vào notebook (1 dòng/triệu chứng)
+
+#### 2. SET IN ORDER — Priority
+- Sắp xếp triệu chứng theo độ nghiêm trọng: cái nào critical (mất giao tiếp hoàn toàn), cái nào partial (chỉ 1 chức năng), cái nào cosmetic
+- Đặt hypothesis ban đầu (ít nhất 3 hypothesis khác nhau)
+
+#### 3. SHINE — Clean inspection
+- Kiểm tra vật lý: wiring, connector, termination, power supply
+- Kiểm tra config: JSON file, baud setting, BLE pairing
+- Dùng **binary search**: chia bench thành 2 nửa, test từng nửa để cô lập vấn đề
+
+#### 4. STANDARDIZE — Procedure
+- Khi tìm ra root cause → fix theo quy trình chuẩn (không "thử đại")
+- Document từng thay đổi (vd: "Tôi đổi baud từ 500k → 125k tại Settings → Save")
+
+#### 5. SUSTAIN — Verify + document
+- Sau khi fix → verify bằng cách reproduce triệu chứng ban đầu (phải không còn lỗi)
+- Document đầy đủ: triệu chứng + hypothesis + cách diagnose + fix + verify
+
+### Submit
+- ≥ 50 raw frames (gồm cả giai đoạn lỗi và sau fix)
+- Diagnostic notebook (chụp ảnh hoặc ghi text trong post-quiz) — phải show được đủ 5 bước S
+
+### Tiêu chí pass
+- Diagnose đúng root cause (GV chấm)
+- Fix thành công (verify lại không còn triệu chứng)
+- Notebook có đầy đủ 5 bước S, rõ ràng, có thể tái sử dụng làm SOP cho lần sau
+
+### Hints
+- KHÔNG vội "thử đại" — luôn đặt hypothesis trước khi thay đổi gì
+- Nếu bí 30 phút → xin "hint" từ GV (sẽ trừ điểm nhẹ, nhưng tốt hơn là không xong)
+- Binary search là kỹ thuật mạnh nhất: nếu không biết lỗi đâu, chia bench làm 2, test mỗi nửa$md$,
+    'raw_frames',
+    50,
+    '5S workflow: Sort → Set in order → Shine → Standardize → Sustain. Đừng "thử đại" — đặt hypothesis trước.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Step 6 — Group presentation
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    6,
+    'Group presentation — trình bày findings (5 phút/nhóm)',
+    $md$### Mục tiêu (TR4021 LO.4 — Communication)
+Mỗi nhóm chuẩn bị slide và trình bày findings của 4 case studies (Step 2, 3, 4, 5) trước cả lớp. Đây là phần đánh giá kỹ năng truyền đạt — KHÔNG chỉ làm được mà phải **giải thích được**.
+
+### Yêu cầu slide
+- **8-12 slide** (theo TR4021 LO.4 guideline)
+- Suggested outline:
+  1. Title slide (tên nhóm + members + ngày)
+  2. Bench setup overview (1 ảnh)
+  3. Case Study #1 (Kim RPM) — triệu chứng → diagnose → root cause → fix
+  4. Case Study #2 (Cluster câm) — như trên
+  5. Case Study #3 (Đèn pha) — như trên
+  6. Free-form case — như trên
+  7. Lessons learned (3-5 bullet point quan trọng nhất)
+  8. **Summary slide** — tổng kết 4 case + recommendation cho future labs
+  9-12. Backup slides (raw frames, screenshots, voltage measurement, etc.)
+
+### Trình bày
+- Thời gian: **5 phút/nhóm** (4 phút trình bày + 1 phút Q&A)
+- Tất cả member trong nhóm phải nói (không 1 người làm hết)
+- Ngôn ngữ: tiếng Việt hoặc tiếng Anh đều OK
+
+### Đánh giá
+GV chấm theo rubric:
+- **Nội dung** (40%): chính xác về root cause, đầy đủ 4 case
+- **Cấu trúc** (20%): logic, dễ theo dõi
+- **Truyền đạt** (20%): rõ ràng, không đọc slide
+- **Q&A** (20%): trả lời được câu hỏi của GV/lớp
+
+### Submit
+- 1 screenshot của **summary slide** (slide tổng kết cuối — slide 8 trong outline)
+- File PDF/PPTX full deck nộp riêng cho GV (không upload vào hệ thống)
+
+### Hints
+- Đừng "đọc" slide — slide chỉ là gợi ý, nói bằng lời của mình
+- Practice trước ít nhất 1 lần với đồng đội (timing 5 phút!)
+- Q&A thường hỏi về root cause "tại sao bạn lại nghĩ là X" → chuẩn bị reasoning rõ$md$,
+    'screenshot',
+    1,
+    '8-12 slide. 5 phút/nhóm. Submit screenshot summary slide. PDF full deck gửi riêng cho GV.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- ── LAB-06 Pre-quiz (8 questions) ──────────────────────────────────────────
+
+-- LAB-06 Pre-Q 1
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'pre_lab', 1, 'multiple_choice',
+    '3S là gì?',
+    '{"A":"Sort, Set, Shine","B":"Safety, Security, Speed","C":"Sense, Solve, Show","D":"Standardize, Sustain"}'::jsonb,
+    'A',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Pre-Q 2
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'pre_lab', 2, 'multiple_choice',
+    '5S thêm gì so với 3S?',
+    '{"A":"Speed, Setup","B":"Standardize, Sustain","C":"Safety, Security","D":"Sensor, System"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Pre-Q 3
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'pre_lab', 3, 'multiple_choice',
+    'Bước đầu tiên trong fault tree analysis là gì?',
+    '{"A":"Fix the fault","B":"Identify root cause","C":"Define the problem clearly","D":"Test hypothesis"}'::jsonb,
+    'C',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Pre-Q 4
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'pre_lab', 4, 'multiple_choice',
+    'Sau khi fix fault, bước nào BẮT BUỘC?',
+    '{"A":"Document","B":"Verify the fix works","C":"Send report","D":"Both A and B"}'::jsonb,
+    'D',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Pre-Q 5
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'pre_lab', 5, 'multiple_choice',
+    'Khi không biết root cause, kỹ thuật nào hữu ích?',
+    '{"A":"Replace random parts","B":"Binary search (isolate half by half)","C":"Throw the device away","D":"Wait"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Pre-Q 6 (free_text)
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'pre_lab', 6, 'free_text',
+    'Liệt kê 4 công cụ trên app BKDiagnostic giúp diagnose bus issue.',
+    NULL,
+    'Raw Monitor (TX/RX filter), CanSender, Active Test, Gauge Control, Live Data, Settings (baud config), Bus error log — bất kỳ 4 trong số này.',
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Pre-Q 7 (free_text)
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'pre_lab', 7, 'free_text',
+    'Khi STM32 báo ERROR(0x10 TX_QUEUE_OVR), nguyên nhân khả nghi là gì?',
+    NULL,
+    'Bus quá đông, UART throughput không đủ — cần giảm rate gửi từ Android hoặc nâng UART baud.',
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Pre-Q 8 (free_text)
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'pre_lab', 8, 'free_text',
+    '1-2 câu giải thích tại sao "đọc DTC" KHÔNG đủ để chẩn đoán đầy đủ?',
+    NULL,
+    'Vì DTC chỉ là triệu chứng, cần xác định root cause qua live data, schematic, history. Một DTC có thể có nhiều nguyên nhân.',
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- ── LAB-06 Post-quiz (5 questions — reflection) ────────────────────────────
+
+-- LAB-06 Post-Q 1
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'post_lab', 1, 'free_text',
+    'Trong 3 case studies, case nào khó nhất? Giải thích.',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Post-Q 2
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'post_lab', 2, 'image_upload',
+    'Vẽ flowchart 5S workflow bạn đã áp dụng (chụp ảnh).',
+    NULL,
+    NULL,
+    3, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Post-Q 3
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'post_lab', 3, 'free_text',
+    'Nếu xe thực có triệu chứng "kim đồng hồ giật giật mỗi 30s", bạn sẽ check gì đầu tiên?',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Post-Q 4
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'post_lab', 4, 'free_text',
+    'Đề xuất 1 improvement cho app BKDiagnostic giúp diagnose dễ hơn.',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-06 Post-Q 5
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-06'),
+    'post_lab', 5, 'free_text',
+    'Self-assessment: bạn đạt LO nào trong 6 LO của TR4021 sau lab này? (checkbox — liệt kê các LO đạt được)',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
