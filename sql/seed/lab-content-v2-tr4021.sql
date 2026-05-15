@@ -1437,3 +1437,438 @@ ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
     correct_answer = EXCLUDED.correct_answer,
     points         = EXCLUDED.points,
     hint           = EXCLUDED.hint;
+
+-- ════════════════════════════════════════════════════════════════════════════
+--  LAB-04 — Hệ thống Cảnh báo Dashboard — Mapping Warning Lights (v2)
+-- ════════════════════════════════════════════════════════════════════════════
+
+INSERT INTO public.labs (code, title, description, order_index, pre_quiz_pass_threshold, is_published)
+VALUES (
+    'LAB-04',
+    'Hệ thống Cảnh báo Dashboard — Mapping Warning Lights',
+    $md$### Mục tiêu học tập (TR4021 LO.2, LO.6)
+Sau khi hoàn thành lab này, sinh viên có thể:
+1. Phân loại 14 warning lights theo màu (red/amber/blue/green) và độ ưu tiên
+2. Hiểu cơ chế: BCM activate via UDS vs Cluster activate via broadcast frame
+3. Sử dụng Active Test JSON config để map mỗi icon → CAN data
+4. Test tất cả 14 icons, document kết quả
+5. Đề xuất nâng cấp config cho icon chưa hoạt động
+
+### Thiết bị
+- Cluster Ford Ranger + BCM Ford Ranger + STM32 + MCP2515 + Android phone
+- File config `assets/can_config/ford_ranger_dashboard.json`
+
+### Thời lượng
+5 tiết (4h)$md$,
+    4, 70, true
+)
+ON CONFLICT (code) DO UPDATE SET
+    title                   = EXCLUDED.title,
+    description             = EXCLUDED.description,
+    order_index             = EXCLUDED.order_index,
+    pre_quiz_pass_threshold = EXCLUDED.pre_quiz_pass_threshold,
+    is_published            = EXCLUDED.is_published,
+    updated_at              = now();
+
+-- ── LAB-04 Steps (7) ───────────────────────────────────────────────────────
+
+-- LAB-04 Step 1 — Inventory 14 warning icons
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    1,
+    'Inventory 14 warning icons',
+    $md$### Mục tiêu
+Tổng quan toàn bộ 14 warning icons có sẵn trên màn hình Active Test trước khi đi sâu vào từng cái.
+
+### Các bước
+1. Mở app → vào màn hình **Active Test**
+2. Cuộn xuống khu vực **Warning Lights** — đếm đủ 14 icon:
+   high_beam, lamp_on, seat_belt, tire, battery, engine_chk, airbag, engine, overheat, abs, brake, stability, oil, fuel
+3. Quan sát màu sắc icon: đỏ (critical), vàng (warning), xanh dương (info), xanh lá (status)
+4. Submit: screenshot Active Test screen với cả 14 icons rõ ràng trong khung hình
+
+### Lưu ý
+- Nếu thiếu icon nào → app version chưa đủ mới, cập nhật lên ≥ v2.0
+- Nếu icon hiển thị không đúng màu mong đợi → đó là feedback cho config JSON sau này$md$,
+    'screenshot',
+    1,
+    'Active Test → khu vực Warning Lights. Đảm bảo screenshot show đủ 14 icons.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Step 2 — Identify configured vs unconfigured
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    2,
+    'Identify configured vs unconfigured icons',
+    $md$### Mục tiêu
+Phân biệt icon đã có CAN config (clickable) và icon chưa có config (disabled).
+
+### Các bước
+1. Trên Active Test screen, quan sát độ sáng (alpha) của từng icon:
+   - **Sáng 65%** → đã có CAN config (`canId ≠ 0x000`) → có thể bấm thử
+   - **Mờ 15%** → chưa config → không bấm được (`canId = 0x000`)
+2. Đếm:
+   - Bao nhiêu icon **configured** (sáng 65%)?
+   - Bao nhiêu icon **unconfigured** (mờ 15%)?
+3. Ghi chú lại danh sách từng loại (vd: configured = high_beam, lamp_on, ...)
+4. Submit: screenshot + 1 dòng ghi chú ngắn "configured: N, unconfigured: M"
+
+### Lưu ý
+- Đếm số phải khớp tổng = 14
+- Nếu tất cả icons đều mờ → file `ford_ranger_dashboard.json` không load được, kiểm tra log app$md$,
+    'screenshot',
+    1,
+    'So sánh độ sáng icon — 65% là configured, 15% là chưa. Đếm và screenshot.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Step 3 — Test configured icons
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    3,
+    'Test configured icons (≥ 4)',
+    $md$### Mục tiêu
+Xác nhận từng icon đã configured thực sự bật được đèn tương ứng trên cluster.
+
+### Các bước
+1. Chọn ≥ 4 icon đã configured (vd: high_beam, lamp_on, seat_belt, battery)
+2. Với mỗi icon:
+   - Nhấn icon → quan sát đèn cluster bật lên
+   - Đèn sẽ tự tắt sau ~2 giây (pulse mode)
+   - App tự tạo 1 **active_test** evidence record
+3. Lặp cho đủ ≥ 4 icon khác nhau
+4. Submit: ≥ 4 active_test entries (mỗi entry tương ứng 1 icon)
+
+### Lưu ý
+- Nếu đèn cluster KHÔNG bật khi nhấn icon → ghi chú lại, có thể canData trong config sai
+- Một số icon (như engine_chk) cần BCM gửi qua UDS — đảm bảo BCM đã được kết nối$md$,
+    'active_test',
+    4,
+    'Nhấn lần lượt ≥ 4 icon đã configured. Quan sát đèn cluster pulse 2 giây.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Step 4 — Reverse engineer unconfigured icons
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    4,
+    'Reverse engineer 1 unconfigured icon',
+    $md$### Mục tiêu
+Tìm ra CAN ID + data cần thiết để bật 1 icon hiện chưa configured.
+
+### Các bước
+1. Chọn 1 icon chưa configured (vd: `fuel` hoặc `airbag`)
+2. Mở **CanSender** screen — chuẩn bị thử nhiều CAN ID/data
+3. Áp dụng 1 trong 3 phương pháp:
+   - **Phương pháp 1** — Probe BCM DID:
+     gửi UDS request `0x7A0 03 22 D0 XX 00 00 00 00` (Read DID `0xD0XX`) với `XX` quét từ 60 → 9F
+     → xem BCM trả gì (positive response = DID tồn tại)
+   - **Phương pháp 2** — Tra cứu cộng đồng:
+     search forum FORScan / Ford Wiki cho danh sách DID dashboard
+   - **Phương pháp 3** — Brute force write:
+     gửi `0x7A0 06 2F D0 XX 03 01 00 00` với `XX` quét → quan sát đèn nào sáng
+4. Ghi chú DID/CAN ID tìm được + chứng cứ (frame phản hồi)
+5. Submit: ≥ 100 raw frames trong quá trình thử + ghi chú DID tìm được
+
+### Lưu ý
+- ⚠️ Brute force write có thể gây phản ứng phụ — chỉ làm khi xe ở chế độ bench, không gắn vào xe thật
+- Nếu BCM trả negative response `7F 22 31` (request out of range) → DID không tồn tại, thử XX khác
+- Lưu lại log Raw Monitor để Step 5 dùng làm reference$md$,
+    'raw_frames',
+    100,
+    'CanSender → quét DID 0xD060-0xD09F. Lưu ≥ 100 frame từ Raw Monitor làm evidence.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Step 5 — Update JSON config
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    5,
+    'Update JSON config for new icon',
+    $md$### Mục tiêu
+Tích hợp DID/CAN data vừa reverse engineer được vào file config dashboard.
+
+### Các bước
+1. Lấy file `ford_ranger_dashboard.json`:
+   - Cách 1: từ Settings của app → Export config
+   - Cách 2: ADB pull `assets/can_config/ford_ranger_dashboard.json` (instructor hỗ trợ)
+2. Mở file bằng editor → tìm entry icon vừa reverse engineer (vd: `"fuel"`)
+3. Cập nhật các trường:
+   - `canId`: thay `0x000` → CAN ID đã tìm (vd: `0x7A0`)
+   - `canDataOn`: 8 byte hex bật đèn (vd: `06 2F D0 7A 03 01 00 00`)
+   - `canDataOff`: 8 byte hex tắt đèn (vd: `05 2F D0 7A 00 00 00 00`)
+4. Save file → reload app (hoặc Import config từ Settings)
+5. Quay lại Active Test screen → verify icon từ mờ 15% chuyển sang sáng 65%
+6. Submit: screenshot Active Test screen với icon vừa update đã active
+
+### Lưu ý
+- JSON phải parse được — kiểm tra dấu phẩy, ngoặc trước khi save
+- Nếu reload xong icon vẫn mờ → log app sẽ báo parse error, dùng để debug$md$,
+    'screenshot',
+    1,
+    'Sửa entry trong ford_ranger_dashboard.json, reload app, screenshot icon đã sáng 65%.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Step 6 — Test newly configured icon
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    6,
+    'Test newly configured icon',
+    $md$### Mục tiêu
+Xác nhận icon mới configured thực sự bật được đèn cluster — chứng minh reverse engineering thành công.
+
+### Các bước
+1. Trên Active Test screen, nhấn icon vừa update config
+2. Quan sát đèn cluster tương ứng có pulse lên ~2 giây không
+3. Nếu OK → 1 active_test evidence được tạo
+4. Nếu KHÔNG OK → xem lại Step 4 (CAN data có thể sai byte), Step 5 (JSON parse có thể lỗi)
+5. Submit: 1 active_test evidence
+
+### Lưu ý
+- Đèn cluster phải bật rõ ràng — nếu chỉ chớp 1 lần rất nhanh có thể là frame chưa đủ duration
+- Có thể nhấn icon nhiều lần để confirm tính ổn định trước khi submit$md$,
+    'active_test',
+    1,
+    'Nhấn icon mới configured. Đèn cluster phải pulse 2 giây.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Step 7 — Document final mapping
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    7,
+    'Document final mapping table',
+    $md$### Mục tiêu
+Tổng kết toàn bộ 14 icons với CAN data + nguồn activate dưới dạng bảng tham chiếu.
+
+### Các bước
+1. Mở Google Sheets / Excel / Notion → tạo bảng theo template:
+
+| Icon | Color | canId | canDataOn | canDataOff | Status | Source |
+|------|-------|-------|-----------|------------|--------|--------|
+| high_beam | Blue | 0x7A0 | 06 2F D0 21 03 01 00 00 | 05 2F D0 21 00 00 00 00 | ✓ Works | UDS BCM |
+| lamp_on | Green | 0x7A0 | ... | ... | ✓ Works | UDS BCM |
+| ... | ... | ... | ... | ... | ... | ... |
+
+2. Điền đủ 14 dòng — kể cả icon vẫn chưa hoạt động (Status = ✗ TODO, Source = ?)
+3. Cột **Source** phân biệt: `UDS BCM` (gửi qua BCM) vs `Cluster broadcast` (frame định kỳ từ cluster) vs `?` (chưa rõ)
+4. Submit: screenshot bảng đầy đủ (zoom đọc rõ)
+
+### Lưu ý
+- Bảng này là deliverable chính của lab — instructor sẽ chấm dựa trên độ đầy đủ và tính chính xác
+- Lưu lại bảng để dùng cho LAB-05 (chẩn đoán lỗi) và LAB-06 (capstone)$md$,
+    'screenshot',
+    1,
+    'Sheet 14 dòng × 7 cột. Screenshot zoom đọc rõ từng ô.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- ── LAB-04 Pre-quiz (5 questions) ──────────────────────────────────────────
+
+-- LAB-04 Pre-Q 1
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    'pre_lab', 1, 'multiple_choice',
+    'Màu nào dùng cho cảnh báo CRITICAL trên dashboard?',
+    '{"A":"Xanh lá","B":"Vàng","C":"Đỏ","D":"Xanh dương"}'::jsonb,
+    'C',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Pre-Q 2
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    'pre_lab', 2, 'multiple_choice',
+    'Đèn pha (High Beam) trên cluster Ford thường có màu gì?',
+    '{"A":"Đỏ","B":"Vàng","C":"Xanh dương","D":"Trắng"}'::jsonb,
+    'C',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Pre-Q 3
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    'pre_lab', 3, 'multiple_choice',
+    'File config dashboard ở đâu trong project?',
+    '{"A":"/data/local","B":"assets/can_config/ford_ranger_dashboard.json","C":"Supabase","D":"Hardcoded trong Kotlin"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Pre-Q 4
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    'pre_lab', 4, 'multiple_choice',
+    'Khi `canId = 0x000`, icon trên app hiển thị thế nào?',
+    '{"A":"Sáng đầy đủ","B":"Mờ 65%","C":"Mờ 15% + không bấm được","D":"Hidden"}'::jsonb,
+    'C',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Pre-Q 5 (free_text)
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    'pre_lab', 5, 'free_text',
+    'Liệt kê 3 đèn cảnh báo MÀU ĐỎ trên dashboard Ford Ranger (vd: airbag, brake, oil...)',
+    NULL,
+    'airbag, brake warning, oil pressure, seat belt, battery, engine overheat — bất kỳ 3 trong số này',
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- ── LAB-04 Post-quiz (4 questions) ─────────────────────────────────────────
+
+-- LAB-04 Post-Q 1
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    'post_lab', 1, 'free_text',
+    'Trong 14 icons, bao nhiêu hoạt động được sau khi config? Bao nhiêu cần BCM, bao nhiêu activate trực tiếp từ cluster broadcast?',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Post-Q 2
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    'post_lab', 2, 'free_text',
+    'Trong các icon bạn reverse engineer, DID nào tìm thấy? List ra ≥ 2 DID mới.',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Post-Q 3
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    'post_lab', 3, 'free_text',
+    'Đề xuất 2 cảnh báo còn THIẾU trên cluster của bạn mà xe Ford Ranger thực có (vd: lane assist, hill start assist...)',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-04 Post-Q 4
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-04'),
+    'post_lab', 4, 'image_upload',
+    'Upload screenshot bảng mapping cuối cùng (14 icons × 7 cột: Icon, Color, canId, canDataOn, canDataOff, Status, Source).',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
