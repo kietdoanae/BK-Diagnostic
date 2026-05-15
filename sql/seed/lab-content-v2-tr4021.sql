@@ -1872,3 +1872,478 @@ ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
     correct_answer = EXCLUDED.correct_answer,
     points         = EXCLUDED.points,
     hint           = EXCLUDED.hint;
+
+-- ════════════════════════════════════════════════════════════════════════════
+--  LAB-05 — Chẩn đoán Lỗi CAN Bus & Auto-Recovery (v2)
+--  ⚠️ Lab có rủi ro phần cứng — yêu cầu GV giám sát chặt mọi bước thao tác bus
+-- ════════════════════════════════════════════════════════════════════════════
+
+INSERT INTO public.labs (code, title, description, order_index, pre_quiz_pass_threshold, is_published)
+VALUES (
+    'LAB-05',
+    'Chẩn đoán Lỗi CAN Bus & Auto-Recovery',
+    $md$### Mục tiêu học tập (TR4021 LO.5, LO.6, Ch.3)
+Sau khi hoàn thành lab này, sinh viên có thể:
+1. Hiểu CAN error states: warning → passive → BUS-OFF
+2. Đọc MCP2515 EFLG register + TEC/REC counters
+3. Trigger BUS-OFF intentional & quan sát STM32 auto-recovery
+4. Diagnose root cause khi bus có lỗi (termination mismatch, baud mismatch, short circuit)
+5. Tuân thủ an toàn — lab này có rủi ro phần cứng nếu sai
+
+### ⚠️ AN TOÀN
+**LAB này yêu cầu GIẢNG VIÊN GIÁM SÁT CHẶT** vì có thao tác phần cứng:
+- Tháo termination resistor khi bus đang hoạt động
+- Có thể gây stress cho cluster/BCM nếu không cẩn thận
+
+### Thiết bị
+- Cluster Ford Ranger + BCM Ford Ranger + STM32 + MCP2515 + Android phone
+- ST-Link debugger (optional, để đọc register MCP2515)
+
+### Thời lượng
+5 tiết (4h)$md$,
+    5, 70, true
+)
+ON CONFLICT (code) DO UPDATE SET
+    title                   = EXCLUDED.title,
+    description             = EXCLUDED.description,
+    order_index             = EXCLUDED.order_index,
+    pre_quiz_pass_threshold = EXCLUDED.pre_quiz_pass_threshold,
+    is_published            = EXCLUDED.is_published,
+    updated_at              = now();
+
+-- ── LAB-05 Steps (7) ───────────────────────────────────────────────────────
+
+-- LAB-05 Step 1 — Baseline measurement
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    1,
+    'Baseline measurement — bus khỏe mạnh',
+    $md$### Mục tiêu
+Xác lập baseline để so sánh với trạng thái lỗi ở các bước sau — bus hoạt động bình thường, không có ERROR frame, TEC/REC = 0.
+
+### Các bước
+1. Đảm bảo setup chuẩn: 2 termination 120Ω ở 2 đầu bus, baud = 125k (MS-CAN Ford Ranger)
+2. Bật cluster + BCM + STM32, kết nối app qua BLE
+3. Mở **Raw Monitor** — quan sát traffic ổn định ~30-60 frame/s, **không** có frame TYPE 0x03 (ERROR)
+4. Kiểm tra status bar app: ONLINE (màu xanh), không có toast/snackbar cảnh báo
+5. Đọc TEC/REC qua debugger (nếu có ST-Link) hoặc tính năng status — phải = 0
+6. Submit: screenshot Raw Monitor + status bar ONLINE rõ ràng
+
+### Lưu ý an toàn
+- Bước này KHÔNG can thiệp phần cứng — chỉ quan sát
+- Nếu thấy ERROR frame ngay từ baseline → kiểm tra wiring trước khi tiếp tục
+- Đây là tham chiếu để so sánh trong các bước tháo termination phía sau$md$,
+    'screenshot',
+    1,
+    'Raw Monitor traffic đều, status bar ONLINE xanh, không ERROR frame.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Step 2 — Trigger BUS-OFF by removing 1 termination
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    2,
+    'Trigger BUS-OFF: tháo 1 termination resistor',
+    $md$### Mục tiêu
+Cố ý đẩy bus vào trạng thái BUS-OFF bằng cách tháo 1 termination 120Ω, quan sát chuỗi chuyển trạng thái warning → passive → BUS-OFF và STM32 auto-recovery.
+
+### ⚠️ CẢNH BÁO AN TOÀN
+**⚠️ Cần GV giám sát chặt — tháo termination khi bus đang hoạt động có thể gây stress cho cluster nếu không cẩn thận.**
+- Chỉ tháo termination trong < 5 giây, KHÔNG để lâu
+- Re-attach NGAY sau khi đã ghi nhận đủ ERROR frame
+- Tuyệt đối KHÔNG thực hiện khi xe gắn trên xe thật — chỉ bench setup
+
+### Các bước
+1. Bật Raw Monitor + bật log recording (để bắt frame TYPE 0x03)
+2. Báo GV sẵn sàng → GV thực hiện: tháo 1 đầu termination 120Ω
+3. Trong 1-2 giây, quan sát chuỗi:
+   - STM32 detect CRC errors → TEC tăng nhanh
+   - Toast/snackbar lần lượt: **ERROR(0x20) BUS_WARNING** → **ERROR(0x21) BUS_PASSIVE** → **ERROR(0x22) BUS_OFF**
+   - Sau ~100ms: **ERROR(0x24) BUS_RECOVERED** (STM32 auto-recovery)
+4. Re-attach termination NGAY khi đã thấy đủ 4 ERROR frame
+5. Submit: ≥ 30 raw frames trong log, phải chứa cả 4 ERROR frame nêu trên
+
+### Lưu ý an toàn
+- Nếu sau 5 giây vẫn không thấy BUS_OFF → re-attach termination NGAY, kiểm tra setup
+- Nếu cluster lock/limp mode → GV cycle power BCM + cluster
+- Ghi nhận thời điểm chính xác để Step 7 (recovery time measurement) đối chiếu$md$,
+    'raw_frames',
+    30,
+    'GV tháo 120Ω < 5s, app sẽ hiện 4 ERROR (0x20→0x21→0x22→0x24). Re-attach ngay.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Step 3 — Read EFLG sequence
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    3,
+    'Đọc EFLG sequence qua debugger',
+    $md$### Mục tiêu
+Kiểm chứng giá trị EFLG register + TEC/REC tại từng trạng thái lỗi để hiểu cơ chế bên trong MCP2515.
+
+### Các bước
+1. GV connect ST-Link debugger vào STM32, mở watch window theo dõi `EFLG`, `TEC`, `REC` của MCP2515 (qua SPI read)
+2. Ghi lại giá trị tại 5 thời điểm:
+
+| Thời điểm | EFLG (hex) | TEC | REC |
+|-----------|-----------|-----|-----|
+| Bình thường | 0x00 | 0 | 0 |
+| Warning | 0x05 (EWARN + TXWAR) | > 96 | … |
+| Passive | 0x15 (+TXEP) | > 128 | … |
+| BUS-OFF | 0x25 (+TXBO) | 255 | … |
+| Sau recovery | 0x00 | 0 | 0 |
+
+3. Re-trigger BUS-OFF nhẹ (Step 2 quy trình) để capture các giá trị giữa
+4. Submit: screenshot debugger watch window (hoặc ảnh ghi tay nếu không có ST-Link)
+
+### Lưu ý an toàn
+- Step này lặp lại thao tác tháo termination → áp dụng lại CẢNH BÁO Step 2
+- Đọc debugger phải đồng bộ với app toast — dùng pause/breakpoint nếu cần
+- Nếu không có ST-Link: ghi tay 5 dòng dựa trên log app + sách MCP2515 datasheet$md$,
+    'screenshot',
+    1,
+    'ST-Link watch EFLG/TEC/REC. Capture 5 thời điểm: normal, warning, passive, bus-off, recovered.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Step 4 — Trigger RX overflow
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    4,
+    'Trigger RX buffer overflow',
+    $md$### Mục tiêu
+Gây RX overflow để quan sát error code 0x23 RX_BUF_OVERFLOW (khác BUS-OFF — đây là lỗi buffer phía controller).
+
+### Các bước
+1. GV chuyển cluster sang mode "flooding" — gửi traffic dày đặc (vd: 200+ frame/s)
+   - Hoặc dùng CAN generator riêng (Kvaser/PCAN) blast frame trên cùng bus
+2. Trong app: tạm dừng `Protocol_PollCanRx()` — GV có thể inject "delay" giả lập để STM32 không kịp đọc RXBUF
+3. Sau ~500ms: MCP2515 set RX0OVR/RX1OVR flag → STM32 gửi **ERROR(0x23) RX_BUF_OVERFLOW**
+4. Quan sát toast/snackbar trên app + frame TYPE 0x03 code 0x23 trong Raw Monitor
+5. Tháo cluster khỏi flooding mode → bus normal trở lại
+6. Submit: ≥ 50 raw frames trong log, chứa ít nhất 1 ERROR(0x23)
+
+### Lưu ý an toàn
+- Flooding traffic không gây hư phần cứng, nhưng có thể làm cluster hiển thị bất thường tạm thời
+- Không kéo dài flooding > 30 giây — sẽ làm log/RAM phía app phình to
+- Nếu STM32 reset đột ngột → kiểm tra power supply (flooding tăng dòng tiêu thụ)$md$,
+    'raw_frames',
+    50,
+    'Cluster flooding + pause RX poll. ERROR(0x23) RX_BUF_OVERFLOW xuất hiện sau ~500ms.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Step 5 — Baud mismatch experiment
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    5,
+    'Baud mismatch experiment',
+    $md$### Mục tiêu
+Quan sát hậu quả khi baud rate STM32 sai lệch với cluster — minh chứng tại sao baud setting phải khớp.
+
+### Các bước
+1. Mở **Settings** → đổi CAN baud từ 125k sang **500k** (sai với cluster MS-CAN 125k)
+2. App gửi FRAME_SET_BAUD xuống STM32 → STM32 cấu hình lại MCP2515 với baud mới
+3. Quan sát Raw Monitor sau khi đổi:
+   - Traffic ngừng hoàn toàn, hoặc
+   - CRC errors liên tục (ERROR frame TYPE 0x03)
+4. Đợi 5-10 giây để ghi nhận đủ frame chứng cứ
+5. Đổi baud về **125k** → traffic khôi phục bình thường
+6. Submit: ≥ 20 raw frames bao gồm cả giai đoạn trước & sau mismatch
+
+### Lưu ý an toàn
+- Baud mismatch KHÔNG hư phần cứng — chỉ làm bus mất giao tiếp
+- Sau test phải đổi LẠI 125k trước khi kết thúc lab — nếu để 500k thì lab sau sẽ không chạy được
+- Nếu sau khi đổi về 125k mà bus vẫn lỗi → reset STM32 (power cycle)$md$,
+    'raw_frames',
+    20,
+    'Settings → baud 500k → quan sát loạn → đổi về 125k → khôi phục. Lưu ≥ 20 frame.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Step 6 — Length validation test
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    6,
+    'Length & type validation test',
+    $md$### Mục tiêu
+Test cơ chế validation của STM32 firmware — bắt frame sai LEN, sai TYPE phía host trước khi đẩy lên CAN bus.
+
+### Các bước
+1. Mở **CanSender** screen
+2. Thử case 1 — sai LEN:
+   - Compose 1 frame với LEN = 5 nhưng chỉ điền 5 byte data (thay vì 8)
+   - Send → STM32 phải trả về **ERROR(0x11) BAD_LENGTH**
+   - App tạo 1 active_test evidence với error response
+3. Thử case 2 — unknown TYPE:
+   - Compose 1 frame với TYPE byte = **0xFF** (không thuộc protocol)
+   - Send → STM32 phải trả về **ERROR(0x04) UNKNOWN_TYPE**
+   - App tạo active_test evidence thứ 2
+4. Submit: 2 active_test entries (mỗi entry tương ứng 1 case lỗi)
+
+### Lưu ý an toàn
+- Step này KHÔNG can thiệp phần cứng — hoàn toàn ở tầng protocol phía host ↔ STM32
+- Frame sai bị STM32 reject TRƯỚC KHI gửi lên CAN → cluster không bị ảnh hưởng
+- Nếu STM32 không trả error → firmware có thể chưa enable validation, báo GV$md$,
+    'active_test',
+    2,
+    'CanSender 2 case: LEN sai (0x11), TYPE 0xFF (0x04). Submit 2 active_test với error response.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Step 7 — Recovery time measurement
+INSERT INTO public.lab_steps (lab_id, step_order, title, instruction, evidence_type, required_count, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    7,
+    'Đo thời gian auto-recovery (BUS-OFF → BUS_RECOVERED)',
+    $md$### Mục tiêu
+Đo định lượng thời gian STM32 phát hiện BUS-OFF + auto-recover + reload baud, đối chiếu với spec ~100ms.
+
+### Các bước
+1. Chuẩn bị đồng hồ điện tử bấm giờ (smartphone stopwatch OK)
+2. Đảm bảo bus đang chạy normal
+3. Quy trình đo:
+   1. Bấm **START** trên đồng hồ
+   2. GV tháo 1 termination → bus vào BUS-OFF
+   3. Chờ STM32 auto-recovery
+   4. GV re-attach termination
+   5. Bấm **STOP** khi thấy snackbar **BUS_RECOVERED** trên app
+4. Đo total time — target **< 500ms** (spec ~100ms phát hiện + reload baud)
+5. Lặp 3 lần, tính trung bình
+6. Submit: screenshot đồng hồ (thời gian đo) + screenshot Raw Monitor có chuỗi 4 ERROR frame (0x20 → 0x21 → 0x22 → 0x24)
+
+### Lưu ý an toàn
+- Áp dụng lại CẢNH BÁO Step 2: tháo termination < 5 giây, re-attach NGAY
+- Nếu recovery time > 1 giây → có thể firmware Phase 7 chưa enable, báo GV
+- Sau khi đo xong, đảm bảo bus về trạng thái baseline trước khi tắt thiết bị$md$,
+    'screenshot',
+    1,
+    'Stopwatch + Raw Monitor. Target < 500ms. Submit 2 screenshot: timer + log 4 ERROR frame.'
+)
+ON CONFLICT (lab_id, step_order) DO UPDATE SET
+    title          = EXCLUDED.title,
+    instruction    = EXCLUDED.instruction,
+    evidence_type  = EXCLUDED.evidence_type,
+    required_count = EXCLUDED.required_count,
+    hint           = EXCLUDED.hint;
+
+-- ── LAB-05 Pre-quiz (6 questions) ──────────────────────────────────────────
+
+-- LAB-05 Pre-Q 1
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    'pre_lab', 1, 'multiple_choice',
+    'Khi TEC > 96, MCP2515 vào state nào?',
+    '{"A":"Normal","B":"Warning","C":"Passive","D":"BUS-OFF"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Pre-Q 2
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    'pre_lab', 2, 'multiple_choice',
+    'Khi TEC = 255, state là?',
+    '{"A":"Warning","B":"Passive","C":"BUS-OFF","D":"Sleep"}'::jsonb,
+    'C',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Pre-Q 3
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    'pre_lab', 3, 'multiple_choice',
+    'Termination resistor 120Ω đặt sai (chỉ 1 đầu hoặc cả 2 đầu nối tiếp 60Ω) → hậu quả?',
+    '{"A":"OK bình thường","B":"Bus reflection → CRC errors → BUS-OFF","C":"Tăng baud rate","D":"Không có hậu quả"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Pre-Q 4
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    'pre_lab', 4, 'multiple_choice',
+    'STM32 Phase 7 firmware xử lý BUS-OFF như thế nào?',
+    '{"A":"Ignore","B":"Reset chip toàn bộ","C":"Reset MCP2515, reload baud, return NORMAL","D":"Tăng baud lên"}'::jsonb,
+    'C',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Pre-Q 5
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    'pre_lab', 5, 'multiple_choice',
+    'Error code 0x22 từ STM32 nghĩa là gì?',
+    '{"A":"Bad frame","B":"BUS-OFF","C":"Unknown type","D":"TX overflow"}'::jsonb,
+    'B',
+    1, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Pre-Q 6 (free_text)
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    'pre_lab', 6, 'free_text',
+    'Khi nào MCP2515 tự reset error counter về 0? Giải thích 1-2 câu.',
+    NULL,
+    'Sau khi 128 lần x 11-bit recessive bits liên tiếp được nhận thành công trên bus — đây là điều kiện ''bus idle'' để MCP2515 reset BUS-OFF.',
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- ── LAB-05 Post-quiz (4 questions) ─────────────────────────────────────────
+
+-- LAB-05 Post-Q 1
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    'post_lab', 1, 'free_text',
+    'Sequence các ERROR codes bạn quan sát được khi tháo termination?',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Post-Q 2
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    'post_lab', 2, 'free_text',
+    'Recovery time đo được bao nhiêu ms? So với spec 100ms + reload?',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Post-Q 3
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    'post_lab', 3, 'free_text',
+    'Nếu cluster vào limp mode do BUS-OFF lặp lại nhiều lần, bạn xử lý thế nào?',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
+
+-- LAB-05 Post-Q 4
+INSERT INTO public.lab_questions (lab_id, phase, question_order, question_type, question_text, options, correct_answer, points, hint)
+VALUES (
+    (SELECT id FROM public.labs WHERE code = 'LAB-05'),
+    'post_lab', 4, 'image_upload',
+    'Upload screenshot Raw Monitor có chứa cả 4 error frames trong 1 frame (chuỗi 0x20 → 0x21 → 0x22 → 0x24).',
+    NULL,
+    NULL,
+    2, NULL
+)
+ON CONFLICT (lab_id, phase, question_order) DO UPDATE SET
+    question_type  = EXCLUDED.question_type,
+    question_text  = EXCLUDED.question_text,
+    options        = EXCLUDED.options,
+    correct_answer = EXCLUDED.correct_answer,
+    points         = EXCLUDED.points,
+    hint           = EXCLUDED.hint;
