@@ -141,7 +141,12 @@ object FrameProtocol {
         private var state = State.WAIT_SOF
         private var type: Byte = 0
         private var expectedLen = 0
-        private val payload = mutableListOf<Byte>()
+        // Fixed buffer thay vì MutableList<Byte> — tránh autoboxing per-byte.
+        // Trên CAN bus đầy tải ~1000 frame/s, giảm ~13000 boxing alloc/s.
+        private val payloadBuf = ByteArray(255)
+        private var payloadIdx = 0
+        // Running XOR thay vì duyệt lại payload trong verifyChecksum
+        private var runningXor = 0
         private var checksum: Byte = 0
 
         // Thống kê để debug
@@ -152,7 +157,7 @@ object FrameProtocol {
 
         /**
          * Nạp [len] byte đầu tiên của [buf], trả về danh sách frame hoàn chỉnh.
-         * Không cấp phát ByteArray phụ.
+         * Mỗi frame parse được cấp phát 1 ByteArray (payload). Không boxing per-byte.
          */
         fun feed(buf: ByteArray, len: Int = buf.size): List<ParsedFrame> {
             _ready.clear()
@@ -163,15 +168,21 @@ object FrameProtocol {
         private fun processByte(b: Byte) {
             when (state) {
                 State.WAIT_SOF -> if (b == SOF) state = State.WAIT_TYPE
-                State.WAIT_TYPE -> { type = b; state = State.WAIT_LEN }
+                State.WAIT_TYPE -> {
+                    type = b
+                    runningXor = b.toUByte().toInt()
+                    state = State.WAIT_LEN
+                }
                 State.WAIT_LEN -> {
                     expectedLen = b.toUByte().toInt()
-                    payload.clear()
+                    runningXor = runningXor xor expectedLen
+                    payloadIdx = 0
                     state = if (expectedLen == 0) State.CHECKSUM else State.PAYLOAD
                 }
                 State.PAYLOAD -> {
-                    payload.add(b)
-                    if (payload.size == expectedLen) state = State.CHECKSUM
+                    payloadBuf[payloadIdx++] = b
+                    runningXor = runningXor xor b.toUByte().toInt()
+                    if (payloadIdx == expectedLen) state = State.CHECKSUM
                 }
                 State.CHECKSUM -> {
                     checksum = b
@@ -179,8 +190,12 @@ object FrameProtocol {
                 }
                 State.WAIT_EOF -> {
                     state = State.WAIT_SOF
-                    if (b == EOF && verifyChecksum()) {
-                        _ready.add(ParsedFrame(type, payload.toByteArray()))
+                    val checksumOk = runningXor.toByte() == checksum
+                    if (b == EOF && checksumOk) {
+                        // Cấp phát payload mới đúng kích thước cho frame kết quả
+                        val payload = if (expectedLen == 0) EMPTY_BYTES
+                                      else payloadBuf.copyOf(expectedLen)
+                        _ready.add(ParsedFrame(type, payload))
                         totalParsed++
                     } else {
                         // Frame không hợp lệ (EOF sai hoặc checksum lỗi) — log để debug
@@ -188,7 +203,7 @@ object FrameProtocol {
                         android.util.Log.w(
                             "FrameProtocol",
                             "Dropped frame: EOF=${b == EOF} " +
-                            "checksumOk=${verifyChecksum()} " +
+                            "checksumOk=$checksumOk " +
                             "type=0x${type.toUByte().toString(16)} " +
                             "total_dropped=$totalDropped"
                         )
@@ -197,15 +212,14 @@ object FrameProtocol {
             }
         }
 
-        private fun verifyChecksum(): Boolean {
-            var xor = type.toUByte().toInt() xor expectedLen
-            payload.forEach { xor = xor xor it.toUByte().toInt() }
-            return xor.toByte() == checksum
-        }
-
         fun reset() {
             state = State.WAIT_SOF
-            payload.clear()
+            payloadIdx = 0
+            runningXor = 0
+        }
+
+        private companion object {
+            private val EMPTY_BYTES = ByteArray(0)
         }
     }
 

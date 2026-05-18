@@ -123,10 +123,13 @@ MCP2515_Status_t MCP2515_SendFrame(const CAN_Frame_t *frame)
 {
     if (!frame || frame->dlc > 8) return MCP2515_ERROR;
 
-    /* Wait for TXB0 to be free (TXREQ bit clear) */
+    /* Wait for TXB0 to be free (TXREQ bit clear).
+     * Timeout 10 ms (cũ 50 ms) — đủ rộng cho 1 frame ở 125 kbps (~1 ms thực
+     * tế ở 500 kbps) nhưng không block main loop quá lâu khi CAN bus lỗi.
+     * Frame fail sẽ được Android retry; chấp nhận drop hơn là treo gateway. */
     uint32_t t_start = HAL_GetTick();
     while (reg_read(MCP2515_REG_TXB0CTRL) & 0x08) {  /* bit3 = TXREQ */
-        if ((HAL_GetTick() - t_start) > 50) {
+        if ((HAL_GetTick() - t_start) > 10) {
             return MCP2515_TIMEOUT;
         }
     }

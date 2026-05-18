@@ -11,9 +11,16 @@
 
 /* ── Private state ───────────────────────────────────────────────────────── */
 static RxState_t   s_rx_state = RX_WAIT_SOF;
-static CommFrame_t s_rx_frame;
-static uint8_t     s_rx_idx   = 0;
-static uint8_t     s_rx_xor   = 0;   /* running XOR accumulator             */
+
+/* Ping-pong RX buffers — ISR ghi vào s_rx_buffers[s_rx_isr_idx], main đọc
+ * s_rx_buffers[s_rx_ready_idx] sau khi s_frame_ready được set. Tránh ISR ghi
+ * đè frame đang được main xử lý khi 2 lệnh Android đến trong cùng cửa sổ
+ * MCP2515_SendFrame block (50 ms). */
+static CommFrame_t      s_rx_buffers[2];
+static volatile uint8_t s_rx_isr_idx   = 0;  /* slot ISR đang build           */
+static volatile uint8_t s_rx_ready_idx = 0;  /* slot main đọc                  */
+static uint8_t          s_rx_idx       = 0;
+static uint8_t          s_rx_xor       = 0;  /* running XOR accumulator       */
 
 /* Single-byte interrupt receive buffer */
 static uint8_t s_rx_byte;
@@ -22,8 +29,9 @@ static uint8_t s_rx_byte;
 static volatile uint8_t s_pending_error = 0xFF;  /* 0xFF = no pending error */
 
 /* ── Non-blocking TX queue ───────────────────────────────────────────────── */
-/* 8 slots × 260 bytes ≈ 2 kB SRAM — handles burst of ACK/CAN_RX frames      */
-#define TX_QUEUE_DEPTH  8U
+/* 16 slots × 260 bytes ≈ 4 kB SRAM — đủ buffer cho burst CAN_RX khi main bị
+ * block bởi MCP2515_SendFrame (50 ms timeout) hoặc recover_from_bus_off.    */
+#define TX_QUEUE_DEPTH  16U
 #define TX_FRAME_MAX    260U
 
 typedef struct {
@@ -55,9 +63,11 @@ static uint8_t xor_checksum(uint8_t type, uint8_t len,
 /* ── Comm_Init ───────────────────────────────────────────────────────────── */
 void Comm_Init(void)
 {
-    s_rx_state = RX_WAIT_SOF;
-    s_rx_idx   = 0;
-    s_rx_xor   = 0;
+    s_rx_state     = RX_WAIT_SOF;
+    s_rx_idx       = 0;
+    s_rx_xor       = 0;
+    s_rx_isr_idx   = 0;
+    s_rx_ready_idx = 0;
     HAL_UART_Receive_IT(&COMM_UART, &s_rx_byte, 1);
 }
 
@@ -143,6 +153,8 @@ bool Comm_SendStatus(uint8_t status_flags)
 /* ── Comm_ProcessByte ────────────────────────────────────────────────────── */
 bool Comm_ProcessByte(uint8_t byte)
 {
+    CommFrame_t *isr_frame = &s_rx_buffers[s_rx_isr_idx];
+
     switch (s_rx_state) {
 
         case RX_WAIT_SOF:
@@ -152,23 +164,23 @@ bool Comm_ProcessByte(uint8_t byte)
             break;
 
         case RX_WAIT_TYPE:
-            s_rx_frame.type = byte;
+            isr_frame->type = byte;
             s_rx_xor        = byte;   /* start XOR accumulation              */
             s_rx_state      = RX_WAIT_LEN;
             break;
 
         case RX_WAIT_LEN:
-            s_rx_frame.len = byte;
+            isr_frame->len = byte;
             s_rx_xor      ^= byte;
             s_rx_idx       = 0;
             s_rx_state     = (byte == 0) ? RX_WAIT_CHECKSUM : RX_WAIT_PAYLOAD;
             break;
 
         case RX_WAIT_PAYLOAD:
-            s_rx_frame.payload[s_rx_idx] = byte;
+            isr_frame->payload[s_rx_idx] = byte;
             s_rx_xor ^= byte;
             s_rx_idx++;
-            if (s_rx_idx >= s_rx_frame.len) {
+            if (s_rx_idx >= isr_frame->len) {
                 s_rx_state = RX_WAIT_CHECKSUM;
             }
             break;
@@ -187,6 +199,11 @@ bool Comm_ProcessByte(uint8_t byte)
         case RX_WAIT_EOF:
             s_rx_state = RX_WAIT_SOF;
             if (byte == COMM_EOF) {
+                /* Ping-pong: publish frame vừa hoàn thành sang ready slot,
+                 * chuyển ISR sang slot khác để byte tiếp theo không ghi đè
+                 * khi main loop chưa kịp xử lý.                          */
+                s_rx_ready_idx = s_rx_isr_idx;
+                s_rx_isr_idx   = (uint8_t)(s_rx_isr_idx ^ 1U);
                 App_SetFrameReady();
                 return true;
             }
@@ -206,7 +223,10 @@ bool Comm_ProcessByte(uint8_t byte)
 /* ── Comm_GetFrame ───────────────────────────────────────────────────────── */
 const CommFrame_t *Comm_GetFrame(void)
 {
-    return &s_rx_frame;
+    /* Trả về slot vừa publish bởi ISR; main loop phải gọi NGAY sau khi thấy
+     * s_frame_ready=true và xử lý xong trước khi 2 frame Android nữa đến (
+     * trường hợp này hiếm vì Android serialize qua writeMutex).            */
+    return &s_rx_buffers[s_rx_ready_idx];
 }
 
 /* ── Comm_ProcessPendingError ────────────────────────────────────────────── */

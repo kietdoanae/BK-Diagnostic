@@ -327,6 +327,10 @@ class DiagnosticViewModel(
         gaugeStreamJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 var firstTick = true
+                // Deadline-based scheduling: bù trừ GC pause + USB write jitter.
+                // Nếu tick trễ, vẫn giữ trung bình đúng intervalMs để cluster
+                // watchdog không reset kim về 0.
+                var nextDeadline = System.currentTimeMillis()
                 while (isActive) {
                     val rpmVal = gaugeRpm.value
                     val speedVal = gaugeSpeed.value
@@ -353,7 +357,16 @@ class DiagnosticViewModel(
 
                     firstTick = false
                     _gaugeFrameCount.value = _gaugeFrameCount.value + 1
-                    delay(intervalMs)
+
+                    nextDeadline += intervalMs
+                    val sleepMs = nextDeadline - System.currentTimeMillis()
+                    if (sleepMs > 0) {
+                        delay(sleepMs)
+                    } else {
+                        // Tick trễ quá 1 chu kỳ — bỏ qua các deadline đã qua
+                        // để không spam frame liên tục khi vừa khôi phục từ stall.
+                        nextDeadline = System.currentTimeMillis()
+                    }
                 }
             } finally {
                 _gaugeStreamActive.value = false

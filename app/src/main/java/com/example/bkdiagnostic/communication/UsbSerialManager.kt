@@ -21,8 +21,11 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -56,12 +59,19 @@ class UsbSerialManager private constructor(private val context: Context) {
 
     // ── Luồng CAN frames đến ────────────────────────────────────────────────
 
-    // Buffer 512 frame: đủ cho burst CAN 500kbps (~400 frame/s) trong ~1.2 giây
-    private val _canFrames = MutableSharedFlow<CanFrame>(extraBufferCapacity = 512)
+    // Buffer lớn + DROP_OLDEST: subscriber chậm sẽ mất frame cũ nhất thay vì
+    // suspend read loop. Tránh CP2102 FIFO overflow khi UI/Supabase upload chậm.
+    private val _canFrames = MutableSharedFlow<CanFrame>(
+        extraBufferCapacity = 1024,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
     val canFrames: SharedFlow<CanFrame> = _canFrames.asSharedFlow()
 
-    // Buffer 256 cho ACK/ERROR/STATUS (tần suất thấp hơn CAN_RX)
-    private val _rawFrames = MutableSharedFlow<ParsedFrame>(extraBufferCapacity = 256)
+    // ACK/ERROR/STATUS: tần suất thấp nhưng vẫn DROP_OLDEST để không block parser
+    private val _rawFrames = MutableSharedFlow<ParsedFrame>(
+        extraBufferCapacity = 256,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
     val rawFrames: SharedFlow<ParsedFrame> = _rawFrames.asSharedFlow()
 
     // ── Nội bộ ──────────────────────────────────────────────────────────────
@@ -79,7 +89,7 @@ class UsbSerialManager private constructor(private val context: Context) {
      * Lưu ý: chỉ hoạt động khi thiết bị vẫn còn cắm — không phát hiện
      * unplug/replug (cần ACTION_USB_DEVICE_ATTACHED cho trường hợp đó).
      */
-    var autoReconnect: Boolean = false
+    var autoReconnect: Boolean = true
 
     // ── Internal ─────────────────────────────────────────────────────────────
 
@@ -88,6 +98,11 @@ class UsbSerialManager private constructor(private val context: Context) {
     private var serialPort: UsbSerialPort? = null
     private val parser = FrameProtocol.StreamParser()
     private var receiverRegistered = false
+
+    // Serialize tất cả write lên cổng serial. usb-serial-for-android KHÔNG
+    // thread-safe — concurrent write từ gauge stream + active test + DTC sẽ
+    // interleave byte → STM32 thấy BAD_FRAME → drop lệnh.
+    private val writeMutex = Mutex()
 
     private val ACTION_USB_PERMISSION = "com.example.bkdiagnostic.USB_PERMISSION"
 
@@ -157,16 +172,23 @@ class UsbSerialManager private constructor(private val context: Context) {
     /**
      * Gửi 1 CAN frame lên STM32 (sẽ được STM32 đặt lên CAN bus).
      * Không chờ phản hồi — phản hồi sẽ đến qua [canFrames].
+     *
+     * Thread-safe: tất cả call serialize qua [writeMutex] để tránh byte-level
+     * interleaving giữa gauge stream / active test / DTC request.
      */
     suspend fun sendFrame(frame: CanFrame) = withContext(Dispatchers.IO) {
         val bytes = FrameProtocol.encodeSendCan(frame)
-        runCatching { serialPort?.write(bytes, 200) }
+        writeMutex.withLock {
+            runCatching { serialPort?.write(bytes, 200) }
+        }
     }
 
     /** Gửi lệnh đặt tốc độ CAN bus cho STM32 (gọi trước khi bắt đầu chẩn đoán) */
     suspend fun setCanBaud(baudKbps: Int) = withContext(Dispatchers.IO) {
         val bytes = FrameProtocol.encodeSetBaud(baudKbps)
-        runCatching { serialPort?.write(bytes, 200) }
+        writeMutex.withLock {
+            runCatching { serialPort?.write(bytes, 200) }
+        }
     }
 
     // ── Nội bộ ──────────────────────────────────────────────────────────────
