@@ -13,6 +13,5 @@ void App_Run(void);
 
 /* Called from ISRs */
 void App_SetFrameReady(void);   /* UART frame complete (from Comm_UART_RxCallback) */
-void App_SetCanRxPending(void); /* MCP2515 INT asserted (from EXTI0 callback)      */
 
 #endif /* MAIN_APP_H */

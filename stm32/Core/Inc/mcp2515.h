@@ -3,8 +3,9 @@
  * @brief   MCP2515 CAN Controller SPI Driver
  *
  * Hardware: STM32F103C8T6 (Blue Pill)
- *   SPI1  : PA5(SCK), PA6(MISO), PA7(MOSI), PA4(CS)
- *   INT   : PB0 (active-low interrupt from MCP2515)
+ *   SPI1  : PA5(SCK), PA6(MISO), PA7(MOSI)
+ *   CS    : PB0  (chuyển từ PA4 sau khi đổi phần cứng)
+ *   INT   : KHÔNG dùng — polling-only qua MCP2515_RxAvailable() trong App_Run.
  *
  * CAN Bus: OBD2 standard (500 kbps)
  *   Request ID : 0x7DF  (functional broadcast)
@@ -20,8 +21,8 @@
 
 /* ── SPI & GPIO config ─────────────────────────────────────────────────── */
 #define MCP2515_SPI            hspi1
-#define MCP2515_CS_GPIO        GPIOA
-#define MCP2515_CS_PIN         GPIO_PIN_4
+#define MCP2515_CS_GPIO        GPIOB
+#define MCP2515_CS_PIN         GPIO_PIN_0
 #define MCP2515_SPI_TIMEOUT_MS 10U
 
 /* ── MCP2515 SPI Instructions ──────────────────────────────────────────── */

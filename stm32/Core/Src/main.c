@@ -3,14 +3,15 @@
  * @brief   STM32F103C8T6 (Blue Pill) — CAN Gateway main file
  *
  * ── Pin map ──────────────────────────────────────────────────────────────────
- *  PA4  : MCP2515 CS        (GPIO Output PP, No pull)
  *  PA5  : SPI1_SCK          (Alternate Function PP)
  *  PA6  : SPI1_MISO         (Input Floating)
  *  PA7  : SPI1_MOSI         (Alternate Function PP)
  *  PA9  : USART1_TX         (Alternate Function PP)
  *  PA10 : USART1_RX         (Input Floating)
- *  PB0  : MCP2515 INT       (Input Pull-up, EXTI0 falling edge)
+ *  PB0  : MCP2515 CS        (GPIO Output PP, No pull) — chuyển từ PA4
  *  PC13 : Onboard LED       (GPIO Output PP, active-low)
+ *
+ *  MCP2515 INT: KHÔNG nối (polling-only trong main loop).
  *
  * ── Clock ────────────────────────────────────────────────────────────────────
  *  HSE 8 MHz → PLL ×9 → SYSCLK 72 MHz
@@ -23,8 +24,7 @@
  *  SPI1   : Master, Full-duplex, 8-bit, CPOL=0/CPHA=0, NSS Software
  *           Prescaler /16 → 4.5 MHz (well within MCP2515's 10 MHz SPI max)
  *  USART1 : Async 460800 8N1, interrupt-driven RX
- *  EXTI0  : PB0 falling edge → MCP2515 INT → App_SetCanRxPending()
- *  NVIC   : USART1 global interrupt, EXTI0 interrupt
+ *  NVIC   : USART1 global interrupt
  */
 
 #include "main.h"
@@ -127,13 +127,13 @@ static void MX_GPIO_Init(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    /* ── PA4 : MCP2515 CS (output, idle high) ─── */
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-    GPIO_InitStruct.Pin   = GPIO_PIN_4;
+    /* ── PB0 : MCP2515 CS (output, idle high) — chuyển từ PA4 ─── */
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+    GPIO_InitStruct.Pin   = GPIO_PIN_0;
     GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull  = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* ── PA5, PA7 : SPI1 SCK, MOSI (Alternate Function PP) ─── */
     GPIO_InitStruct.Pin   = GPIO_PIN_5 | GPIO_PIN_7;
@@ -159,15 +159,8 @@ static void MX_GPIO_Init(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* ── PB0 : MCP2515 INT (Input Pull-up, EXTI falling) ─── */
-    GPIO_InitStruct.Pin  = GPIO_PIN_0;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-    /* ── NVIC: EXTI0 (PB0 / MCP2515 INT) ─── */
-    HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 0);
-    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+    /* MCP2515 INT pin: KHÔNG dùng nữa sau khi đổi phần cứng. RX frame được
+     * phát hiện bằng polling MCP2515_RxAvailable() mỗi vòng main loop. */
 }
 
 /* ── MX_SPI1_Init ────────────────────────────────────────────────────────────── */
@@ -241,18 +234,6 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     if (huart->Instance == USART1)
     {
         Comm_UART_TxCallback();
-    }
-}
-
-/**
- * @brief  Called by HAL when an EXTI line triggers.
- *         PB0 falling edge = MCP2515 INT → CAN frame available.
- */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-    if (GPIO_Pin == GPIO_PIN_0)
-    {
-        App_SetCanRxPending();
     }
 }
 
