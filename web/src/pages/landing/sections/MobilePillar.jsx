@@ -71,9 +71,9 @@ export default function MobilePillar() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <PlaceholderImage path="app/screen-live-data.png"  alt="Live Dashboard" ratio="9/19.5" />
-            <PlaceholderImage path="app/screen-dtc-list.png"   alt="DTC List" ratio="9/19.5" />
-            <PlaceholderImage path="app/screen-lab-session.png" alt="Lab Session" ratio="9/19.5"
+            <PlaceholderImage path="app/screen-data-logger.png"   alt="Data Logger" ratio="9/19.5" />
+            <PlaceholderImage path="app/screen-actuator-test.png" alt="Actuator Test" ratio="9/19.5" />
+            <PlaceholderImage path="app/screen-lab-session.png"   alt="Lab Session" ratio="9/19.5"
               caption={t('landing.mobile.screensCaption')} />
           </div>
         </div>
