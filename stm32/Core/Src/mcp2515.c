@@ -108,10 +108,15 @@ MCP2515_Status_t MCP2515_SetMode(uint8_t mode)
 {
     reg_bit_modify(MCP2515_REG_CANCTRL, MCP2515_MODE_MASK, mode);
 
-    /* Poll until mode change is confirmed (max 10 ms) */
+    /* Poll until mode change is confirmed (max 200 ms).
+     * Một số module MCP2515 dùng thạch anh khởi động chậm (typical 10-50ms,
+     * có module tới 200ms để stable). Trước đây timeout 10ms vừa đủ với
+     * module cũ; sau khi đổi phần cứng, module mới khởi động chậm hơn nên
+     * phải nới timeout. 200ms an toàn vì SetMode chỉ gọi khi init/chuyển
+     * baud — không nằm trong hot path RX/TX.                               */
     uint32_t t_start = HAL_GetTick();
     while ((reg_read(MCP2515_REG_CANSTAT) & MCP2515_MODE_MASK) != mode) {
-        if ((HAL_GetTick() - t_start) > 10) {
+        if ((HAL_GetTick() - t_start) > 200) {
             return MCP2515_TIMEOUT;
         }
     }

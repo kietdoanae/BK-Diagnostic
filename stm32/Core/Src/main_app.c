@@ -45,6 +45,11 @@ static bool s_initialized = false;
 /* ── App_Init ────────────────────────────────────────────────────────────── */
 void App_Init(void)
 {
+    /* Đợi MCP2515 oscillator stable trước khi gọi Init.
+     * Một số module dùng crystal khởi động chậm (10-200ms) — gọi Init quá
+     * sớm sẽ làm SetMode timeout. 100ms là biên an toàn cho hầu hết crystal. */
+    HAL_Delay(100);
+
     /* 1. CAN controller - default 500 kbps (OBD2 standard) */
     MCP2515_Status_t can_ok = MCP2515_Init();
     if (can_ok != MCP2515_OK) {
