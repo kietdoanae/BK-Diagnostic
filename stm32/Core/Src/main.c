@@ -40,6 +40,7 @@ static void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART1_UART_Init(void);
+void Error_Handler(void);
 
 /* ── main ────────────────────────────────────────────────────────────────────── */
 int main(void)
