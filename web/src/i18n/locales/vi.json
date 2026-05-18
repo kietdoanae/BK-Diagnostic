@@ -574,7 +574,6 @@
     },
     "metrics": {
       "brands": "Hãng xe\nhỗ trợ",
-      "sensors": "Thông số\ncảm biến",
       "sessions": "Buổi học\nthực hành",
       "components": "Thành phần\ntích hợp",
       "protocols": "Giao thức\nchuẩn đoán"
@@ -601,7 +600,7 @@
         "mobile": {
           "title": "MOBILE APP",
           "tech": "Android Kotlin · Jetpack Compose",
-          "desc": "Hiển thị live data, ghi log, chế độ Lab"
+          "desc": "Ghi log dữ liệu, kích hoạt cơ cấu, chế độ Lab"
         },
         "web": {
           "title": "WEB PLATFORM",
@@ -653,12 +652,9 @@
     "mobile": {
       "eyebrow": "TRỤ CỘT 2 · MOBILE APP",
       "title": "Ứng dụng Android chẩn đoán & học tập",
-      "sub": "Giao tiếp với mạch CAN qua USB-OTG, hiển thị live data, đọc mã lỗi và hỗ trợ chế độ Lab cho lớp học.",
+      "sub": "Giao tiếp với mạch CAN qua USB-OTG, ghi log dữ liệu, kích hoạt cơ cấu chấp hành và hỗ trợ chế độ Lab cho lớp học.",
       "featuresTitle": "Tính năng chính",
       "features": [
-        { "icon": "⏱", "title": "Live Data", "desc": "Hiển thị 50+ thông số sensor cập nhật mỗi 500 ms, biểu diễn dạng gauge và biểu đồ thời gian thực." },
-        { "icon": "⚠", "title": "Mã lỗi DTC", "desc": "Quét và giải mã mã lỗi P/C/B/U từ tất cả ECU, xóa DTC và tắt đèn Check Engine." },
-        { "icon": "💻", "title": "Thông tin ECU", "desc": "Đọc VIN, phiên bản phần mềm và mã hiệu chuẩn từ các module: động cơ, hộp số, ABS, túi khí, BCM." },
         { "icon": "📈", "title": "Data Logger", "desc": "Ghi log dữ liệu ra file CSV để phân tích offline sau khi chạy thử nghiệm." },
         { "icon": "🔧", "title": "Actuator Test", "desc": "Kích hoạt cơ cấu chấp hành (van EGR, bơm nhiên liệu, quạt điện…) qua UDS Mode 31." },
         { "icon": "📡", "title": "Raw CAN Monitor", "desc": "Xem byte CAN thô song song với kết quả giải mã, công cụ debug cho kỹ sư." }

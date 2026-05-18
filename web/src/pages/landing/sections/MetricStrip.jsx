@@ -9,7 +9,6 @@ export default function MetricStrip() {
 
   const METRICS = [
     { value: '8+',  label: t('landing.metrics.brands'), icon: '🏭' },
-    { value: '50+', label: t('landing.metrics.sensors'), icon: '📡' },
     { value: '6',   label: t('landing.metrics.sessions'), icon: '🔬' },
     { value: '3',   label: t('landing.metrics.components'), icon: '🔧' },
     { value: '5',   label: t('landing.metrics.protocols'), icon: '🔌' },

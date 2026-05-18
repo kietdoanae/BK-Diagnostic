@@ -574,7 +574,6 @@
     },
     "metrics": {
       "brands": "Car brands\nsupported",
-      "sensors": "Sensor\nparameters",
       "sessions": "Practice\nsessions",
       "components": "Integrated\ncomponents",
       "protocols": "Diagnostic\nprotocols"
@@ -601,7 +600,7 @@
         "mobile": {
           "title": "MOBILE APP",
           "tech": "Android Kotlin · Jetpack Compose",
-          "desc": "Display live data, log, Lab mode"
+          "desc": "Data logging, actuator activation, Lab mode"
         },
         "web": {
           "title": "WEB PLATFORM",
@@ -653,12 +652,9 @@
     "mobile": {
       "eyebrow": "PILLAR 2 · MOBILE APP",
       "title": "Android Diagnostic & Learning App",
-      "sub": "Communicates with CAN board via USB-OTG, displays live data, reads fault codes, and supports Lab mode for classroom use.",
+      "sub": "Communicates with CAN board via USB-OTG, logs data, activates actuators, and supports Lab mode for classroom use.",
       "featuresTitle": "Key Features",
       "features": [
-        { "icon": "⏱", "title": "Live Data", "desc": "Display 50+ sensor parameters updated every 500 ms, visualized as gauges and real-time charts." },
-        { "icon": "⚠", "title": "DTC Fault Codes", "desc": "Scan and decode P/C/B/U fault codes from all ECUs, clear DTCs and turn off Check Engine light." },
-        { "icon": "💻", "title": "ECU Information", "desc": "Read VIN, software version and standard IDs from modules: engine, transmission, ABS, airbags, BCM." },
         { "icon": "📈", "title": "Data Logger", "desc": "Log data to CSV file for offline analysis after test runs." },
         { "icon": "🔧", "title": "Actuator Test", "desc": "Activate actuators (EGR valve, fuel pump, electric fan…) via UDS Mode 31." },
         { "icon": "📡", "title": "Raw CAN Monitor", "desc": "View raw CAN bytes alongside decoded results, a debugging tool for engineers." }
