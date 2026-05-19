@@ -5,13 +5,16 @@ import ScrollProgress from './shared/ScrollProgress'
 import CursorGlow from './shared/CursorGlow'
 import PageLoader from './shared/PageLoader'
 import SectionDivider from './shared/SectionDivider'
+import CANFrameTicker from './shared/CANFrameTicker'
 import Hero from './sections/Hero'
 import MetricStrip from './sections/MetricStrip'
 import Context from './sections/Context'
 import Architecture from './sections/Architecture'
 import HardwarePillar from './sections/HardwarePillar'
 import MobilePillar from './sections/MobilePillar'
+import VehicleSupport from './sections/VehicleSupport'
 import WebPillar from './sections/WebPillar'
+import LabCatalog from './sections/LabCatalog'
 import UseCase from './sections/UseCase'
 import TechStack from './sections/TechStack'
 import Team from './sections/Team'
@@ -30,6 +33,7 @@ export default function LandingPage() {
         <Navbar />
         <Hero />
         <MetricStrip />
+        <CANFrameTicker />
         <SectionDivider variant="wave" />
         <Context />
         <SectionDivider variant="curve" />
@@ -39,8 +43,12 @@ export default function LandingPage() {
         <SectionDivider variant="wave" flip />
         <MobilePillar />
         <SectionDivider variant="curve" />
-        <WebPillar />
+        <VehicleSupport />
         <SectionDivider variant="tilt" />
+        <WebPillar />
+        <SectionDivider variant="wave" flip />
+        <LabCatalog />
+        <SectionDivider variant="curve" />
         <UseCase />
         <SectionDivider variant="wave" flip />
         <TechStack />

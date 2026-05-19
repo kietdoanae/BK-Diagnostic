@@ -10,6 +10,7 @@ export default function MobilePillar() {
 
   const FEATURES = t('landing.mobile.features', { returnObjects: true })
   const LAB_STEPS = t('landing.mobile.labSteps', { returnObjects: true })
+  const SPOTLIGHT = t('landing.mobile.activeTestSpotlight', { returnObjects: true })
 
   return (
     <motion.section
@@ -28,6 +29,194 @@ export default function MobilePillar() {
           sub={t('landing.mobile.sub')}
           align="left"
         />
+
+        {/* ═════════ Active Test SPOTLIGHT card ═════════ */}
+        <motion.div
+          variants={fadeUpItem}
+          whileHover={{ y: -3 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+          style={{
+            position: 'relative',
+            marginBottom: 32,
+            padding: 2,
+            borderRadius: 22,
+            background:
+              'conic-gradient(from 90deg, rgba(124,58,237,0.65), rgba(21,101,192,0.65), rgba(212,160,23,0.5), rgba(124,58,237,0.65))',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Rotating aurora behind */}
+          <motion.div
+            aria-hidden
+            animate={{ rotate: 360 }}
+            transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+            style={{
+              position: 'absolute',
+              inset: -120,
+              background:
+                'conic-gradient(from 0deg, rgba(124,58,237,0.35) 0%, transparent 40%, rgba(21,101,192,0.35) 70%, transparent 100%)',
+              filter: 'blur(60px)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          <div
+            style={{
+              position: 'relative',
+              background: 'linear-gradient(135deg, #0A0F26 0%, #1B1547 100%)',
+              borderRadius: 20,
+              padding: '32px 36px',
+              color: '#fff',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Decorative dotted grid */}
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: 'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)',
+                backgroundSize: '22px 22px',
+                opacity: 0.55,
+                pointerEvents: 'none',
+              }}
+            />
+
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {/* Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <motion.span
+                  animate={{ opacity: [1, 0.5, 1] }}
+                  transition={{ duration: 1.8, repeat: Infinity }}
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    background: '#A78BFA',
+                    boxShadow: '0 0 12px #A78BFA',
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: 2,
+                    color: '#C4B5FD',
+                  }}
+                >
+                  {SPOTLIGHT.badge}
+                </span>
+              </div>
+
+              {/* Title */}
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: 'clamp(22px, 3vw, 28px)',
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  background: 'linear-gradient(135deg, #fff 0%, #DDD6FE 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                {SPOTLIGHT.title}
+              </h3>
+
+              {/* Description */}
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 14,
+                  lineHeight: 1.65,
+                  color: 'rgba(255,255,255,0.78)',
+                  maxWidth: 680,
+                }}
+              >
+                {SPOTLIGHT.desc}
+              </p>
+
+              {/* Stats row */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                  gap: 12,
+                  marginTop: 6,
+                }}
+              >
+                {SPOTLIGHT.stats.map((s, i) => (
+                  <motion.div
+                    key={i}
+                    variants={fadeUpItem}
+                    whileHover={{ scale: 1.04 }}
+                    style={{
+                      padding: '14px 14px',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 12,
+                      backdropFilter: 'blur(8px)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: 'var(--font-mono, ui-monospace, Menlo, monospace)',
+                        fontSize: 24,
+                        fontWeight: 800,
+                        color: '#fff',
+                        lineHeight: 1,
+                        marginBottom: 4,
+                      }}
+                    >
+                      {s.value}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 10.5,
+                        color: 'rgba(255,255,255,0.55)',
+                        fontWeight: 600,
+                        letterSpacing: 0.5,
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {s.label}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Highlights bullets */}
+              <ul
+                style={{
+                  margin: '8px 0 0',
+                  padding: 0,
+                  listStyle: 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                }}
+              >
+                {SPOTLIGHT.highlights.map((h, i) => (
+                  <li
+                    key={i}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      fontSize: 13,
+                      color: 'rgba(255,255,255,0.85)',
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    <span style={{ color: '#A78BFA', fontWeight: 700, flexShrink: 0 }}>›</span>
+                    <span>{h}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Hàng trên: Tính năng + 3 screenshot */}
         <div style={{

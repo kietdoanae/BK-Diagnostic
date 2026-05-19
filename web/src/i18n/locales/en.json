@@ -559,6 +559,7 @@
       "overview": "Overview",
       "architecture": "Architecture",
       "mobile": "Mobile App",
+      "vehicles": "Vehicles",
       "web": "Web Platform",
       "lab": "Lab",
       "team": "Team"
@@ -566,7 +567,7 @@
     "hero": {
       "badge": "GRADUATION PROJECT · HCMUT · 2026",
       "title": "Vehicle Diagnostics System\n& CAN bus Training",
-      "desc": "An integrated platform with three components — embedded hardware, Android app, and web platform —\nserving CAN bus protocol teaching and automotive diagnostics procedures for\nAutomotive Engineering students.",
+      "desc": "An integrated three-pillar platform — custom CAN hardware, Android cluster-control app,\nand web Lab dashboard — built for teaching the CAN protocol, UDS services and automotive\ndiagnostic workflows to Automotive Engineering students.",
       "btnExplore": "Explore Architecture →",
       "btnLab": "View Lab System",
       "imgAlt": "CAN bus practice workbench at the Automotive Engineering lab",
@@ -600,7 +601,7 @@
         "mobile": {
           "title": "MOBILE APP",
           "tech": "Android Kotlin · Jetpack Compose",
-          "desc": "Data logging, actuator activation, Lab mode"
+          "desc": "Active Test, gauge control, Lab mode"
         },
         "web": {
           "title": "WEB PLATFORM",
@@ -652,12 +653,29 @@
     "mobile": {
       "eyebrow": "PILLAR 2 · MOBILE APP",
       "title": "Android Diagnostic & Learning App",
-      "sub": "Communicates with CAN board via USB-OTG, logs data, activates actuators, and supports Lab mode for classroom use.",
+      "sub": "Talks to the CAN board over USB-OTG. Active Test directly drives a real instrument cluster, logs data, and runs guided Lab sessions for the classroom.",
+      "activeTestSpotlight": {
+        "badge": "FLAGSHIP FEATURE",
+        "title": "Active Test — Drive a real Ford Ranger cluster",
+        "desc": "Tap a warning lamp on a photoreal cluster image — the actual lamp lights up. Drag the RPM/Speed sliders — the real needles follow, with 0.01 km/h resolution.",
+        "stats": [
+          { "value": "14", "label": "CAN warning lamps" },
+          { "value": "2", "label": "Live gauges" },
+          { "value": "0.01", "label": "km/h resolution" },
+          { "value": "100ms", "label": "Stream interval" }
+        ],
+        "highlights": [
+          "Automatic wake-up sequence on USB connect (frame 0x3B3)",
+          "Template-based encoding — adding a new vehicle is a JSON edit",
+          "Every TX/RX frame is logged into the Raw Frame Monitor"
+        ]
+      },
       "featuresTitle": "Key Features",
       "features": [
-        { "icon": "📈", "title": "Data Logger", "desc": "Log data to CSV file for offline analysis after test runs." },
-        { "icon": "🔧", "title": "Actuator Test", "desc": "Activate actuators (EGR valve, fuel pump, electric fan…) via UDS Mode 31." },
-        { "icon": "📡", "title": "Raw CAN Monitor", "desc": "View raw CAN bytes alongside decoded results, a debugging tool for engineers." }
+        { "icon": "🎯", "title": "Active Test", "desc": "14 warning lamps + 2 live gauges on Ford Ranger. CAN frames sourced from a JSON map." },
+        { "icon": "📡", "title": "Raw CAN Monitor", "desc": "Unified TX + RX log with timestamps, hex bytes and OBD-II / UDS decoding. Filter + CSV export." },
+        { "icon": "📈", "title": "Data Logger", "desc": "Capture a CAN session to CSV for offline analysis after a test run." },
+        { "icon": "🔧", "title": "Actuator Test", "desc": "Activate actuators (EGR valve, fuel pump, electric fan…) via UDS Mode 31." }
       ],
       "labTitle": "Lab Mode — Learning Mode",
       "labDesc": "When an instructor activates a session, the app automatically switches to Lab mode. Students\nlog in with their Student ID, take the pre-quiz, follow step-by-step instructions, then complete\nthe post-lab. All CAN operations are recorded as evidence and sent in real-time to the instructor\ndashboard. PDF reports are auto-generated at the end of the session.",
@@ -697,6 +715,39 @@
       ],
       "imgAlt": "Admin Dashboard, session management tab",
       "imgCaption": ""
+    },
+    "vehicles": {
+      "eyebrow": "VEHICLE SUPPORT",
+      "title": "Per-vehicle CAN frame maps",
+      "sub": "CAN frame maps (warning lamps, gauge encoding, wake-up sequence) live in a separate JSON file per vehicle. Adding a new vehicle is a JSON edit — no rebuild required.",
+      "ready": {
+        "label": "SHIPPED",
+        "brand": "Ford",
+        "model": "Ranger 2.0L Bi-Turbo",
+        "year": "2019 (PXIII)",
+        "tags": [
+          "14 warning lamps",
+          "RPM 0x201 · Speed 0x202",
+          "Wake-up 0x3B3",
+          "UDS Mode 22"
+        ]
+      },
+      "roadmapLabel": "ROADMAP",
+      "roadmap": ["Toyota Vios", "Hyundai Accent", "VinFast Fadil", "Kia Cerato", "Mazda 3", "Honda City"]
+    },
+    "labCatalog": {
+      "eyebrow": "TR4021 CURRICULUM",
+      "title": "Six progressive labs",
+      "sub": "A standardized teaching path for TR4021 — Automotive Diagnostic Systems. Every lab ships with a pre-quiz, guided practice, post-lab, and an auto-generated PDF report.",
+      "items": [
+        { "code": "LAB-01", "title": "CAN Bus Anatomy & Frame Inspection", "level": 1, "desc": "First contact with the bus. Read raw frames; understand Arbitration ID, DLC, Data, CRC." },
+        { "code": "LAB-02", "title": "OBD-II Live Data PIDs", "level": 2, "desc": "Decode standard PIDs (Mode 01): RPM, speed, coolant temperature, engine load." },
+        { "code": "LAB-03", "title": "Gauge Simulation & Transfer Functions", "level": 3, "desc": "FLAGSHIP. Analyse RPM/Speed transfer functions, big-endian encode, drive a real cluster." },
+        { "code": "LAB-04", "title": "Dashboard Warning System Mapping", "level": 3, "desc": "Map each CAN frame to its warning lamp, author the JSON config, validate with Active Test." },
+        { "code": "LAB-05", "title": "Bus Error Diagnostics & Recovery", "level": 4, "desc": "Inject errors (bit, stuff, off-bus), observe error counters, program automatic recovery." },
+        { "code": "LAB-06", "title": "Integrated Diagnostic Workflow", "level": 5, "desc": "Capstone. Handle one real case: scan DTC → analyse → Active Test → clear → report." }
+      ],
+      "levelLabel": "Difficulty"
     },
     "useCase": {
       "eyebrow": "USE CASE",
