@@ -559,6 +559,7 @@
       "overview": "Tổng quan",
       "architecture": "Kiến trúc",
       "mobile": "Mobile App",
+      "vehicles": "Dòng xe",
       "web": "Web Platform",
       "lab": "Lab",
       "team": "Team"
@@ -566,7 +567,7 @@
     "hero": {
       "badge": "ĐỒ ÁN TỐT NGHIỆP · HCMUT · 2026",
       "title": "Hệ thống chẩn đoán xe\nvà đào tạo CAN bus",
-      "desc": "Nền tảng tích hợp ba thành phần — phần cứng nhúng, ứng dụng Android và web platform —\nphục vụ giảng dạy giao thức CAN bus và quy trình chẩn đoán xe ô tô cho sinh viên\nngành Kỹ thuật Ô tô.",
+      "desc": "Nền tảng tích hợp ba trụ cột — mạch CAN tự thiết kế, ứng dụng Android điều khiển\ncụm đồng hồ và web platform quản trị Lab — phục vụ giảng dạy giao thức CAN bus,\nUDS và quy trình chẩn đoán xe ô tô cho sinh viên ngành Kỹ thuật Ô tô.",
       "btnExplore": "Khám phá kiến trúc →",
       "btnLab": "Xem hệ thống Lab",
       "imgAlt": "Sa bàn thực hành CAN bus tại phòng lab Bộ môn Kỹ thuật Ô tô",
@@ -600,7 +601,7 @@
         "mobile": {
           "title": "MOBILE APP",
           "tech": "Android Kotlin · Jetpack Compose",
-          "desc": "Ghi log dữ liệu, kích hoạt cơ cấu, chế độ Lab"
+          "desc": "Active Test, điều khiển kim đồng hồ, chế độ Lab"
         },
         "web": {
           "title": "WEB PLATFORM",
@@ -652,12 +653,29 @@
     "mobile": {
       "eyebrow": "TRỤ CỘT 2 · MOBILE APP",
       "title": "Ứng dụng Android chẩn đoán & học tập",
-      "sub": "Giao tiếp với mạch CAN qua USB-OTG, ghi log dữ liệu, kích hoạt cơ cấu chấp hành và hỗ trợ chế độ Lab cho lớp học.",
+      "sub": "Giao tiếp với mạch CAN qua USB-OTG. Active Test điều khiển trực tiếp cụm đồng hồ thật, ghi log dữ liệu và hỗ trợ chế độ Lab cho lớp học.",
+      "activeTestSpotlight": {
+        "badge": "TÍNH NĂNG NỔI BẬT",
+        "title": "Active Test — Điều khiển cụm đồng hồ Ford Ranger",
+        "desc": "Chạm vào biểu tượng đèn cảnh báo trên ảnh photoreal — đèn thật trên cụm đồng hồ xe sẽ sáng. Kéo slider RPM/Speed — kim đồng hồ thật quay theo, độ phân giải 0.01 km/h.",
+        "stats": [
+          { "value": "14", "label": "Đèn cảnh báo CAN" },
+          { "value": "2", "label": "Kim đồng hồ điều khiển" },
+          { "value": "0.01", "label": "km/h độ phân giải" },
+          { "value": "100ms", "label": "Chu kỳ stream" }
+        ],
+        "highlights": [
+          "Wake-up sequence tự động khi cắm USB (frame 0x3B3)",
+          "Encoding template-based — thêm xe mới chỉ cần edit JSON",
+          "Mọi frame TX/RX log vào Raw Frame Monitor để debug"
+        ]
+      },
       "featuresTitle": "Tính năng chính",
       "features": [
-        { "icon": "📈", "title": "Data Logger", "desc": "Ghi log dữ liệu ra file CSV để phân tích offline sau khi chạy thử nghiệm." },
-        { "icon": "🔧", "title": "Actuator Test", "desc": "Kích hoạt cơ cấu chấp hành (van EGR, bơm nhiên liệu, quạt điện…) qua UDS Mode 31." },
-        { "icon": "📡", "title": "Raw CAN Monitor", "desc": "Xem byte CAN thô song song với kết quả giải mã, công cụ debug cho kỹ sư." }
+        { "icon": "🎯", "title": "Active Test", "desc": "14 đèn cảnh báo + 2 kim đồng hồ trên Ford Ranger. Gửi CAN frame chính xác từ JSON map." },
+        { "icon": "📡", "title": "Raw CAN Monitor", "desc": "Log unified TX + RX với timestamp, hex bytes và decode OBD-II/UDS. Filter + export CSV." },
+        { "icon": "📈", "title": "Data Logger", "desc": "Ghi session CAN ra CSV để phân tích offline sau buổi thử nghiệm." },
+        { "icon": "🔧", "title": "Actuator Test", "desc": "Kích hoạt cơ cấu chấp hành (van EGR, bơm nhiên liệu, quạt điện…) qua UDS Mode 31." }
       ],
       "labTitle": "Lab Mode — Chế độ học tập",
       "labDesc": "Khi giảng viên kích hoạt một buổi học, ứng dụng tự chuyển sang chế độ Lab. Sinh viên\nđăng nhập bằng MSSV, làm pre-quiz, thực hành theo hướng dẫn, rồi hoàn thành post-lab.\nToàn bộ thao tác CAN được ghi nhận làm bằng chứng (evidence) gửi real-time về dashboard\ngiảng viên. Báo cáo PDF sinh tự động cuối buổi.",
@@ -697,6 +715,39 @@
       ],
       "imgAlt": "Trang Admin Dashboard, tab quản lý phiên học",
       "imgCaption": ""
+    },
+    "vehicles": {
+      "eyebrow": "DÒNG XE HỖ TRỢ",
+      "title": "Map CAN frame riêng cho từng dòng xe",
+      "sub": "CAN frame map (đèn cảnh báo, gauge encoding, wake-up sequence) lưu trong file JSON riêng cho mỗi xe. Thêm xe mới chỉ cần soạn thêm 1 file — không cần build lại app.",
+      "ready": {
+        "label": "TRIỂN KHAI",
+        "brand": "Ford",
+        "model": "Ranger 2.0L Bi-Turbo",
+        "year": "2019 (PXIII)",
+        "tags": [
+          "14 đèn cảnh báo",
+          "RPM 0x201 · Speed 0x202",
+          "Wake-up 0x3B3",
+          "UDS Mode 22"
+        ]
+      },
+      "roadmapLabel": "ROADMAP",
+      "roadmap": ["Toyota Vios", "Hyundai Accent", "VinFast Fadil", "Kia Cerato", "Mazda 3", "Honda City"]
+    },
+    "labCatalog": {
+      "eyebrow": "CHƯƠNG TRÌNH HỌC TR4021",
+      "title": "Sáu bài Lab tiệm tiến",
+      "sub": "Lộ trình giảng dạy chuẩn hóa cho học phần TR4021 — Hệ thống Chẩn đoán Ô tô. Mỗi Lab có pre-quiz, hướng dẫn thực hành, post-lab và báo cáo PDF tự động.",
+      "items": [
+        { "code": "LAB-01", "title": "Giải phẫu CAN bus & quan sát frame", "level": 1, "desc": "Tiếp xúc đầu tiên với CAN. Đọc raw frame, hiểu cấu trúc Arbitration ID + DLC + Data + CRC." },
+        { "code": "LAB-02", "title": "Live Data PID OBD-II", "level": 2, "desc": "Giải mã PID chuẩn (Mode 01): RPM, tốc độ, nhiệt độ nước làm mát, % tải động cơ." },
+        { "code": "LAB-03", "title": "Mô phỏng kim đồng hồ", "level": 3, "desc": "FLAGSHIP. Phân tích transfer function RPM/Speed, encode big-endian, gửi CAN điều khiển cluster thật." },
+        { "code": "LAB-04", "title": "Map đèn cảnh báo Dashboard", "level": 3, "desc": "Map từng CAN frame với từng đèn cảnh báo, viết JSON config, kiểm chứng bằng Active Test." },
+        { "code": "LAB-05", "title": "Chẩn đoán lỗi bus & phục hồi", "level": 4, "desc": "Tiêm lỗi (bit error, stuff error, off-bus), quan sát error counter, lập trình phục hồi tự động." },
+        { "code": "LAB-06", "title": "Quy trình chẩn đoán tích hợp", "level": 5, "desc": "Capstone. Sinh viên xử lý 1 ca thực tế: scan DTC → phân tích → Active Test → xóa lỗi → báo cáo." }
+      ],
+      "levelLabel": "Độ khó"
     },
     "useCase": {
       "eyebrow": "USE CASE",

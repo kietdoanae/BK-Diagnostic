@@ -22,6 +22,7 @@ export default function Navbar() {
     { href: '#tong-quan',  label: t('landing.nav.overview') },
     { href: '#kien-truc',  label: t('landing.nav.architecture') },
     { href: '#mobile',     label: t('landing.nav.mobile') },
+    { href: '#vehicles',   label: t('landing.nav.vehicles') },
     { href: '#web',        label: t('landing.nav.web') },
     { href: '#lab',        label: t('landing.nav.lab') },
     { href: '#team',       label: t('landing.nav.team') },
