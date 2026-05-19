@@ -94,6 +94,7 @@ fun DiagnosticScreen(
         DiagView.HUB ->
             DiagnosticHub(
                 viewModel      = viewModel,
+                brandId        = brandId,
                 onBack         = onBack,
                 onNavigate     = { currentView = it },
                 isAdmin        = isAdmin
@@ -110,6 +111,8 @@ fun DiagnosticScreen(
                 modelId   = modelId,
                 onBack    = { currentView = DiagView.HUB }
             )
+        // DiagView.LIVE_DATA branch giữ lại để khi cần bật lại tính năng chỉ
+        // việc thêm card vào Hub — màn hình đã sẵn sàng, không bị xoá.
         DiagView.LIVE_DATA ->
             LiveDataScreen(
                 viewModel = viewModel,
@@ -125,10 +128,15 @@ fun DiagnosticScreen(
 @Composable
 private fun DiagnosticHub(
     viewModel: DiagnosticViewModel,
+    brandId: String,
     onBack: () -> Unit,
     onNavigate: (DiagView) -> Unit,
     @Suppress("UNUSED_PARAMETER") isAdmin: Boolean = false
 ) {
+    // Active Test hiện chỉ hỗ trợ Ford (CAN frame map đầy đủ trong
+    // ford_ranger_dashboard.json). Các brand khác sẽ thấy nút Active Test
+    // bị disable.
+    val isFord = brandId.equals("ford", ignoreCase = true)
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
 
@@ -182,7 +190,9 @@ private fun DiagnosticHub(
                     onClick = { onNavigate(DiagView.RAW_MONITOR) }
                 )
 
-                // Live Data — RPM, speed, engine temp, load, ... (mọi user)
+                // Live Data — đã ẩn theo yêu cầu. Khi cần bật lại, uncomment block
+                // dưới đây (LiveDataScreen + navigation branch vẫn còn nguyên).
+                /*
                 DiagnosticFunctionCard(
                     icon = Icons.Default.Speed,
                     title = stringResource(R.string.diagnostic_live_data_title),
@@ -193,17 +203,20 @@ private fun DiagnosticHub(
                     actionLabel = stringResource(R.string.diagnostic_btn_open),
                     onClick = { onNavigate(DiagView.LIVE_DATA) }
                 )
+                */
 
-                // Active Test — Kích hoạt cơ cấu chấp hành
+                // Active Test — Kích hoạt cơ cấu chấp hành. Chỉ hỗ trợ Ford
+                // (frame map riêng cho Ford cluster); brand khác bị disable.
                 DiagnosticFunctionCard(
                     icon = Icons.Default.DirectionsCar,
                     title = stringResource(R.string.diagnostic_active_test_title),
-                    description = stringResource(R.string.diagnostic_active_test_desc),
+                    description = stringResource(R.string.diagnostic_active_test_desc) +
+                        if (!isFord) " — chỉ hỗ trợ Ford" else "",
                     accentColor = Color(0xFF7C3AED),
-                    enabled = true,
+                    enabled = isFord,
                     actionIcon = Icons.Default.DirectionsCar,
                     actionLabel = stringResource(R.string.diagnostic_btn_open),
-                    onClick = { onNavigate(DiagView.ACTIVE_TEST) }
+                    onClick = { if (isFord) onNavigate(DiagView.ACTIVE_TEST) }
                 )
                 // Lưu ý: Lab Mode đã được tách ra dashboard chính (top-level),
                 // không còn nằm trong Diagnostic Hub.
