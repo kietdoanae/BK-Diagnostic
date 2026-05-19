@@ -303,13 +303,31 @@ fun ActiveTestScreen(
         }
     }
 
-    // ── Cluster wake-up: gửi 1 frame đánh thức trên 0x3B3 mỗi khi USB chuyển từ
-    //    disconnected → connected. Dùng rememberSaveable để không bắn lại khi
-    //    config-change (xoay màn hình) trong cùng phiên kết nối.
+    // ── Cluster wake-up: gửi chuỗi frame trong dashboardConfig.wakeUpSequence
+    //    mỗi khi USB chuyển từ disconnected → connected. Frame list được nạp
+    //    từ JSON nên có thể bổ sung thêm (vd: đèn nền kim) mà không cần build.
+    //    Fallback an toàn nếu JSON rỗng: chỉ gửi frame Wake-Up cluster mặc định.
+    val wakeUpSequence = remember(dashboardConfig) {
+        if (dashboardConfig.wakeUpSequence.isEmpty) {
+            DashboardCanConfig.WakeUpSequence(
+                frames = listOf(
+                    DashboardCanConfig.WakeUpFrame(
+                        canId = 0x3B3,
+                        canData = byteArrayOf(
+                            0x44.toByte(), 0x88.toByte(), 0xC0.toByte(), 0x0C.toByte(),
+                            0xE6.toByte(), 0x00.toByte(), 0x03.toByte(), 0x3A.toByte()
+                        ),
+                        label = "Wake-up cluster (fallback)"
+                    )
+                ),
+                intervalMs = 30L
+            )
+        } else dashboardConfig.wakeUpSequence
+    }
     var hasWokenUp by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(isConnected) {
         if (isConnected && !hasWokenUp) {
-            viewModel.wakeUpCluster()
+            viewModel.wakeUpCluster(wakeUpSequence)
             hasWokenUp = true
         } else if (!isConnected) {
             // Mất kết nối → reset cờ để lần connect kế tiếp lại đánh thức.
