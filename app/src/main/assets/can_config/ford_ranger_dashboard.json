@@ -28,6 +28,20 @@
     "  • gear_d         (Chỉnh số D)              CAN 0x171  ON: 34 60 00 00 00 00 00 00"
   ],
 
+  "wakeUpSequence": {
+    "_doc": "Danh sách CAN frame gửi MỘT LẦN ngay sau khi USB-CAN connect, để đánh thức cụm đồng hồ và bật đèn nền kim.",
+    "_format": "Mỗi frame có canId + canData (8 byte hex). Gửi tuần tự, cách nhau intervalMs.",
+    "_howto": "Bổ sung frame mới: copy 1 entry trong frames[], điền canId + canData. Không cần build lại app — chỉ cần đóng/mở app.",
+    "intervalMs": 30,
+    "frames": [
+      {
+        "_label": "Wake-up cụm đồng hồ (Cluster bus)",
+        "canId":   "0x3B3",
+        "canData": "44 88 C0 0C E6 00 03 3A"
+      }
+    ]
+  },
+
   "gauges": {
     "_doc": "Gauge Control — điều khiển kim đồng hồ RPM/Speed bằng CAN broadcast liên tục",
     "_schema": [

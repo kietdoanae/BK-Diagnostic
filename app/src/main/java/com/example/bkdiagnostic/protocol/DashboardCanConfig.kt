@@ -78,11 +78,33 @@ object DashboardCanConfig {
     }
 
     /**
-     * Toàn bộ config dashboard cho 1 model: icons + gauges.
+     * 1 frame trong chuỗi đánh thức cluster.  Mỗi frame là 1 CAN payload
+     * sẽ được gửi tuần tự sau khi USB-CAN kết nối thành công.
+     */
+    data class WakeUpFrame(
+        val canId: Int,
+        val canData: ByteArray,
+        val label: String = ""
+    )
+
+    /**
+     * Chuỗi đánh thức cụm đồng hồ. List rỗng = không gửi frame nào (fallback
+     * mặc định sẽ do caller xử lý).
+     */
+    data class WakeUpSequence(
+        val frames: List<WakeUpFrame>,
+        val intervalMs: Long = 30L,
+    ) {
+        val isEmpty: Boolean get() = frames.isEmpty()
+    }
+
+    /**
+     * Toàn bộ config dashboard cho 1 model: icons + gauges + wake-up sequence.
      */
     data class DashboardConfig(
         val icons: Map<String, IconCanEntry>,
-        val gauges: GaugeConfig
+        val gauges: GaugeConfig,
+        val wakeUpSequence: WakeUpSequence = WakeUpSequence(emptyList())
     )
 
     /**
@@ -116,7 +138,8 @@ object DashboardCanConfig {
         val root = JSONObject(json)
         val icons = parseIcons(root.optJSONObject("icons"))
         val gauges = parseGauges(root.optJSONObject("gauges"))
-        return DashboardConfig(icons, gauges)
+        val wakeUp = parseWakeUpSequence(root.optJSONObject("wakeUpSequence"))
+        return DashboardConfig(icons, gauges, wakeUp)
     }
 
     /**
@@ -155,6 +178,27 @@ object DashboardCanConfig {
         val intervalMs = obj.optLong("intervalMs", 100L)
         Log.d(TAG, "Loaded gauges: rpm=${rpm != null}, speed=${speed != null}, interval=${intervalMs}ms")
         return GaugeConfig(rpm, speed, intervalMs)
+    }
+
+    private fun parseWakeUpSequence(obj: JSONObject?): WakeUpSequence {
+        if (obj == null) return WakeUpSequence(emptyList())
+        val intervalMs = obj.optLong("intervalMs", 30L)
+        val arr = obj.optJSONArray("frames") ?: return WakeUpSequence(emptyList(), intervalMs)
+        val frames = mutableListOf<WakeUpFrame>()
+        for (i in 0 until arr.length()) {
+            try {
+                val e = arr.getJSONObject(i)
+                val canId = parseHexInt(e.getString("canId"))
+                if (canId == 0) continue
+                val canData = parseHexBytes(e.getString("canData"))
+                val label = e.optString("_label", "")
+                frames += WakeUpFrame(canId, canData, label)
+            } catch (ex: Exception) {
+                Log.w(TAG, "Lỗi parse wakeUpSequence[$i]: ${ex.message}")
+            }
+        }
+        Log.d(TAG, "Loaded wakeUpSequence: ${frames.size} frame(s), interval=${intervalMs}ms")
+        return WakeUpSequence(frames, intervalMs)
     }
 
     private fun parseGaugeEntry(obj: JSONObject?): GaugeEntry? {
