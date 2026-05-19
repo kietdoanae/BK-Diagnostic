@@ -281,6 +281,34 @@ class DiagnosticViewModel(
         }
     }
 
+    /**
+     * Gửi 1 frame "đánh thức" cụm đồng hồ ngay sau khi USB-CAN kết nối thành công.
+     *
+     *   CAN ID: 0x3B3
+     *   Data  : 44 88 C0 0C E6 00 03 3A
+     *
+     * Cluster Ford Ranger sau khi mất nguồn / từ trạng thái sleep cần 1 frame
+     * "kick" trên 0x3B3 để các module nội bộ vào trạng thái Active, nếu không
+     * các lệnh Active Test / gauge stream phía sau sẽ bị ignore.
+     *
+     * Hàm này idempotent — gọi nhiều lần không gây tác hại; nhưng caller nên
+     * gọi đúng 1 lần khi state chuyển sang Connected (xem LaunchedEffect trong
+     * [ActiveTestScreen]).
+     */
+    fun wakeUpCluster() {
+        val data = byteArrayOf(
+            0x44.toByte(), 0x88.toByte(), 0xC0.toByte(), 0x0C.toByte(),
+            0xE6.toByte(), 0x00.toByte(), 0x03.toByte(), 0x3A.toByte()
+        )
+        viewModelScope.launch(Dispatchers.IO) {
+            val frame = CanFrame(id = 0x3B3, dlc = 8, data = data)
+            logTxFrame(frame, source = "active_test",
+                decoded = "Cluster Wake-Up: CAN 0x3B3")
+            usbManager.sendFrame(frame)
+            _message.value = "Đồng hồ đã được đánh thức!"
+        }
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     //  Gauge Streaming — gửi CAN frame liên tục để điều khiển kim đồng hồ
     //  (RPM, Speed). Cluster cần stream liên tục mỗi 50-100ms để kim không

@@ -53,6 +53,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -299,6 +300,20 @@ fun ActiveTestScreen(
         message?.let {
             snackbarHost.showSnackbar(it)
             viewModel.clearMessage()
+        }
+    }
+
+    // ── Cluster wake-up: gửi 1 frame đánh thức trên 0x3B3 mỗi khi USB chuyển từ
+    //    disconnected → connected. Dùng rememberSaveable để không bắn lại khi
+    //    config-change (xoay màn hình) trong cùng phiên kết nối.
+    var hasWokenUp by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(isConnected) {
+        if (isConnected && !hasWokenUp) {
+            viewModel.wakeUpCluster()
+            hasWokenUp = true
+        } else if (!isConnected) {
+            // Mất kết nối → reset cờ để lần connect kế tiếp lại đánh thức.
+            hasWokenUp = false
         }
     }
 
